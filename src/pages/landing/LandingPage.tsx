@@ -126,7 +126,12 @@ const LandingPage: React.FC = () => {
   }, []);
 
   const openCurrencyValuation = async () => {
-    console.log('currency calc opened')
+
+    const focused = await invoke<boolean>('is_diablo_focused');
+    if (!focused) {
+      console.warn("[LandingPage] Diablo is not focused, skipping search.");
+      return;
+    }
 
     await openCenteredWindow('Currency', '/currency', {
       decorations: false,
@@ -140,6 +145,13 @@ const LandingPage: React.FC = () => {
 
   // Add handler to open the quick list item shortcut page in a webview
   const openQuickListWindow = async () => {
+
+    const focused = await invoke<boolean>('is_diablo_focused');
+    if (!focused) {
+      console.warn("[LandingPage] Diablo is not focused, skipping search.");
+      return;
+    }
+
     console.log('[LandingPage] Opening quick list window...');
 
     await keyPress('ctrl+c');
@@ -177,7 +189,7 @@ const LandingPage: React.FC = () => {
         shadow: false,
         skipTaskbar: true,
         width: 600,
-        height: 485,
+        height: 512,
         resizable: true,
         alwaysOnTop: true,
       });
