@@ -3,6 +3,7 @@ export const changeLog = {
     "✨ Added a new tab to the quick list window to manage your listed items",
     "🆕 The quick list window is now resizable.",
     "🆕 Most windows are now draggable and may be moved around the screen.",
+    "🔧 Prevent windows from opening if Diablo is not focused.",
   ],
   "0.3.0": [
     "✨ Added feature to check the total value of your rune stash (default: ctrl + x)",
