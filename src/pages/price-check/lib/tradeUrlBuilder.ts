@@ -263,6 +263,28 @@ export function buildGetMarketListingByStashItemQuery(
   return query as MarketListingQuery;
 }
 
+export function buildGetAllUserMarketListingsQuery(
+  userId: string,
+  isHardcore: boolean,
+  isLadder: boolean,
+  limit: number = 20,
+  skip: number = 0,
+): MarketListingQuery {
+  const query: Partial<MarketListingQuery> = {
+    $resolve: { user: { in_game_account: true } },
+    type: 'item',
+    $limit: limit,
+    $skip: skip,
+    accepted_offer_id: null,
+    $sort: { bumped_at: -1 },
+    user_id: userId,
+    is_hardcore: isHardcore,
+    is_ladder: isLadder,
+  };
+
+  return query as MarketListingQuery;
+}
+
 function getPropertyKey(id: number, stat: Stat, statMapper?: (statId: number, stat: Stat) => string | undefined): string {
   return statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
 }

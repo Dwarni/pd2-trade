@@ -24,7 +24,7 @@ export const QuickListPage: React.FC<any> = () => {
             setItem(json);
             console.log('[QuickListPage] Item: ' + json);
           } catch (err) {
-            console.error("[QuickListPage] Failed to parse initial payload:", err);
+            console.error("[QuickListPage] Failed to parse initial payload:", err);``
           }
         }
         // Listen for quick-list-new-item events
@@ -45,7 +45,7 @@ export const QuickListPage: React.FC<any> = () => {
       <TooltipProvider>
         <OptionsProvider>
           <Pd2WebsiteProvider>
-            {item && <ListItemShortcutForm item={item}></ListItemShortcutForm>}
+            <ListItemShortcutForm item={item}></ListItemShortcutForm>
           </Pd2WebsiteProvider>
         </OptionsProvider>
       </TooltipProvider>

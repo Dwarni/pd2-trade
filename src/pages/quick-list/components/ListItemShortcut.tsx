@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { X } from "lucide-react";
+import { X, GripVertical } from "lucide-react";
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -11,18 +11,24 @@ import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/t
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { emit } from '@tauri-apps/api/event';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import ListedItemsTab from './ListedItemsTab';
+import { Badge } from '@/components/ui/badge';
+import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 
 interface ListItemShortcutFormProps {
-  item: PriceCheckItem;
+  item: PriceCheckItem | null;
 }
 
 const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => {
   const { findMatchingItems, listSpecificItem, authData, getMarketListings, updateMarketListing, updateItemByHash, deleteMarketListing } = usePd2Website();
+  const { settings } = useOptions();
   const [matchingItems, setMatchingItems] = useState<GameStashItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<GameStashItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +37,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [totalListingsCount, setTotalListingsCount] = useState<number>(0);
+  const [allListings, setAllListings] = useState<MarketListingEntry[]>([]);
   
   const form = useForm<ShortcutFormData>({
     resolver: zodResolver(shortcutFormSchema),
@@ -38,6 +46,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   });
 
   const type = form.watch('type');
+
+  // Get the current window reference (Tauri v2 API)
+  const appWindow = useMemo(() => getCurrentWebviewWindow(), []);
+
+  // Window control handler
+  const handleClose = useCallback(() => {
+    appWindow.hide();
+  }, [appWindow]);
+
 
   // Complete reset function for new items
   const resetAllState = useCallback(() => {
@@ -81,9 +98,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [item, authData, findMatchingItemsInStash]);
 
   const pd2MarketQuery = useMemo(() => {
-    if (!authData || matchingItems.length === 0) return null;
+    if (!item || !authData || matchingItems.length === 0) return null;
     return buildGetMarketListingByStashItemQuery(matchingItems, authData.user._id);
-  }, [matchingItems, authData]);
+  }, [matchingItems, authData, item]);
 
   const getMarketListingsForStashItems = useCallback(async () => {
     if (!pd2MarketQuery) return;
@@ -111,6 +128,35 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [pd2MarketQuery, getMarketListingsForStashItems]);
 
+  // Fetch all user listings for the badge and to pass to ListedItemsTab
+  const allListingsQuery = useMemo(() => {
+    if (!authData || !settings) return null;
+    return buildGetAllUserMarketListingsQuery(
+      authData.user._id,
+      settings.mode === 'hardcore',
+      settings.ladder === 'ladder',
+      5, // Fetch first page (5 items to match ITEMS_PER_PAGE) to get both data and total count
+      0
+    );
+  }, [authData, settings]);
+
+  const fetchAllListings = useCallback(async () => {
+    if (!allListingsQuery) return;
+    try {
+      const result = await getMarketListings(allListingsQuery);
+      setAllListings(result.data);
+      setTotalListingsCount(result.total);
+    } catch (err) {
+      console.error('Failed to fetch all listings:', err);
+      setAllListings([]);
+      setTotalListingsCount(0);
+    }
+  }, [allListingsQuery, getMarketListings]);
+
+  useEffect(() => {
+    fetchAllListings();
+  }, [fetchAllListings]);
+
   const handleSubmit = async (values: ShortcutFormData) => {
     if (!selectedItem) {
       setError('Please select an item to list');
@@ -130,8 +176,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
+        await fetchAllListings(); // Refresh all listings
         await emit('toast-event', 'Listing updated!');
-        getCurrentWebviewWindow().hide();
+        appWindow.hide();
       } else {
         const listing = await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
         form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
@@ -150,8 +197,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         };
         
         await emit('toast-event', toastPayload);
-        
-        getCurrentWebviewWindow().hide();
+        await fetchAllListings(); // Refresh all listings
+        appWindow.hide();
       }
     } catch (err) {
       console.error(err instanceof Error ? err.message : 'Failed to list/update item');
@@ -198,7 +245,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   // Prepopulate form fields when selecting a listed item
   useEffect(() => {
-    if (!selectedItem) return;
+    if (!selectedItem || !item) return;
   
     const resetValues: ShortcutFormData = currentListingForSelected
       ? { 
@@ -212,7 +259,35 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       : { type: 'exact', note: '', price: '', currency: 'HR' };
   
     form.reset(resetValues);
-  }, [selectedItem, currentListingForSelected, form]);
+  }, [selectedItem, currentListingForSelected, form, item]);
+
+  // If no item is provided, show only the Listed Items tab
+  if (!item) {
+    return (
+      <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
+        <div className="flex justify-between mb-2 items-center" id="titlebar">
+          <div className="flex items-center gap-1">
+            <GripVertical 
+              data-tauri-drag-region
+              className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+              id="titlebar-drag-handle"
+            />
+            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">Listed Items</span>
+          </div>
+          <Button 
+            type="button" 
+            id="titlebar-close"
+            className="h-6 w-6" 
+            variant='ghost' 
+            onClick={handleClose}
+          >
+            <X className='h-4 w-4'/>
+          </Button>
+        </div>
+        <ListedItemsTab onClose={handleClose} />
+      </div>
+    );
+  }
 
   // Check for loading/error states first
   if (isLoading || error || matchingItems.length === 0) {
@@ -228,40 +303,77 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }
 
   return (
-    <Form {...form}>
-      <form className="inline-block p-4 border rounded-lg bg-background shadow w-screen" onSubmit={form.handleSubmit(handleSubmit)}>
-        <div className="flex justify-between mb-2 items-center">
-          <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
-          <Button type="button" className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
+    <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
+
+      <Tabs defaultValue="list-item" className="w-full">
+      <div className="flex justify-between mb-2 items-center" id="titlebar">
+        <div className="flex items-center gap-1">
+            <GripVertical 
+              data-tauri-drag-region
+              className="h-4 w-4 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+              id="titlebar-drag-handle"
+            />
+            <TabsList>
+              <TabsTrigger value="list-item" className="font-bold" style={{fontFamily: 'DiabloFont'}}>List Item</TabsTrigger>
+              <TabsTrigger value="listed-items" className="font-bold" >
+                <span className="font-bold" style={{fontFamily: 'DiabloFont'}}>Manage</span>
+                {totalListingsCount > 0 && <Badge className="font-bold text-xs rounded-full">{totalListingsCount}</Badge>}
+              </TabsTrigger>
+            </TabsList>  
+          </div>
+      
+          <Button 
+            type="button" 
+            id="titlebar-close"
+            className="h-6 w-6" 
+            variant='ghost' 
+            onClick={handleClose}
+          >
             <X className='h-4 w-4'/>
           </Button>
         </div>
+        
+        <TabsContent value="list-item" className="mt-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <ItemSelectionList
+                deleteMarketListing={deleteMarketListing}
+                matchingItems={matchingItems}
+                selectedItem={selectedItem}
+                currentListings={currentListings}
+                expandedItems={expandedItems}
+                isMarketListingsLoading={isMarketListingsLoading}
+                onItemSelect={setSelectedItem}
+                onToggleExpanded={toggleExpandedStats}
+                onExpandAll={expandAllStats}
+                onCollapseAll={collapseAllStats}
+                onBump={handleBump}
+                onRefresh={handleRefresh}
+              />
 
-        <ItemSelectionList
-          deleteMarketListing={deleteMarketListing}
-          matchingItems={matchingItems}
-          selectedItem={selectedItem}
-          currentListings={currentListings}
-          expandedItems={expandedItems}
-          isMarketListingsLoading={isMarketListingsLoading}
-          onItemSelect={setSelectedItem}
-          onToggleExpanded={toggleExpandedStats}
-          onExpandAll={expandAllStats}
-          onCollapseAll={collapseAllStats}
-          onBump={handleBump}
-          onRefresh={handleRefresh}
-        />
+              <ListingFormFields
+                form={form}
+                type={type}
+                selectedItem={selectedItem}
+                currentListings={currentListings}
+                submitLoading={submitLoading}
+                onSubmit={handleSubmit}
+              />
+            </form>
+          </Form>
+        </TabsContent>
 
-        <ListingFormFields
-          form={form}
-          type={type}
-          selectedItem={selectedItem}
-          currentListings={currentListings}
-          submitLoading={submitLoading}
-          onSubmit={handleSubmit}
-        />
-      </form>
-    </Form>
+        <TabsContent value="listed-items" className="mt-4">
+          <ListedItemsTab 
+            onClose={handleClose} 
+            initialListings={allListings}
+            initialTotalCount={totalListingsCount}
+            onTotalCountChange={setTotalListingsCount}
+            onListingsChange={setAllListings}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

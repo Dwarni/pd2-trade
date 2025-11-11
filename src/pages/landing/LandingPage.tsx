@@ -178,11 +178,12 @@ const LandingPage: React.FC = () => {
         skipTaskbar: true,
         width: 600,
         height: 485,
+        resizable: true,
         alwaysOnTop: true,
       });
-      attachWindowCloseHandler(quickListWinRef.current, () => {
-        quickListWinRef.current = null;
-      });
+      // attachWindowCloseHandler(quickListWinRef.current, () => {
+      //   quickListWinRef.current = null;
+      // });
     } else {
       quickListWinRef.current.emit('quick-list-new-item', encodedItem);
       await sleep(100);

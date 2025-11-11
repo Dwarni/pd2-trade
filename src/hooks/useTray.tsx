@@ -5,7 +5,7 @@ import { Menu } from "@tauri-apps/api/menu";
 import { exit } from '@tauri-apps/plugin-process';
 import {useOptions} from "@/hooks/useOptions";
 import {openCenteredWindow, attachWindowCloseHandler} from "@/lib/window";
-import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import {isRegistered, register, unregister} from '@tauri-apps/plugin-global-shortcut';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -44,10 +44,10 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         height: 650,
       });
       setIsSettingsOpen(true);
-      attachWindowCloseHandler(settingsWinRef.current, () => {
-        settingsWinRef.current = null;
-        setIsSettingsOpen(false);
-      });
+      // attachWindowCloseHandler(settingsWinRef.current, () => {
+      //   settingsWinRef.current = null;
+      //   setIsSettingsOpen(false);
+      // });
     } else {
       await settingsWinRef.current.show();
       setIsSettingsOpen(true);
@@ -65,9 +65,12 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         if (lastShortcutRef.current) {
           await unregister(lastShortcutRef.current);
         }
-        await register(shortcut, () => {
-          openWindow();
-        });
+        if (!await isRegistered(shortcut)) {
+          await register(shortcut, () => {
+            openWindow();
+          });
+        }
+
         lastShortcutRef.current = shortcut;
       } catch (err) {
         console.error('Failed to register settings shortcut:', err);

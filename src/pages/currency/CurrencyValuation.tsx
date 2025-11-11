@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { CheckIcon, ChevronDown, Loader2, X } from 'lucide-react';
+import { CheckIcon, ChevronDown, GripVertical, Loader2, X } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { Currency } from '@/common/types/pd2-website/GameStashResponse';
@@ -137,7 +137,14 @@ export function CurrencyValuation() {
     <div className="min-h-screen w-full space-y-6 p-10 md:block bg-background">
       <div className="flex flex-row justify-between">
         <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold">Currency Valuation</h2>
+          <div className="flex items-center gap-1">
+              <GripVertical 
+                  data-tauri-drag-region
+                  className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+                  id="titlebar-drag-handle"
+                />
+                <h2 className="text-2xl font-bold">Currency Valuation</h2>
+          </div>
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
             Powered by{' '}
             <a

@@ -1,4 +1,9 @@
 export const changeLog = {
+  "0.4.0": [
+    "✨ Added a new tab to the quick list window to manage your listed items",
+    "🆕 The quick list window is now resizable.",
+    "🆕 Most windows are now draggable and may be moved around the screen.",
+  ],
   "0.3.0": [
     "✨ Added feature to check the total value of your rune stash (default: ctrl + x)",
     "🔧 Fixed an issue which was causing the popup window to block the users input",
