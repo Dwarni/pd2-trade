@@ -31,6 +31,7 @@ const appearanceFormSchema = z.object({
   ladder: z.enum(['non-ladder', 'ladder'], {
     required_error: 'Please select a ladder.',
   }),
+  fillStatValue: z.number().int().min(0).max(100).optional(),
 });
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
@@ -42,11 +43,23 @@ export function GeneralForm() {
   // Always call hooks at the top level
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
-    defaultValues: settings || {
-      mode: 'softcore',
-      ladder: 'non-ladder',
+    defaultValues: {
+      mode: settings?.mode || 'softcore',
+      ladder: settings?.ladder || 'non-ladder',
+      fillStatValue: settings?.fillStatValue ?? 5,
     },
   });
+
+  // Reset form when settings change
+  React.useEffect(() => {
+    if (settings) {
+      form.reset({
+        mode: settings.mode || 'softcore',
+        ladder: settings.ladder || 'non-ladder',
+        fillStatValue: settings.fillStatValue ?? 5,
+      });
+    }
+  }, [settings, form]);
 
   if (isLoading || !settings) {
     return null;
@@ -110,6 +123,34 @@ export function GeneralForm() {
                   </SelectContent>
                 </Select>
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="fillStatValue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fill Stat Value (%)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="5"
+                  className="w-[200px]"
+                  value={field.value ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === '' ? undefined : parseInt(value, 10));
+                  }}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  ref={field.ref}
+                />
+              </FormControl>
+              <FormDescription>
+                Percentage used to automatically populate stat value ranges when selecting stats with ranges.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

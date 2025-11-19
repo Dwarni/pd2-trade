@@ -27,5 +27,4 @@ export type {
   ItemData, 
   ItemValue, 
   RuneCombination 
-} from '../lib/types';
-export { RANGE_MARGIN } from '../lib/types'; 
+} from '../lib/types'; 

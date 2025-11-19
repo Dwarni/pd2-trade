@@ -8,7 +8,7 @@ export enum StatId {
 
 export const PRIORITY_STATS = [StatId.Corrupted, StatId.Socket, StatId.Ethereal];
 
-export const STRIP_STATS = [361, 56];
+export const STRIP_STATS = [361, 56, 17, 18]; // 17: item_maxdamage_percent, 18: item_mindamage_percent (combined into 998)
 
 
 export const statRemapByName: Record<string, Stat> = {
@@ -50,8 +50,8 @@ export const statIdToProperty: Record<number,string> = {
   18: "item_mindamage_percent",
   19: "tohit",
   20: "toblock",
-  21: "mindamage",
-  // 22: "maxdamage", TODO this is currently bugged out on the trade site
+  21: "min_damage",
+  22: "max_damage",
   23: "secondary_mindamage",
   24: "secondary_maxdamage",
   25: "damagepercent",

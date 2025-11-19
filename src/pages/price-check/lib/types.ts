@@ -45,4 +45,7 @@ export type EconomyValue = {
   Ubers: ItemValue[];
 };
 
-export const RANGE_MARGIN = 0.05; // 20% by default, make this configurable if needed
+// RANGE_MARGIN has been replaced by fillStatValue setting (0-100%)
+// Default value is 5% (0.05). This constant is kept for backward compatibility but should not be used.
+// @deprecated Use fillStatValue from settings instead
+export const RANGE_MARGIN = 0.05;

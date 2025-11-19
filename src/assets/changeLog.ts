@@ -4,6 +4,9 @@ export const changeLog = {
     "🆕 The quick list window is now resizable.",
     "🆕 Most windows are now draggable and may be moved around the screen.",
     "🔧 Prevent windows from opening if Diablo is not focused.",
+    "🆕 Added a new setting to control the fill stat value percentage.",
+    "🔧 Fixed an issue which caused enhanced damage to be incorrectly displayed in the price check widget.",
+    "🔧 Fixed an issue which caused min and max damage to not populate correctly in the price check widget.",
   ],
   "0.3.0": [
     "✨ Added feature to check the total value of your rune stash (default: ctrl + x)",

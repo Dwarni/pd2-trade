@@ -23,6 +23,7 @@ export interface ISettings {
   hotkeyKeySettings?: string;
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
+  fillStatValue?: number;
 }
 
 interface OptionsContextProps {
@@ -45,6 +46,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyKeySettings: 'o',
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
+  fillStatValue: 5,
 };
 
 const SETTINGS_FILENAME = 'settings.json';

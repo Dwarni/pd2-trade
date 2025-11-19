@@ -4,7 +4,6 @@ import { skillNameToIdMap } from "@/assets/character-skills";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
-import { RANGE_MARGIN } from "./types";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
 import { ItemType as PD2Item } from "@/assets/itemFuzzySearch";
 import { Item as GameStashItem } from "@/common/types/pd2-website/GameStashResponse";
@@ -289,6 +288,77 @@ function getPropertyKey(id: number, stat: Stat, statMapper?: (statId: number, st
   return statMapper?.(id, stat) || statIdToProperty[id] || `stat_${id}`;
 }
 
+/**
+ * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
+ * into a single "Enhanced Damage" stat (stat_id 998)
+ */
+function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
+  const minDamageStat = stats.find(s => s.stat_id === 18); // item_mindamage_percent
+  const maxDamageStat = stats.find(s => s.stat_id === 17); // item_maxdamage_percent
+  const existingEnhancedDamageStat = stats.find(s => s.stat_id === 998);
+
+  // Filter out stats 17, 18, and any existing 998 to avoid duplicates
+  const filteredStats = stats.filter(s => s.stat_id !== 17 && s.stat_id !== 18 && s.stat_id !== 998);
+
+  // For jewels, enhanced damage is always 5-40%
+  const isJewel = itemType === "Jewel";
+  const jewelRange = isJewel ? { min: 5, max: 40 } : undefined;
+
+  // If both min and max damage stats exist, combine them
+  if (minDamageStat && maxDamageStat) {
+    const combinedValue = maxDamageStat.value ?? minDamageStat.value ?? 0;
+    const combinedRange = jewelRange ?? {
+      min: minDamageStat.range?.min ?? minDamageStat.value ?? 0,
+      max: maxDamageStat.range?.max ?? maxDamageStat.value ?? 0,
+    };
+    const combinedStat: Stat = {
+      stat_id: 998,
+      name: "% Enhanced Damage",
+      value: combinedValue,
+      range: combinedRange,
+    };
+    return [...filteredStats, combinedStat];
+  }
+
+  // If only min damage exists, convert it to the combined stat
+  if (minDamageStat) {
+    const range = jewelRange ?? minDamageStat.range;
+    const combinedStat: Stat = {
+      stat_id: 998,
+      name: "% Enhanced Damage",
+      value: minDamageStat.value,
+      range: range,
+    };
+    return [...filteredStats, combinedStat];
+  }
+
+  // If only max damage exists, convert it to the combined stat
+  if (maxDamageStat) {
+    const range = jewelRange ?? maxDamageStat.range;
+    const combinedStat: Stat = {
+      stat_id: 998,
+      name: "% Enhanced Damage",
+      value: maxDamageStat.value,
+      range: range,
+    };
+    return [...filteredStats, combinedStat];
+  }
+
+  // If no 17/18 stats but existing 998 exists, keep it (but update range if jewel)
+  if (existingEnhancedDamageStat) {
+    if (isJewel && existingEnhancedDamageStat.stat_id === 998) {
+      const updatedStat: Stat = {
+        ...existingEnhancedDamageStat,
+        range: jewelRange,
+      };
+      return [...filteredStats, updatedStat];
+    }
+    return [...filteredStats, existingEnhancedDamageStat];
+  }
+
+  return filteredStats;
+}
+
 function getSortedStats(item: any): Stat[] {
   const baseStats = [];
 
@@ -309,7 +379,10 @@ function getSortedStats(item: any): Stat[] {
     });
   }
 
-  return [...item.stats, ...baseStats].sort((a: Stat, b: Stat) => {
+  // Combine enhanced damage stats before processing
+  const combinedStats = combineEnhancedDamageStats(item.stats, item.type);
+
+  return [...combinedStats, ...baseStats].sort((a: Stat, b: Stat) => {
     const pa = PRIORITY_STATS.includes(a.stat_id) ? 0 : 1;
     const pb = PRIORITY_STATS.includes(b.stat_id) ? 0 : 1;
     return pa - pb;             // priority first, others after
