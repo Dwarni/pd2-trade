@@ -4,11 +4,19 @@ export enum StatId {
   Corrupted = 360,
   Socket = 1000,
   Ethereal = 1001,
+  AllResistances = 999,
+  AllAttributes = 1002,
 }
 
 export const PRIORITY_STATS = [StatId.Corrupted, StatId.Socket, StatId.Ethereal];
 
-export const STRIP_STATS = [361, 56, 17, 18]; // 17: item_maxdamage_percent, 18: item_mindamage_percent (combined into 998)
+export const STRIP_STATS = [
+  361,
+   56, 
+   159, // an evil force
+   17, // 17: item_maxdamage_percent (combined into 998)
+   18 // 18: item_mindamage_percent(combined into 998)
+]; 
 
 
 export const statRemapByName: Record<string, Stat> = {
@@ -17,7 +25,7 @@ export const statRemapByName: Record<string, Stat> = {
     name: "% Enhanced Damage",
   },
   "to Strength": {
-    stat_id: 997,
+    stat_id: 0,
     name: "to Strength",
   }
 }
@@ -542,6 +550,8 @@ export const statIdToProperty: Record<number,string> = {
   510: "no_wolves",
   998: "maxdamage_percent",
   997: "strength",
+  999: "all_resist",
   1000: "socket",
   1001: "ethereal",
+  1002: "all_attributes",
 };

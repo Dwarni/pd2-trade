@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import {statIdToProperty, StatId} from "@/pages/price-check/lib/stat-mappings";
 import {HoverPopover} from "@/components/custom/hover-popover";
 import {Badge} from "@/components/ui/badge";
-import {skillNameToIdMap} from "@/assets/character-skills";
+import {fuzzyMatchCharacterSkill, skillNameToIdMap} from "@/assets/character-skills";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName} from "@/assets/class-skills";
 
 interface StatRowProps {
@@ -38,7 +38,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   const isEthereal = stat.stat_id === StatId.Ethereal;
   const isSkill = "skill" in stat;
   const isUnknownSkill = isSkill && (
-    !skillNameToIdMap[stat.skill.toLowerCase()] &&
+    !fuzzyMatchCharacterSkill(stat.skill.toLowerCase()) &&
     !fuzzyClassSkillByName(stat.skill.toLowerCase()) &&
     !fuzzyClassSubSkillByName(stat.skill.toLowerCase()));
   const isUnknown = (statIdToProperty[stat.stat_id] === undefined && !isSkill) || isUnknownSkill;

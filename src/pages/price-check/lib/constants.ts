@@ -9,6 +9,27 @@ export const FIXED_RUNE_PRICES: Record<string, number> = {
   'Lem Rune': 0.01,
 };
 
+// Complete rune HR values (only runes with HR values: Lum through Zod)
+export const ALL_RUNE_HR_VALUES: Record<string, number> = {
+  'Lum Rune': 0.005,
+  'Ko Rune': 0.01,
+  'Fal Rune': 0.01,
+  'Lem Rune': 0.02,
+  'Pul Rune': 0.03,
+  'Um Rune': 0.05,
+  'Mal Rune': 0.1,
+  'Ist Rune': 0.15,
+  'Gul Rune': 0.25,
+  'Vex Rune': 0.5,
+  'Ohm Rune': 0.75,
+  'Lo Rune': 1,
+  'Sur Rune': 1.5,
+  'Ber Rune': 3,
+  'Jah Rune': 2,
+  'Cham Rune': 2.25,
+  'Zod Rune': 4.5,
+};
+
 // Item name to API identifier mapping
 export const ECONOMY_API_MAP = {
   Currency: {

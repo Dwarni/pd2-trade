@@ -1,5 +1,7 @@
 import {CharacterSkill} from "@/common/types/CharacterSkill";
+import Fuse from "fuse.js";
 import _ from "lodash";
+
 
 export const characterSkillMap: Record<number, CharacterSkill> = {
   0: {
@@ -4628,3 +4630,22 @@ export const skillNameToIdMap: Record<string, CharacterSkill> = _.keyBy(
   Object.values(characterSkillMap),
   (skill) => skill.name.toLowerCase()
 );
+
+export function fuzzyMatchCharacterSkill(
+  searchTerm: string, 
+  characterSkillList: CharacterSkill[] = Object.values(skillNameToIdMap),
+): CharacterSkill | null {
+
+  console.log('[character-skills] Fuzzy matching character skill:', searchTerm);
+  const fuse = createCharacterSkillFuse(characterSkillList);
+  const results = fuse.search(searchTerm);
+  console.log('[character-skills] Results:', results);
+  return results.length > 0 ? results[0].item : null;
+}
+
+export function createCharacterSkillFuse(characterSkillList: CharacterSkill[] = Object.values(skillNameToIdMap)) {
+  return new Fuse(characterSkillList, {
+    keys: ['name'],
+    threshold: 0.3,
+  });
+}

@@ -1,6 +1,6 @@
 import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
-import { skillNameToIdMap } from "@/assets/character-skills";
+import { fuzzyCharacterSkill, fuzzyMatchCharacterSkill, skillNameToIdMap } from "@/assets/character-skills";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
@@ -31,7 +31,7 @@ export function buildTradeUrl(
     let propKey = "stat_undefined";
 
     if ('skill' in stat && stat.skill) {
-      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
+      const skillEntry = fuzzyMatchCharacterSkill(stat.skill.toLowerCase());
       if (skillEntry) {
         propKey = `item_singleskill{${skillEntry.id}}`;
       }
@@ -43,6 +43,8 @@ export function buildTradeUrl(
       if (subClassEntry) {
         propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
       }
+
+      console.log('[tradeUrlBuilder] Skill entry:', skillEntry, 'Class entry:', classEntry, 'Subclass entry:', subClassEntry);
 
     } else if (stat.stat_id !== undefined) {
       propKey = getPropertyKey(stat.stat_id, stat, statMapper);
@@ -311,11 +313,13 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
       min: minDamageStat.range?.min ?? minDamageStat.value ?? 0,
       max: maxDamageStat.range?.max ?? maxDamageStat.value ?? 0,
     };
+    const isCorrupted = minDamageStat.corrupted || maxDamageStat.corrupted;
     const combinedStat: Stat = {
       stat_id: 998,
       name: "% Enhanced Damage",
       value: combinedValue,
       range: combinedRange,
+      ...(isCorrupted && { corrupted: true }),
     };
     return [...filteredStats, combinedStat];
   }
@@ -328,6 +332,7 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
       name: "% Enhanced Damage",
       value: minDamageStat.value,
       range: range,
+      ...(minDamageStat.corrupted && { corrupted: true }),
     };
     return [...filteredStats, combinedStat];
   }
@@ -340,6 +345,7 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
       name: "% Enhanced Damage",
       value: maxDamageStat.value,
       range: range,
+      ...(maxDamageStat.corrupted && { corrupted: true }),
     };
     return [...filteredStats, combinedStat];
   }
@@ -357,6 +363,126 @@ function combineEnhancedDamageStats(stats: Stat[], itemType?: string): Stat[] {
   }
 
   return filteredStats;
+}
+
+/**
+ * Combines fire, lightning, cold, and poison resist stats (stat_ids 39, 41, 43, 45)
+ * into a single "All Resistances" stat (stat_id 999) when they all have the same value
+ */
+function combineResistanceStats(stats: Stat[]): Stat[] {
+  const fireResist = stats.find(s => s.stat_id === 39); // fireresist
+  const lightResist = stats.find(s => s.stat_id === 41); // lightresist
+  const coldResist = stats.find(s => s.stat_id === 43); // coldresist
+  const poisonResist = stats.find(s => s.stat_id === 45); // poisonresist
+  const existingAllResistStat = stats.find(s => s.stat_id === 999);
+
+  // Check if all four resistance stats exist and have the same value
+  const allResistsExist = fireResist && lightResist && coldResist && poisonResist;
+  const allSameValue = allResistsExist && 
+    fireResist.value === lightResist.value &&
+    lightResist.value === coldResist.value &&
+    coldResist.value === poisonResist.value;
+
+  // If all four resistances exist and have the same value, combine them
+  if (allSameValue && fireResist) {
+    // Filter out individual resistance stats and existing 999 to avoid duplicates
+    const filteredStats = stats.filter(s => s.stat_id !== 39 && s.stat_id !== 41 && s.stat_id !== 43 && s.stat_id !== 45 && s.stat_id !== 999);
+    
+    const combinedValue = fireResist.value;
+    // Combine ranges: use the minimum of all mins and maximum of all maxes
+    const combinedRange = {
+      min: Math.min(
+        fireResist.range?.min ?? fireResist.value ?? 0,
+        lightResist!.range?.min ?? lightResist!.value ?? 0,
+        coldResist!.range?.min ?? coldResist!.value ?? 0,
+        poisonResist!.range?.min ?? poisonResist!.value ?? 0
+      ),
+      max: Math.max(
+        fireResist.range?.max ?? fireResist.value ?? 0,
+        lightResist!.range?.max ?? lightResist!.value ?? 0,
+        coldResist!.range?.max ?? coldResist!.value ?? 0,
+        poisonResist!.range?.max ?? poisonResist!.value ?? 0
+      ),
+    };
+    const isCorrupted = fireResist.corrupted || lightResist!.corrupted || coldResist!.corrupted || poisonResist!.corrupted;
+    const combinedStat: Stat = {
+      stat_id: 999,
+      name: "All Resistances",
+      value: combinedValue,
+      range: combinedRange,
+      ...(isCorrupted && { corrupted: true }),
+    };
+    return [...filteredStats, combinedStat];
+  }
+
+  // If values are not the same, keep individual stats as normal
+  // Only filter out existing 999 if it exists (to avoid duplicates)
+  if (existingAllResistStat) {
+    return stats.filter(s => s.stat_id !== 999);
+  }
+
+  // Return stats as-is if no combination needed and no existing 999
+  return stats;
+}
+
+/**
+ * Combines strength, energy, dexterity, and vitality stats (stat_ids 0, 1, 2, 3)
+ * into a single "All Attributes" stat (stat_id 1002) when they all have the same value
+ */
+function combineAttributeStats(stats: Stat[]): Stat[] {
+  const strengthStat = stats.find(s => s.stat_id === 0); // strength
+  const energyStat = stats.find(s => s.stat_id === 1); // energy
+  const dexterityStat = stats.find(s => s.stat_id === 2); // dexterity
+  const vitalityStat = stats.find(s => s.stat_id === 3); // vitality
+  const existingAllAttributesStat = stats.find(s => s.stat_id === StatId.AllAttributes);
+
+  // Check if all four attribute stats exist and have the same value
+  const allAttributesExist = strengthStat && energyStat && dexterityStat && vitalityStat;
+  const allSameValue = allAttributesExist && 
+    strengthStat.value === energyStat.value &&
+    energyStat.value === dexterityStat.value &&
+    dexterityStat.value === vitalityStat.value;
+
+  // If all four attributes exist and have the same value, combine them
+  if (allSameValue && strengthStat) {
+    // Filter out individual attribute stats and existing 1002 to avoid duplicates
+    const filteredStats = stats.filter(s => s.stat_id !== 0 && s.stat_id !== 1 && s.stat_id !== 2 && s.stat_id !== 3 && s.stat_id !== StatId.AllAttributes);
+    
+    const combinedValue = strengthStat.value;
+    // Combine ranges: use the minimum of all mins and maximum of all maxes
+    const combinedRange = {
+      min: Math.min(
+        strengthStat.range?.min ?? strengthStat.value ?? 0,
+        energyStat!.range?.min ?? energyStat!.value ?? 0,
+        dexterityStat!.range?.min ?? dexterityStat!.value ?? 0,
+        vitalityStat!.range?.min ?? vitalityStat!.value ?? 0
+      ),
+      max: Math.max(
+        strengthStat.range?.max ?? strengthStat.value ?? 0,
+        energyStat!.range?.max ?? energyStat!.value ?? 0,
+        dexterityStat!.range?.max ?? dexterityStat!.value ?? 0,
+        vitalityStat!.range?.max ?? vitalityStat!.value ?? 0
+      ),
+    };
+    const isCorrupted = strengthStat.corrupted || energyStat!.corrupted || dexterityStat!.corrupted || vitalityStat!.corrupted;
+    const combinedStat: Stat = {
+      stat_id: StatId.AllAttributes,
+      name: "All Attributes",
+      value: combinedValue,
+      range: combinedRange,
+      ...(isCorrupted && { corrupted: true }),
+    };
+    return [...filteredStats, combinedStat];
+  }
+
+  // If values are not the same, keep individual stats as normal
+  // Only filter out existing 1002 if it exists (to avoid duplicates)
+  if (existingAllAttributesStat) {
+    return stats.filter(s => s.stat_id !== StatId.AllAttributes);
+  }
+
+  // Return stats as-is if no combination needed and no existing 1002
+  return stats;
 }
 
 function getSortedStats(item: any): Stat[] {
@@ -379,8 +505,21 @@ function getSortedStats(item: any): Stat[] {
     });
   }
 
+  // Apply name-based remapping first (e.g., "to Strength" -> stat_id 0)
+  // This must happen before combining attributes so the combination can find the remapped stats
+  let combinedStats = item.stats.map((stat: Stat) => {
+    if (stat.name in statRemapByName) {
+      return {...stat, ...statRemapByName[stat.name]};
+    }
+    return stat;
+  });
+  
   // Combine enhanced damage stats before processing
-  const combinedStats = combineEnhancedDamageStats(item.stats, item.type);
+  combinedStats = combineEnhancedDamageStats(combinedStats, item.type);
+  // Combine attribute stats if applicable
+  combinedStats = combineAttributeStats(combinedStats);
+  // Combine resistance stats if applicable
+  combinedStats = combineResistanceStats(combinedStats);
 
   return [...combinedStats, ...baseStats].sort((a: Stat, b: Stat) => {
     const pa = PRIORITY_STATS.includes(a.stat_id) ? 0 : 1;
@@ -390,6 +529,8 @@ function getSortedStats(item: any): Stat[] {
     if (stat.stat_id in statRemap) {
       return statRemap[stat.stat_id];
     }
+    // Note: statRemapByName is already applied earlier, before combining attributes
+    // But we still check here in case there are other remappings needed
     if (stat.name in statRemapByName) {
       return {...stat, ...statRemapByName[stat.name]}
     }
@@ -397,5 +538,11 @@ function getSortedStats(item: any): Stat[] {
       return {...stat, name: stat.skill} // use skill name as display name
     }
     return stat;
-  }).filter((stat) => !STRIP_STATS.includes(stat.stat_id));
+  }).filter((stat) => {
+    // Filter out stats by ID
+    if (STRIP_STATS.includes(stat.stat_id)) return false;
+    // Filter out stats with "an evil force" in the name
+    if (stat.name && stat.name.toLowerCase().includes("an evil force")) return false;
+    return true;
+  })
 } 

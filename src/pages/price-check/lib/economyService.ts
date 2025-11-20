@@ -1,5 +1,5 @@
 import { RUNE_HIERARCHY } from '@/common/constants';
-import { ECONOMY_API_MAP, FIXED_RUNE_PRICES } from './constants';
+import { ECONOMY_API_MAP, FIXED_RUNE_PRICES, ALL_RUNE_HR_VALUES } from './constants';
 import { EconomyData, EconomyValue, ItemData, ItemValue, RuneCombination } from './types';
 
 export async function fetchEconomyData(): Promise<{
@@ -83,7 +83,22 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
     const data = rune.data;
     if (!data || FIXED_RUNE_PRICES[rune.name]) return;
 
-    if (data.numListings >= 10) {
+    const floorPrice = ALL_RUNE_HR_VALUES[rune.name];
+    // Use standard price if:
+    // 1. Less than 10 listings, OR
+    // 2. Price drops too far below floor price (more than 30% below)
+    const shouldUseStandardPrice = data.numListings < 10 || (floorPrice && data.price < floorPrice * 0.7);
+
+    if (shouldUseStandardPrice && floorPrice) {
+      runeValues.push({
+        name: rune.name,
+        price: floorPrice,
+        numListings: data.numListings,
+        isCalculated: false,
+        isFixed: true,
+        originalPrice: data.price,
+      });
+    } else if (data.numListings >= 10) {
       runeValues.push({
         name: rune.name,
         price: data.price,
@@ -91,6 +106,7 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
         isCalculated: false,
       });
     } else {
+      // Fallback: use calculated price if no floor price available
       let calculatedPrice = data.price;
       let isCalculated = false;
       const originalPrice = data.price;
@@ -152,8 +168,25 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
     if (!latest) return;
 
     const { price, numListings } = latest;
+    const floorPrice = ALL_RUNE_HR_VALUES[name];
 
-    if (numListings >= 10) {
+    // Use standard price if:
+    // 1. Less than 10 listings, OR
+    // 2. Price drops too far below floor price (more than 30% below)
+    const shouldUseStandardPrice = numListings < 10 || (floorPrice && price < floorPrice * 0.7);
+
+    if (shouldUseStandardPrice && floorPrice) {
+      runeValues.push({
+        name,
+        itemName: item.itemName,
+        price: floorPrice,
+        numListings,
+        isCalculated: false,
+        isFixed: true,
+        originalPrice: price,
+      });
+      lastValidPrice = floorPrice;
+    } else if (numListings >= 10) {
       runeValues.push({
         name,
         itemName: item.itemName,
@@ -163,6 +196,7 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
       });
       lastValidPrice = price;
     } else {
+      // Fallback: use calculated price if no floor price available
       const calculatedPrice = lastValidPrice ? lastValidPrice * 0.5 : 0;
       runeValues.push({
         name,

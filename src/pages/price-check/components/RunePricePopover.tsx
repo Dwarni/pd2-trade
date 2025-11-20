@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ArrowRightLeft, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ItemValue, RuneCombination } from "../lib/types";
+import { FIXED_RUNE_PRICES } from "../lib/constants";
 
 interface RunePricePopoverProps {
   loading: boolean;
@@ -33,9 +34,11 @@ export function RunePricePopover({
   // Determine which runes to display
   const displayedRunes = showMore ? calculatedRuneValues : highRunes;
 
+  console.log(calculatedRuneValues);
   return (
     <Popover>
       <PopoverTrigger>
+
         <Button variant="ghost" size="sm" className="flex items-center gap-2 h-6">
           <ArrowRightLeft className="h-2 w-4" />
         </Button>
@@ -132,11 +135,9 @@ export function RunePricePopover({
                 </div>
               )}
               
-              {(calculatedRuneValues.some(r => r.isCalculated) || calculatedRuneValues.some(r => r.isFixed)) && (
                 <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                  * Calculated as 0.5x the value of the rune above (when &lt;10 listings) or fixed pricing for lower runes
+                  * Standard pricing used when &lt;10 listings or when value drops too far below floor price
                 </div>
-              )}
               
               {/* Attribution */}
               <div className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-600 text-center">

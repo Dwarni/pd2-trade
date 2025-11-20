@@ -54,6 +54,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [allListingsForSearch, setAllListingsForSearch] = useState<MarketListingEntry[]>([]);
   const [isLoadingAllListings, setIsLoadingAllListings] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   const editForm = useForm<ShortcutFormData>({
     resolver: zodResolver(shortcutFormSchema),
@@ -134,18 +135,27 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     if (searchQuery.trim()) {
       return;
     }
-    // If we have initial data and we're on page 0, use it instead of fetching
-    // But only use the first ITEMS_PER_PAGE items
-    if (currentPage === 0 && initialListings && initialListings.length > 0 && initialTotalCount !== undefined) {
-      setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+    // If we have initial data (even if empty) and we're on page 0, use it instead of fetching
+    // This prevents infinite loops when there are no items
+    if (currentPage === 0 && !hasInitialized && initialTotalCount !== undefined) {
+      if (initialListings && initialListings.length > 0) {
+        setListings(initialListings.slice(0, ITEMS_PER_PAGE));
+      } else {
+        // Empty initial listings - set empty state to prevent fetch loop
+        setListings([]);
+      }
       setTotalCount(initialTotalCount);
+      setHasInitialized(true);
       return;
     }
-    // Otherwise, fetch for the current page
-    if (marketQuery) {
+    // Only fetch if we've initialized and we're not on the initial page
+    // OR if we haven't initialized but we're not on page 0 (shouldn't happen, but safety check)
+    if (marketQuery && hasInitialized && currentPage !== 0) {
+      fetchListings();
+    } else if (marketQuery && !hasInitialized && currentPage !== 0) {
       fetchListings();
     }
-  }, [marketQuery, fetchListings, currentPage, initialListings, initialTotalCount, searchQuery]);
+  }, [marketQuery, fetchListings, currentPage, initialListings, initialTotalCount, searchQuery, hasInitialized]);
 
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);
