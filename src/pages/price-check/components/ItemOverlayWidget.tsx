@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SquareArrowOutUpRight, X } from "lucide-react";
+import { ArchiveIcon, SquareArrowOutUpRight, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { qualityColor } from "../lib/qualityColor";
 import { StatRow } from "./StatRow";
 import { useOptions } from "@/hooks/useOptions";
@@ -20,10 +21,14 @@ import { useItems } from "@/hooks/useItems";
 import { MarketListingEntry, MarketListingResult } from "@/common/types/pd2-website/GetMarketListingsResponse";
 import { usePd2Website } from "@/hooks/pd2website/usePD2Website";
 import { emit } from "@tauri-apps/api/event";
+import { Toggle } from "@/components/ui/toggle";
+import { Label } from "@/components/ui/label";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
-  const { getMarketListings, authData } = usePd2Website();
+  const { getMarketListings, getMarketListingsArchive, authData } = usePd2Website();
   const { findOneByName } = useItems();
 
   // Use custom hooks for state management
@@ -47,20 +52,20 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const pd2Item = useMemo(() => findOneByName(item.name), [item])
 
+  // Market listings state
+  const [marketListingsResult, setMarketListingsResult] = useState<MarketListingResult | null>(null);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketError, setMarketError] = useState<string | null>(null);
+  const [searchArchived, setSearchArchived] = useState(false);
+
   /** Build ProjectDiablo2 trade URL */
   const tradeUrl = useMemo(() => {
     return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper);
   }, [selected, filters, item, statMapper, settings, pd2Item]);
 
   const pd2MarketQuery = useMemo(() => {
-    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper);
-  }, [selected, filters, item, statMapper, settings]);
-  
-
-  // Market listings state
-  const [marketListingsResult, setMarketListingsResult] = useState<MarketListingResult | null>(null);
-  const [marketLoading, setMarketLoading] = useState(false);
-  const [marketError, setMarketError] = useState<string | null>(null);
+    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived);
+  }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item]);
 
 
   useEffect(() => {
@@ -87,6 +92,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           selectedRuneCombinations={selectedRuneCombinations}
           onRuneBreakdownSelect={setSelectedRuneBreakdown}
         />
+
+
+        <Button variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="self-start h-7 w-7">
+            <X className="h-2 w-2" />
+        </Button>
       </div>
 
       {/* Header */}
@@ -111,12 +124,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {item.defense && <Badge variant='outline' className={'text-sm border-gray-300 text-gray-300 rounded-lg mt-1'}>Defense: {item.defense} </Badge>}
           </div>
 
-          <Button variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="self-start">
-            <X className="h-4 w-4" />
-          </Button>
+  
         </CardHeader>
       </div>
 
@@ -138,35 +146,51 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           </div>
         </ScrollArea>
         {/* Search button */}
-        <div className="flex flex-row gap-2">
-        <Button
-          className="w-full mt-2"
-          onClick={async () => {
-            setMarketError(null);
-            setMarketLoading(true);
-            setMarketListingsResult(null);
-            try {
-              const result = await getMarketListings(pd2MarketQuery);
-              setMarketListingsResult(result);
-            } catch (e: any) {
-              console.log(e.message || 'Failed to fetch market listings')
-              setMarketError(e.message || 'Failed to fetch market listings');
-            } finally {
-              setMarketLoading(false);
-            }
-          }}
-        >
-          Search ({selected.size})
-        </Button>
-        <Button
-          className="w-40 mt-2 flex flex-row justify-center gap-2"
-          onClick={() => {
-            if (tradeUrl) openUrl(tradeUrl);
-          }}
-        >
-          Trade
-          <SquareArrowOutUpRight className="w-4 h-4"/>
-        </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-2">
+              <ButtonGroup>
+                <Button
+                  variant="secondary"
+                  className="w-full mt-2"
+                  onClick={async () => {
+                    setMarketError(null);
+                    setMarketLoading(true);
+                    setMarketListingsResult(null);
+                    try {
+                      const result = searchArchived 
+                        ? await getMarketListingsArchive(pd2MarketQuery)
+                        : await getMarketListings(pd2MarketQuery);
+                      setMarketListingsResult(result);
+                    } catch (e: any) {
+                      console.log(e.message || 'Failed to fetch market listings')
+                      setMarketError(e.message || 'Failed to fetch market listings');
+                    } finally {
+                      setMarketLoading(false);
+                    }
+                  }}
+                >
+                  Search
+                </Button>
+                <Button
+                variant="secondary"
+                  className="mt-2 flex flex-row justify-center gap-2"
+                  onClick={() => {
+                    if (tradeUrl) openUrl(tradeUrl);
+                  }}
+                >
+                  <SquareArrowOutUpRight className="w-4 h-4"/>
+                </Button>
+            </ButtonGroup>
+          </div>
+          <div className="flex flex-row items-center gap-2 mt-1">
+            <Switch
+              
+              id="archived-toggle"
+              checked={searchArchived}
+              onCheckedChange={setSearchArchived}
+            />
+           <Label htmlFor="archived-toggle">Archived</Label>
+          </div>
         </div>
 
         {/* Market listings table */}

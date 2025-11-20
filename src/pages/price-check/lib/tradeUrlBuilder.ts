@@ -111,17 +111,19 @@ export function buildGetMarketListingQuery(
   selected: Set<string>,
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
-  statMapper?: (statId: number, stat: Stat) => string | undefined
+  statMapper?: (statId: number, stat: Stat) => string | undefined,
+  isArchive: boolean = false
 ): MarketListingQuery {
   const now = new Date();
-  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
+  const dateThreshold = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
     $limit: 10,
     $skip: 0,
     accepted_offer_id: null,
-    updated_at: { $gte: threeDaysAgo.toISOString() },
+    updated_at: { $gte: dateThreshold.toISOString() },
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',

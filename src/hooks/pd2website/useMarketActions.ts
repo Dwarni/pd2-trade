@@ -13,6 +13,7 @@ interface UseMarketActionsReturn {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note' | 'negotiable') => Promise<MarketListingEntry>;
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
+  getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   deleteMarketListing: (hash: string) => Promise<void>;
   getCurrencyTab: () => Promise<Currency>;
@@ -127,6 +128,18 @@ export function useMarketActions({
     return await handleApiResponse(response);
   }, [settings]);
 
+  // Get archived market listings (GET /market/listingArchive)
+  const getMarketListingsArchive = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
+    const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listingArchive', query);
+    const response = await tauriFetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${settings.pd2Token}`,
+      }
+    });
+    return await handleApiResponse(response);
+  }, [settings]);
+
   // Generic update market listing (PATCH /market/listing/:listingId)
   const updateMarketListing = useCallback(async (listingId: string, update: Record<string, any>): Promise<MarketListingEntry> => {
     const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
@@ -151,5 +164,5 @@ export function useMarketActions({
     await handleApiResponse(response);
   }, [settings]);
 
-  return { findMatchingItems, listSpecificItem, getMarketListings, updateMarketListing, deleteMarketListing, getCurrencyTab };
+  return { findMatchingItems, listSpecificItem, getMarketListings, getMarketListingsArchive, updateMarketListing, deleteMarketListing, getCurrencyTab };
 } 
