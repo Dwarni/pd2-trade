@@ -76,7 +76,7 @@ export const classSubSkillNameToIdMap: Record<string, ClassSubSkill> = _.keyBy(
 export function createClassSubSkillFuse(subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap)) {
   return new Fuse(subSkillList, {
     keys: ['name'],
-    threshold: 0.3,
+    threshold: 0.4,
   });
 }
 
@@ -98,7 +98,7 @@ export function fuzzyClassSubSkillByName(name: string): ClassSubSkill | null {
 export function createClassSkillFuse(skillList: ClassSkill[] = Object.values(classSkillsMap)) {
   return new Fuse(skillList, {
     keys: ['name'],
-    threshold: 0.3,
+    threshold: 0.4,
   });
 }
 
