@@ -189,7 +189,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               checked={searchArchived}
               onCheckedChange={setSearchArchived}
             />
-           <Label htmlFor="archived-toggle">Archived</Label>
+           <Label htmlFor="archived-toggle" className="text-sm text-gray-300">Show Expired</Label>
           </div>
         </div>
 
