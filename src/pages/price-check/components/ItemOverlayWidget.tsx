@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArchiveIcon, SquareArrowOutUpRight, X } from "lucide-react";
+import { SettingsIcon , LuggageIcon, SquareArrowOutUpRight, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { qualityColor } from "../lib/qualityColor";
@@ -25,6 +25,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { openCenteredWindow } from "@/lib/window";
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -77,6 +78,31 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       
     }
   }, [item])
+
+
+  const openCurrencyValuation = useCallback(async () => {
+    await openCenteredWindow('Currency', '/currency', {
+      decorations: false,
+      focus: true,
+      shadow: false,
+      width: 640,
+      height: 870,
+      alwaysOnTop: true,
+    });
+  }, []);
+
+  const openSettingsPage = useCallback(async () => {
+    await openCenteredWindow("Settings", "/settings", {
+      decorations: false,
+      transparent: true,
+      alwaysOnTop: true,
+      focus: true,
+      shadow: false,
+      width: 1025,
+      height: 650,
+    });
+  }, []);
+
   /** -------------------
    *  Render
    *  -----------------*/
@@ -85,21 +111,38 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       {/* Top Bar */}
       <div className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
         {/* Rune Information Popover */}
-        <RunePricePopover
-          loading={loading}
-          calculatedRuneValues={calculatedRuneValues}
-          selectedRuneBreakdown={selectedRuneBreakdown}
-          selectedRuneCombinations={selectedRuneCombinations}
-          onRuneBreakdownSelect={setSelectedRuneBreakdown}
-        />
+        <div className="flex flex-row items-center">
+          <RunePricePopover
+            loading={loading}
+            calculatedRuneValues={calculatedRuneValues}
+            selectedRuneBreakdown={selectedRuneBreakdown}
+            selectedRuneCombinations={selectedRuneCombinations}
+            onRuneBreakdownSelect={setSelectedRuneBreakdown}
+          />
+          <Button variant="ghost"
+              size="icon"
+              onClick={openCurrencyValuation}
+              className="self-start h-7 w-7">
+            <LuggageIcon className="h-4 w-4" />
+          </Button>
+        </div>
 
-
+        <div className="flex flex-row items-center">
+ 
+        <Button variant="ghost"
+            size="icon"
+            onClick={openSettingsPage}
+            className="self-start h-7 w-7">
+            <SettingsIcon className="h-2 w-2" />
+        </Button>
+      
         <Button variant="ghost"
             size="icon"
             onClick={onClose}
             className="self-start h-7 w-7">
             <X className="h-2 w-2" />
         </Button>
+        </div>
       </div>
 
       {/* Header */}

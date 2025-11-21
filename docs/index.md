@@ -26,10 +26,16 @@ hero:
 features:
   - title: Item Price Check
     details: Instantly check the value of your items in-game with a single hotkey.
-    image: https://i.imgur.com/F8qoHCw.png
+    image: https://imgur.com/a/FjFSzXh.png
   - title: Quick List
     details: List your items for trade quickly and efficiently.
-    image: https://i.imgur.com/4eHHz6a.jpeg
+    image: https://imgur.com/a/sbomu5z.jpeg
+  - title: Manage Listings
+    details: Easily manage, update, and view all your items currently listed on the PD2 marketplace from a dedicated tab.
+    image: https://imgur.com/a/PLfEVWy.jpeg
+  - title: Stash Value
+    details: Instantly calculate the total value of your stash so you always know how much your runes, ubers and currency are worth.
+    image: https://imgur.com/a/Y4iYVWP.jpeg
   - title: Rune Exchange
     details: Easily compare and trade runes with up-to-date exchange rates.
     image: https://i.imgur.com/YvGC9Du.png
