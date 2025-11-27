@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {Card} from "@/components/ui/card";
@@ -53,6 +53,7 @@ export default function SettingsLayout() {
                   data-tauri-drag-region
                   className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
                   id="titlebar-drag-handle"
+  
                 />
                 <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
               </div>

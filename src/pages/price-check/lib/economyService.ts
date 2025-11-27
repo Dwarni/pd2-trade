@@ -7,36 +7,13 @@ export async function fetchEconomyData(): Promise<{
   Currency: Record<string, ItemData>;
   Ubers: Record<string, ItemData>;
 }> {
-  const result: {
-    Currency: Record<string, ItemData>;
-    Runes: Record<string, ItemData>;
-    Ubers: Record<string, ItemData>;
-  } = {
+  // pd2.tools is inactive - return empty data structures
+  // Runes will be calculated using fixed prices only
+  return {
     Runes: {},
     Currency: {},
     Ubers: {},
   };
-
-  const categories = ['Runes', 'Currency', 'Ubers'] as const;
-
-  const allPromises = categories.flatMap((category) => {
-    return Object.entries(ECONOMY_API_MAP[category])
-      .filter(([name]) => category !== 'Runes' || !FIXED_RUNE_PRICES[name])
-      .map(async ([name, apiId]) => {
-        try {
-          const response = await fetch(`https://api.pd2.tools/api/economy/item?item=${apiId}`);
-          if (response.ok) {
-            const data = await response.json();
-            result[category][name] = data;
-          }
-        } catch (error) {
-          console.error(`Failed to fetch data for ${name} (${category}):`, error);
-        }
-      });
-  });
-
-  await Promise.all(allPromises);
-  return result;
 }
 
 export function getLatestRuneData(runeData: Record<string, ItemData>, runeName: string) {
@@ -46,12 +23,12 @@ export function getLatestRuneData(runeData: Record<string, ItemData>, runeName: 
 }
 
 export function sortItemsByPrice(runeData: Record<string, ItemData>) {
+  // Use fixed prices only - sort by hierarchy and fixed prices
   return Object.keys(ECONOMY_API_MAP.Runes)
     .map((runeName) => ({
       name: runeName,
-      data: getLatestRuneData(runeData, runeName),
+      data: null, // No API data available
     }))
-    .filter((rune) => rune.data !== null)
     .sort((a, b) => {
       const aIndex = RUNE_HIERARCHY.indexOf(a.name);
       const bIndex = RUNE_HIERARCHY.indexOf(b.name);
@@ -60,8 +37,8 @@ export function sortItemsByPrice(runeData: Record<string, ItemData>) {
         return aIndex - bIndex;
       }
 
-      const aPrice = FIXED_RUNE_PRICES[a.name] || a.data?.price || 0;
-      const bPrice = FIXED_RUNE_PRICES[b.name] || b.data?.price || 0;
+      const aPrice = FIXED_RUNE_PRICES[a.name] || ALL_RUNE_HR_VALUES[a.name] || 0;
+      const bPrice = FIXED_RUNE_PRICES[b.name] || ALL_RUNE_HR_VALUES[b.name] || 0;
       return bPrice - aPrice;
     });
 }
@@ -69,6 +46,7 @@ export function sortItemsByPrice(runeData: Record<string, ItemData>) {
 export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any }>): ItemValue[] {
   const runeValues: ItemValue[] = [];
 
+  // Add all fixed runes from FIXED_RUNE_PRICES
   Object.entries(FIXED_RUNE_PRICES).forEach(([runeName, fixedPrice]) => {
     runeValues.push({
       name: runeName,
@@ -79,53 +57,18 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
     });
   });
 
-  sortedRunes.forEach((rune, index) => {
-    const data = rune.data;
-    if (!data || FIXED_RUNE_PRICES[rune.name]) return;
+  // Add all runes from ALL_RUNE_HR_VALUES that aren't in FIXED_RUNE_PRICES
+  sortedRunes.forEach((rune) => {
+    if (FIXED_RUNE_PRICES[rune.name]) return;
 
-    const floorPrice = ALL_RUNE_HR_VALUES[rune.name];
-    // Use standard price if:
-    // 1. Less than 10 listings, OR
-    // 2. Price drops too far below floor price (more than 30% below)
-    const shouldUseStandardPrice = data.numListings < 10 || (floorPrice && data.price < floorPrice * 0.7);
-
-    if (shouldUseStandardPrice && floorPrice) {
+    const hrValue = ALL_RUNE_HR_VALUES[rune.name];
+    if (hrValue) {
       runeValues.push({
         name: rune.name,
-        price: floorPrice,
-        numListings: data.numListings,
+        price: hrValue,
+        numListings: -1,
         isCalculated: false,
         isFixed: true,
-        originalPrice: data.price,
-      });
-    } else if (data.numListings >= 10) {
-      runeValues.push({
-        name: rune.name,
-        price: data.price,
-        numListings: data.numListings,
-        isCalculated: false,
-      });
-    } else {
-      // Fallback: use calculated price if no floor price available
-      let calculatedPrice = data.price;
-      let isCalculated = false;
-      const originalPrice = data.price;
-
-      if (index > 0) {
-        const aboveRune = sortedRunes[index - 1];
-        if (aboveRune.data) {
-          const aboveRunePrice = runeValues.find((r) => r.name === aboveRune.name)?.price || aboveRune.data.price;
-          calculatedPrice = aboveRunePrice * 0.5;
-          isCalculated = true;
-        }
-      }
-
-      runeValues.push({
-        name: rune.name,
-        price: calculatedPrice,
-        numListings: data.numListings,
-        isCalculated,
-        originalPrice,
       });
     }
   });
@@ -140,15 +83,10 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
     Ubers: [],
   };
 
-  const getLatest = (item: ItemData) => {
-    const list = item?.dataByIngestionDate;
-    return list?.length ? list[list.length - 1] : null;
-  };
-
-  // --- Handle Runes ---
+  // --- Handle Runes using fixed prices only ---
   const runeValues: ItemValue[] = [];
 
-  // Add fixed runes first
+  // Add all fixed runes from FIXED_RUNE_PRICES
   Object.entries(FIXED_RUNE_PRICES).forEach(([name, fixedPrice]) => {
     runeValues.push({
       name,
@@ -159,74 +97,24 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
     });
   });
 
-  let lastValidPrice: number | null = null;
-
-  Object.entries(input.Runes).forEach(([name, item]) => {
-    if (FIXED_RUNE_PRICES[name]) return;
-
-    const latest = getLatest(item);
-    if (!latest) return;
-
-    const { price, numListings } = latest;
-    const floorPrice = ALL_RUNE_HR_VALUES[name];
-
-    // Use standard price if:
-    // 1. Less than 10 listings, OR
-    // 2. Price drops too far below floor price (more than 30% below)
-    const shouldUseStandardPrice = numListings < 10 || (floorPrice && price < floorPrice * 0.7);
-
-    if (shouldUseStandardPrice && floorPrice) {
+  // Add all runes from ALL_RUNE_HR_VALUES that aren't in FIXED_RUNE_PRICES
+  Object.entries(ALL_RUNE_HR_VALUES).forEach(([name, hrValue]) => {
+    if (!FIXED_RUNE_PRICES[name]) {
       runeValues.push({
         name,
-        itemName: item.itemName,
-        price: floorPrice,
-        numListings,
+        price: hrValue,
+        numListings: -1,
         isCalculated: false,
         isFixed: true,
-        originalPrice: price,
       });
-      lastValidPrice = floorPrice;
-    } else if (numListings >= 10) {
-      runeValues.push({
-        name,
-        itemName: item.itemName,
-        price,
-        numListings,
-        isCalculated: false,
-      });
-      lastValidPrice = price;
-    } else {
-      // Fallback: use calculated price if no floor price available
-      const calculatedPrice = lastValidPrice ? lastValidPrice * 0.5 : 0;
-      runeValues.push({
-        name,
-        itemName: item.itemName,
-        price: calculatedPrice,
-        numListings,
-        isCalculated: true,
-        originalPrice: price,
-      });
-      lastValidPrice = calculatedPrice;
     }
   });
 
   economyValues.Runes = runeValues.sort((a, b) => b.price - a.price);
 
-  // --- Handle Currency and Ubers ---
-  (['Currency', 'Ubers'] as const).forEach((category) => {
-    const categoryValues: ItemValue[] = Object.entries(input[category]).map(([name, item]) => {
-      const latest = getLatest(item);
-      return {
-        name,
-        itemName: item.itemName,
-        price: latest?.price ?? 0,
-        numListings: latest?.numListings ?? 0,
-        isCalculated: false,
-      };
-    });
-
-    economyValues[category] = categoryValues.sort((a, b) => b.price - a.price);
-  });
+  // Currency and Ubers are disabled - return empty arrays
+  economyValues.Currency = [];
+  economyValues.Ubers = [];
 
   return economyValues;
 }

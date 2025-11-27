@@ -114,12 +114,25 @@ export function attachWindowCloseHandler(
     onClose();
   });
 
+  let focusLossTimeout: ReturnType<typeof setTimeout> | null = null;
+
   w.onFocusChanged((event) => {
     if (!event.payload) {
-      w.hide();
+      // Add a small delay before hiding to prevent closing during drag operations
+      // This allows the window to regain focus if it was just a brief loss during dragging
+      focusLossTimeout = setTimeout(() => {
+        w.hide();
 
-      if (onFocusLost) {
-        onFocusLost();
+        if (onFocusLost) {
+          onFocusLost();
+        }
+        focusLossTimeout = null;
+      }, 150);
+    } else {
+      // Window regained focus, cancel the hide timeout
+      if (focusLossTimeout) {
+        clearTimeout(focusLossTimeout);
+        focusLossTimeout = null;
       }
     }
   });

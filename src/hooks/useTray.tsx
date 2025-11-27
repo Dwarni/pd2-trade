@@ -9,6 +9,7 @@ import {isRegistered, register, unregister} from '@tauri-apps/plugin-global-shor
 import { openPath } from '@tauri-apps/plugin-opener';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { listen } from '@tauri-apps/api/event';
 
 type TrayContextValue = {
   tray: TrayIcon | null;
@@ -25,17 +26,18 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const lastShortcutRef = useRef<string | null>(null);
   const settingsWinRef = useRef<WebviewWindow | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const isSettingsOpenRef = useRef(isSettingsOpen);
 
-  const openWindow = async () => {
-    if (settingsWinRef.current && isSettingsOpen) {
-      await settingsWinRef.current.hide();
-      setIsSettingsOpen(false);
-      return;
-    }
+  // Keep ref in sync with state
+  useEffect(() => {
+    isSettingsOpenRef.current = isSettingsOpen;
+  }, [isSettingsOpen]);
 
+  const showSettingsWindow = async () => {
     if (!settingsWinRef.current) {
       settingsWinRef.current = await openCenteredWindow("Settings", "/settings", {
         decorations: false,
+        skipTaskbar: true,
         transparent: true,
         alwaysOnTop: true,
         focus: true,
@@ -44,15 +46,32 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         height: 650,
       });
       setIsSettingsOpen(true);
-      // attachWindowCloseHandler(settingsWinRef.current, () => {
-      //   settingsWinRef.current = null;
-      //   setIsSettingsOpen(false);
-      // });
+      attachWindowCloseHandler(settingsWinRef.current, () => {
+        settingsWinRef.current = null;
+        setIsSettingsOpen(false);
+      });
     } else {
       await settingsWinRef.current.show();
       setIsSettingsOpen(true);
     }
   };
+
+  // Listen for open-settings event
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    listen('open-settings', () => {
+      showSettingsWindow();
+    }).then((off) => {
+      unlisten = off;
+    }).catch((err) => {
+      console.error('Failed to listen for open-settings event:', err);
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // Register global shortcut for opening settings
   useEffect(() => {
@@ -67,7 +86,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         }
         if (!await isRegistered(shortcut)) {
           await register(shortcut, () => {
-            openWindow();
+            showSettingsWindow();
           });
         }
 
@@ -98,7 +117,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               id: 'settings',
               text: 'Settings',
               action: () => {
-                openWindow();
+                showSettingsWindow();
               }
             },
             {

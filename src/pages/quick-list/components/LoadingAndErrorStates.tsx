@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Search, Loader2, AlertCircle } from "lucide-react";
+import { X, Search, Loader2, AlertCircle, GripVertical } from "lucide-react";
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -24,7 +24,13 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
-          <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
+          <div className="flex items-center gap-1">
+            <GripVertical 
+              data-tauri-drag-region
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+            />
+            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+          </div>
           <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
@@ -41,7 +47,13 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
-          <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
+          <div className="flex items-center gap-1">
+            <GripVertical 
+              data-tauri-drag-region
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+            />
+            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+          </div>
           <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>
@@ -59,7 +71,13 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
-          <span style={{fontFamily: 'DiabloFont'}}>List Item</span>
+          <div className="flex items-center gap-1">
+            <GripVertical 
+              data-tauri-drag-region
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+            />
+            <span style={{fontFamily: 'DiabloFont'}} className="mt-1">List Item</span>
+          </div>
           <Button className="h-6 w-6" variant='ghost' onClick={() => getCurrentWebviewWindow().hide()}>
             <X className='h-4 w-4'/>
           </Button>

@@ -68,6 +68,7 @@ const LandingPage: React.FC = () => {
       winRef.current = await openOverDiabloWindow('Item', `/item?text=${encoded}`, {
         decorations: false,
         transparent: true,
+        skipTaskbar: true,
         alwaysOnTop: true,
         shadow: false,
         focus: true,
@@ -90,6 +91,7 @@ const LandingPage: React.FC = () => {
       decorations: false,
       focus: true,
       shadow: false,
+      skipTaskbar: true,
       width: 640,
       height: 870,
       alwaysOnTop: true,

@@ -88,19 +88,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       width: 640,
       height: 870,
       alwaysOnTop: true,
+      skipTaskbar: true,
     });
   }, []);
 
   const openSettingsPage = useCallback(async () => {
-    await openCenteredWindow("Settings", "/settings", {
-      decorations: false,
-      transparent: true,
-      alwaysOnTop: true,
-      focus: true,
-      shadow: false,
-      width: 1025,
-      height: 650,
-    });
+    await emit('open-settings');
   }, []);
 
   /** -------------------

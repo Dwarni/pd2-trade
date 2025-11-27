@@ -15,6 +15,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { STASH_API_MAP } from './lib/constants';
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { FormattedItem, FormattedStashCategory, FormattedStashData } from './lib/types';
@@ -119,8 +125,9 @@ export function CurrencyValuation() {
 
   function formattedEconomyData(currency: Currency, calculatedValues: EconomyValue): FormattedStashData {
     const runes = formatEconomyCategoryAmounts('Runes', currency, calculatedValues, RUNE_HIERARCHY);
-    const ubers = formatEconomyCategoryAmounts('Ubers', currency, calculatedValues);
-    const currencyItems = formatEconomyCategoryAmounts('Currency', currency, calculatedValues);
+    // Currency and Ubers are disabled - return empty data
+    const ubers = { items: [], total: 0 };
+    const currencyItems = { items: [], total: 0 };
 
     return {
       runes,
@@ -130,7 +137,8 @@ export function CurrencyValuation() {
   }
 
   function getGrandTotal(data: FormattedStashData): number {
-    return data.currency.total + data.runes.total + data.ubers.total;
+    // Only calculate runes total since currency and ubers are disabled
+    return data.runes.total;
   }
 
   return (
@@ -146,16 +154,7 @@ export function CurrencyValuation() {
                 <h2 className="text-2xl font-bold">Currency Valuation</h2>
           </div>
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
-            Powered by{' '}
-            <a
-              href="https://pd2.tools"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300"
-            >
-              pd2.tools
-            </a>
-            {' '}- Only available for softcore.
+          Displays the total value of the runes in your stash, based on fixed prices.
           </div>
         </div>
 
@@ -169,25 +168,47 @@ export function CurrencyValuation() {
 
       <Separator className="" />
       {currency && !loading && (
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button variant="outline"
-              className="ml-auto w-32 justify-between capitalize">
-              {selectedCategory} <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {categoryOptions.map((category) => (
-              <DropdownMenuItem key={category}
-                className="capitalize"
-                onClick={() => setSelectedCategory(category)}>
-                <div className="w-full flex items-center justify-between">
-                  <p>{category}</p> {category === selectedCategory && <CheckIcon />}
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TooltipProvider>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button variant="outline"
+                className="ml-auto w-32 justify-between capitalize">
+                {selectedCategory} <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {categoryOptions.map((category) => {
+                const isDisabled = category !== 'runes';
+                const menuItem = (
+                  <DropdownMenuItem
+                    key={category}
+                    className={`capitalize ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => !isDisabled && setSelectedCategory(category)}
+                    disabled={isDisabled}>
+                    <div className="w-full flex items-center justify-between">
+                      <p>{category}</p> {category === selectedCategory && <CheckIcon />}
+                    </div>
+                  </DropdownMenuItem>
+                );
+
+                if (isDisabled) {
+                  return (
+                    <Tooltip key={category} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div>{menuItem}</div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>pd2.tools is undergoing changes and economy data is unavailable</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return menuItem;
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TooltipProvider>
       )}
 
       <div className="flex flex-col flex-grow min-h-[400px]">
@@ -201,7 +222,7 @@ export function CurrencyValuation() {
                   {selectedCategory} Value: <span className="text-gray-400">{formatHr(data[selectedCategory].total)}</span>
                 </p>
                 <p className="text-md text-gray-300 pt-1">
-                  Estimated Stash Value: <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>
+                  Estimated Stash Value (Runes Only): <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>
                 </p>
               </>
             );

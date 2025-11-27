@@ -98,8 +98,6 @@ export function useMarketActions({
       item: {
         ...stashItem,
         account_id,
-        is_hardcore,
-        is_ladder,
       },
       hr_price: hrPrice,
       price: type === 'negotiable' ? 'obo' : note,

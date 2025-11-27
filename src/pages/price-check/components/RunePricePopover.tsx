@@ -138,11 +138,6 @@ export function RunePricePopover({
                 <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
                   * Standard pricing used when &lt;10 listings or when value drops too far below floor price
                 </div>
-              
-              {/* Attribution */}
-              <div className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-600 text-center">
-                Powered by <a href="https://pd2.tools" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">pd2.tools</a>
-              </div>
             </div>
           )}
         </div>

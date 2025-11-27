@@ -34,7 +34,7 @@ features:
     details: Easily manage, update, and view all your items currently listed on the PD2 marketplace from a dedicated tab.
     image: https://i.imgur.com/VQ8gNuf.jpeg
   - title: Stash Value
-    details: Instantly calculate the total value of your stash so you always know how much your runes, ubers and currency are worth.
+    details: Instantly calculate the total value of your stash so you always know how much your runes are worth.
     image: https://i.imgur.com/wCqiZpj.png
   - title: Rune Exchange
     details: Easily compare and trade runes with up-to-date exchange rates.
@@ -87,7 +87,7 @@ Easily manage, update, and view all your items currently listed on the PD2 marke
 </a>
 
 #### Stash Value
-Instantly calculate the total value of your stash so you always know how much your runes, ubers and currency are worth.
+Instantly calculate the total value of your stash so you always know how much your runes are worth.
 <a href="https://i.imgur.com/wCqiZpj.png" target="_blank" rel="noopener noreferrer">
   <img src="https://i.imgur.com/wCqiZpj.png" alt="Stash Value" style="max-width: 100%; margin-top: 0.5rem;" />
 </a>
