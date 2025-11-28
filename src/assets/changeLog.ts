@@ -1,7 +1,9 @@
 export const changeLog = {
+  "0.4.2": [
+    "✨ Updated the items database to include season 12 items unqiues and sets.",
+  ],
   "0.4.1": [
     "🔧 Disabled the economy features in the currency valuation window as pd2.tools is not available.",
-
   ],
   "0.4.0": [
     "✨ Added a new tab to the quick list window to manage your listed items",

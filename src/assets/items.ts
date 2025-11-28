@@ -1245,13 +1245,8 @@ export const uniqueItems = [{
         min: 10,
         max: 10
     }, {
-        key: "*enr",
-        param_id: 6,
-        min: -5,
-        max: -5
-    }, {
         key: "swing2",
-        param_id: 7,
+        param_id: 6,
         min: 20,
         max: 20
     }, {
@@ -3725,11 +3720,6 @@ export const uniqueItems = [{
         param_id: 7,
         min: 20,
         max: 20
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 9
@@ -3777,11 +3767,6 @@ export const uniqueItems = [{
         param_id: 6,
         min: 20,
         max: 20
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 18
@@ -3833,11 +3818,6 @@ export const uniqueItems = [{
         param_id: 7,
         min: 30,
         max: 50
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 27
@@ -3885,11 +3865,6 @@ export const uniqueItems = [{
         param: 47,
         min: 45,
         max: 12
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 28
@@ -9723,7 +9698,12 @@ export const uniqueItems = [{
         param_id: 7,
         param: 15,
         min: 2,
-        max: 3
+        max: 2
+    }, {
+        key: "extra-spiritwolf",
+        param_id: 8,
+        min: 3,
+        max: 4
     }, {
         key: "splash",
         param_id: 12,
@@ -10006,10 +9986,10 @@ export const uniqueItems = [{
         min: 15,
         max: 15
     }, {
-        key: "ac",
+        key: "crush-efficiency",
         param_id: 5,
-        min: 100,
-        max: 100
+        min: 10,
+        max: 25
     }, {
         key: "ac%",
         param_id: 6,
@@ -10030,11 +10010,6 @@ export const uniqueItems = [{
         param_id: 9,
         min: 100,
         max: 100
-    }, {
-        key: "cast2",
-        param_id: 10,
-        min: 30,
-        max: 30
     }, {
         key: "splash",
         param_id: 12,
@@ -10203,7 +10178,7 @@ export const uniqueItems = [{
         key: "mana-kill",
         param_id: 2,
         min: 10,
-        max: 20
+        max: 15
     }, {
         key: "allskills",
         param_id: 3,
@@ -10711,11 +10686,6 @@ export const uniqueItems = [{
         param_id: 7,
         min: 40,
         max: 40
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 32
@@ -10779,11 +10749,6 @@ export const uniqueItems = [{
         param_id: 9,
         min: 20,
         max: 25
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 36
@@ -10840,11 +10805,6 @@ export const uniqueItems = [{
         param: 200,
         min: 32,
         max: 196
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 41
@@ -10874,7 +10834,7 @@ export const uniqueItems = [{
     }, {
         key: "hit-skill",
         param_id: 3,
-        min: 15,
+        min: 10,
         max: 16
     }, {
         key: "explosivearrow",
@@ -10897,11 +10857,6 @@ export const uniqueItems = [{
         param: 492,
         min: 6,
         max: 6
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 49
@@ -13464,7 +13419,7 @@ export const uniqueItems = [{
         key: "dmg%",
         param_id: 5,
         min: 60,
-        max: 100
+        max: 90
     }, {
         key: "dur",
         param_id: 6,
@@ -14055,9 +14010,8 @@ export const uniqueItems = [{
     }, {
         key: "att-skill",
         param_id: 2,
-        param: 53,
         min: 18,
-        max: 28
+        max: 35
     }, {
         key: "ignore-ac",
         param_id: 3,
@@ -14225,18 +14179,14 @@ export const uniqueItems = [{
     }, {
         key: "dmg%",
         param_id: 9,
-        min: 200,
-        max: 260
+        min: 180,
+        max: 240
     }, {
         key: "skill",
         param_id: 10,
         param: 154,
         min: 2,
         max: 3
-    }, {
-        key: "rep-dur",
-        param_id: 11,
-        param: 25
     }, {
         key: "splash",
         param_id: 12,
@@ -14318,7 +14268,7 @@ export const uniqueItems = [{
     kind: "item.unique",
     key: "Constricting Ring",
     base_code: "rin",
-    name: "Constricting Ring",
+    name: "Constricting Loop",
     level: 73,
     modifiers: [{
         key: "regen",
@@ -14604,7 +14554,7 @@ export const uniqueItems = [{
     modifiers: [{
         key: "move2",
         param_id: 1,
-        min: 30,
+        min: 20,
         max: 30
     }, {
         key: "swing2",
@@ -14612,10 +14562,10 @@ export const uniqueItems = [{
         min: 30,
         max: 30
     }, {
-        key: "ac",
+        key: "pierce",
         param_id: 3,
-        min: 100,
-        max: 100
+        min: 20,
+        max: 20
     }, {
         key: "ac-miss",
         param_id: 4,
@@ -15893,11 +15843,6 @@ export const uniqueItems = [{
         param_id: 8,
         min: 12,
         max: 28
-    }, {
-        key: "pierce-phys",
-        param_id: 12,
-        min: 5,
-        max: 5
     }],
     requirements: {
         level: 71
@@ -16142,8 +16087,8 @@ export const uniqueItems = [{
     }, {
         key: "sock",
         param_id: 10,
-        min: 2,
-        max: 4
+        min: 3,
+        max: 5
     }, {
         key: "splash",
         param_id: 12,
@@ -16435,6 +16380,12 @@ export const uniqueItems = [{
         param_id: 7,
         min: 300,
         max: 360
+    }, {
+        key: "skilltab",
+        param_id: 8,
+        param: 20,
+        min: 2,
+        max: 2
     }, {
         key: "deadly",
         param_id: 11,
@@ -16894,7 +16845,7 @@ export const uniqueItems = [{
     }, {
         key: "pierce-phys",
         param_id: 6,
-        min: 5,
+        min: 4,
         max: 5
     }],
     requirements: {
@@ -16997,8 +16948,8 @@ export const uniqueItems = [{
     }, {
         key: "max-deadly",
         param_id: 7,
-        min: 10,
-        max: 10
+        min: 15,
+        max: 15
     }, {
         key: "splash",
         param_id: 12,
@@ -17398,8 +17349,8 @@ export const uniqueItems = [{
     }, {
         key: "swing2",
         param_id: 3,
-        min: 50,
-        max: 50
+        min: 60,
+        max: 60
     }, {
         key: "att",
         param_id: 4,
@@ -18282,17 +18233,17 @@ export const uniqueItems = [{
 }, {
     id: 340,
     kind: "item.unique",
-    key: "Giantmaimer",
+    key: "Armageddon Blade",
     base_code: "",
-    name: "Giant Maimer",
+    name: "Armageddon's Blade",
     level: null,
     modifiers: [],
     requirements: {
         level: ""
     },
     image: {
-        invfile: "",
-        invtransform: "cred"
+        invfile: "invarmageddonblade",
+        invtransform: ""
     }
 }, {
     id: 341,
@@ -18376,7 +18327,7 @@ export const uniqueItems = [{
     }, {
         key: "nec",
         param_id: 4,
-        min: 3,
+        min: 2,
         max: 3
     }, {
         key: "res-all",
@@ -18581,8 +18532,8 @@ export const uniqueItems = [{
     }, {
         key: "res-pois",
         param_id: 2,
-        min: 70,
-        max: 70
+        min: 50,
+        max: 50
     }, {
         key: "allskills",
         param_id: 3,
@@ -18591,30 +18542,29 @@ export const uniqueItems = [{
     }, {
         key: "res-pois-max",
         param_id: 4,
-        min: 8,
-        max: 8
+        min: 5,
+        max: 5
     }, {
         key: "swing2",
         param_id: 5,
-        min: 30,
-        max: 30
+        min: 20,
+        max: 20
     }, {
         key: "str",
         param_id: 6,
-        min: 25,
+        min: 20,
         max: 30
     }, {
         key: "gethit-skill",
         param_id: 7,
         param: 92,
         min: 15,
-        max: 30
+        max: 36
     }, {
-        key: "charged",
+        key: "pierce-pois",
         param_id: 8,
-        param: 278,
-        min: 20,
-        max: 3
+        min: 6,
+        max: 10
     }, {
         key: "lifesteal",
         param_id: 9,
@@ -19309,8 +19259,8 @@ export const uniqueItems = [{
     }, {
         key: "hit-skill",
         param_id: 4,
-        min: 30,
-        max: 28
+        min: 35,
+        max: 30
     }, {
         key: "dmg-ltng",
         param_id: 5,
@@ -19363,7 +19313,7 @@ export const uniqueItems = [{
         param_id: 2,
         param: 13,
         min: 2,
-        max: 3
+        max: 2
     }, {
         key: "bar",
         param_id: 3,
@@ -19383,14 +19333,14 @@ export const uniqueItems = [{
         key: "skill",
         param_id: 6,
         param: 149,
-        min: 2,
-        max: 3
+        min: 1,
+        max: 2
     }, {
         key: "skill",
         param_id: 7,
         param: 146,
-        min: 2,
-        max: 3
+        min: 1,
+        max: 2
     }, {
         key: "att/lvl",
         param_id: 8,
@@ -19553,12 +19503,12 @@ export const uniqueItems = [{
         param_id: 7,
         param: 230,
         min: 2,
-        max: 3
+        max: 2
     }, {
         key: "coldskill",
         param_id: 8,
         min: 2,
-        max: 2
+        max: 3
     }, {
         key: "splash",
         param_id: 12,
@@ -19847,9 +19797,8 @@ export const uniqueItems = [{
         min: 17,
         max: 17
     }, {
-        key: "skill",
+        key: "oskill",
         param_id: 8,
-        param: 69,
         min: 1,
         max: 2
     }],
@@ -20168,7 +20117,7 @@ export const uniqueItems = [{
     kind: "item.unique",
     key: "Sigurd's Staunch",
     base_code: "uhc",
-    name: "Siggard's Stealth",
+    name: "Siggard's Staunch",
     level: 80,
     modifiers: [{
         key: "ac%",
@@ -20198,7 +20147,7 @@ export const uniqueItems = [{
         key: "hp%",
         param_id: 6,
         min: 5,
-        max: 10
+        max: 8
     }],
     requirements: {
         level: 72
@@ -20967,13 +20916,13 @@ export const uniqueItems = [{
     }, {
         key: "crush",
         param_id: 4,
-        min: 20,
-        max: 30
+        min: 10,
+        max: 20
     }, {
-        key: "thorns",
+        key: "crush-efficiency",
         param_id: 5,
-        min: 250,
-        max: 250
+        min: 5,
+        max: 10
     }, {
         key: "splash",
         param_id: 12,
@@ -22380,8 +22329,8 @@ export const uniqueItems = [{
     }, {
         key: "oskill",
         param_id: 5,
-        min: 6,
-        max: 8
+        min: 5,
+        max: 5
     }, {
         key: "res-ltng",
         param_id: 6,
@@ -22683,10 +22632,10 @@ export const uniqueItems = [{
         min: 4,
         max: 4
     }, {
-        key: "dragonflight-reduction",
+        key: "max-deadly",
         param_id: 7,
-        min: 13,
-        max: 13
+        min: 10,
+        max: 10
     }, {
         key: "splash",
         param_id: 12,
@@ -23269,8 +23218,8 @@ export const uniqueItems = [{
     }, {
         key: "joust-reduction",
         param_id: 4,
-        min: 13,
-        max: 13
+        min: 19,
+        max: 19
     }, {
         key: "crush",
         param_id: 5,
@@ -23299,7 +23248,7 @@ export const uniqueItems = [{
         max: 1
     }],
     requirements: {
-        level: 72
+        level: 68
     },
     image: {
         invfile: "invhighlander",
@@ -23367,36 +23316,31 @@ export const uniqueItems = [{
     modifiers: [{
         key: "curse-effectiveness",
         param_id: 1,
-        min: 40,
-        max: 50
+        min: 30,
+        max: 40
     }, {
         key: "swing2",
         param_id: 2,
         min: 20,
         max: 20
     }, {
-        key: "hp%",
-        param_id: 3,
-        min: -5,
-        max: -5
-    }, {
         key: "max-deadly",
-        param_id: 4,
+        param_id: 3,
         min: 10,
         max: 10
     }, {
         key: "ac%",
-        param_id: 5,
+        param_id: 4,
         min: 130,
         max: 130
     }, {
         key: "dmg%",
-        param_id: 6,
+        param_id: 5,
         min: 60,
         max: 100
     }, {
         key: "heal-kill",
-        param_id: 7,
+        param_id: 6,
         min: 4,
         max: 6
     }],
@@ -23664,8 +23608,8 @@ export const uniqueItems = [{
     modifiers: [{
         key: "dmg%",
         param_id: 1,
-        min: 180,
-        max: 240
+        min: 160,
+        max: 220
     }, {
         key: "skill",
         param_id: 2,
@@ -23744,12 +23688,12 @@ export const uniqueItems = [{
         key: "skilltab",
         param_id: 4,
         param: 10,
-        min: 2,
+        min: 1,
         max: 2
     }, {
         key: "pal",
         param_id: 5,
-        min: 1,
+        min: 2,
         max: 2
     }, {
         key: "crush",
@@ -24040,7 +23984,7 @@ export const uniqueItems = [{
         key: "nec",
         param_id: 1,
         min: 2,
-        max: 2
+        max: 3
     }, {
         key: "ac%",
         param_id: 2,
@@ -24051,7 +23995,7 @@ export const uniqueItems = [{
         param_id: 3,
         param: 66,
         min: 2,
-        max: 3
+        max: 2
     }, {
         key: "gethit-skill",
         param_id: 4,
@@ -24084,7 +24028,7 @@ export const uniqueItems = [{
         param_id: 9,
         param: 91,
         min: 2,
-        max: 3
+        max: 2
     }],
     requirements: {
         level: 64
@@ -24099,7 +24043,7 @@ export const uniqueItems = [{
     kind: "item.unique",
     key: "Imperial Palace Map",
     base_code: "t54",
-    name: "Imperial Palace Map",
+    name: "Imperial Palace",
     level: 80,
     modifiers: [{
         key: "map-glob-density",
@@ -24168,13 +24112,14 @@ export const uniqueItems = [{
     image: {
         invfile: "invmap_imppalace",
         invtransform: ""
-    }
+    },
+    base: "Map"
 }, {
     id: 454,
     kind: "item.unique",
     key: "Outer Void Map",
     base_code: "t55",
-    name: "Outer Void Map",
+    name: "Outer Void",
     level: 80,
     modifiers: [{
         key: "map-glob-density",
@@ -24235,69 +24180,855 @@ export const uniqueItems = [{
     image: {
         invfile: "invmap_outervoid",
         invtransform: ""
-    }
+    },
+    base: "Map"
 }, {
     id: 455,
     kind: "item.unique",
-    key: "Armageddon's Blade",
-    base_code: "7cr2",
-    name: "Armageddon's Blade",
-    level: 90,
+    key: "Balefire",
+    base_code: "aqv",
+    name: "Balefire",
+    level: 14,
     modifiers: [{
-        key: "pal",
+        key: "pierce-fire",
+        param_id: 1,
+        min: 5,
+        max: 8
+    }, {
+        key: "lifesteal",
+        param_id: 2,
+        min: 2,
+        max: 3
+    }, {
+        key: "mag%",
+        param_id: 3,
+        min: 18,
+        max: 32
+    }, {
+        key: "ac-miss",
+        param_id: 4,
+        min: 20,
+        max: 45
+    }, {
+        key: "fire-min",
+        param_id: 5,
+        min: 6,
+        max: 6
+    }, {
+        key: "fire-max",
+        param_id: 6,
+        min: 10,
+        max: 10
+    }, {
+        key: "dmg-max",
+        param_id: 12,
+        min: 2,
+        max: 2
+    }],
+    requirements: {
+        level: 14
+    },
+    image: {
+        invfile: "invqvr",
+        invtransform: "dred"
+    },
+    base: "Blunt Arrows"
+}, {
+    id: 456,
+    kind: "item.unique",
+    key: "Swiftwind Needle",
+    base_code: "aqv2",
+    name: "Swiftwind Needle",
+    level: 32,
+    modifiers: [{
+        key: "move2",
+        param_id: 1,
+        min: 20,
+        max: 30
+    }, {
+        key: "dmg-ac",
+        param_id: 2,
+        min: -20,
+        max: -30
+    }, {
+        key: "dex",
+        param_id: 3,
+        min: 15,
+        max: 35
+    }, {
+        key: "res-cold",
+        param_id: 4,
+        min: 50,
+        max: 50
+    }, {
+        key: "res-ltng",
+        param_id: 5,
+        min: -25,
+        max: -25
+    }, {
+        key: "dmg-min",
+        param_id: 6,
+        min: 12,
+        max: 12
+    }, {
+        key: "dmg-max",
+        param_id: 12,
+        min: 14,
+        max: 14
+    }],
+    requirements: {
+        level: 32
+    },
+    image: {
+        invfile: "invqvr",
+        invtransform: ""
+    },
+    base: "Sharp Arrows"
+}, {
+    id: 457,
+    kind: "item.unique",
+    key: "Tombsong",
+    base_code: "aqv2",
+    name: "Tombsong",
+    level: 36,
+    modifiers: [{
+        key: "pierce",
+        param_id: 1,
+        min: 20,
+        max: 40
+    }, {
+        key: "dmg-undead",
+        param_id: 2,
+        min: 50,
+        max: 100
+    }, {
+        key: "att-undead",
+        param_id: 3,
+        min: 125,
+        max: 175
+    }, {
+        key: "oskill",
+        param_id: 4,
+        min: 12,
+        max: 12
+    }, {
+        key: "curse-effectiveness",
+        param_id: 5,
+        min: 20,
+        max: 20
+    }, {
+        key: "extra-skele-archer",
+        param_id: 6,
+        min: 4,
+        max: 4
+    }, {
+        key: "dmg-max",
+        param_id: 12,
+        min: 10,
+        max: 10
+    }],
+    requirements: {
+        level: 36
+    },
+    image: {
+        invfile: "invqvr",
+        invtransform: "blac"
+    },
+    base: "Sharp Arrows"
+}, {
+    id: 458,
+    kind: "item.unique",
+    key: "Aetherwing",
+    base_code: "aqv3",
+    name: "Aetherwing",
+    level: 55,
+    modifiers: [{
+        key: "swing2",
+        param_id: 1,
+        min: 40,
+        max: 40
+    }, {
+        key: "dmg-ltng",
+        param_id: 2,
+        min: 1,
+        max: 775
+    }, {
+        key: "pierce-ltng",
+        param_id: 3,
+        min: 15,
+        max: 25
+    }, {
+        key: "gethit-skill",
+        param_id: 4,
+        min: 35,
+        max: 40
+    }, {
+        key: "att/lvl",
+        param_id: 5,
+        min: 4,
+        max: 8
+    }, {
+        key: "res-ltng",
+        param_id: 6,
+        min: 20,
+        max: 35
+    }, {
+        key: "res-ltng-max",
+        param_id: 7,
+        min: 4,
+        max: 6
+    }, {
+        key: "dmg-max",
+        param_id: 12,
+        min: 18,
+        max: 18
+    }],
+    requirements: {
+        level: 55
+    },
+    image: {
+        invfile: "invqvr_lightning",
+        invtransform: ""
+    },
+    base: "Razor Arrows"
+}, {
+    id: 459,
+    kind: "item.unique",
+    key: "Basilisk's Quill",
+    base_code: "aqv3",
+    name: "Basilisk's Quill",
+    level: 62,
+    modifiers: [{
+        key: "ama",
         param_id: 1,
         min: 2,
         max: 2
     }, {
-        key: "hit-skill",
+        key: "res-pois",
         param_id: 2,
+        min: 45,
+        max: 45
+    }, {
+        key: "res-pois-max",
+        param_id: 3,
+        min: 5,
+        max: 5
+    }, {
+        key: "pierce-pois",
+        param_id: 4,
+        min: 20,
+        max: 30
+    }, {
+        key: "gold%",
+        param_id: 5,
         min: 75,
+        max: 125
+    }, {
+        key: "heal-kill",
+        param_id: 6,
+        min: 5,
+        max: 8
+    }, {
+        key: "pois-min",
+        param_id: 7,
+        min: 2767,
+        max: 2767
+    }, {
+        key: "pois-max",
+        param_id: 8,
+        min: 3275,
+        max: 3275
+    }, {
+        key: "pois-len",
+        param_id: 9,
+        min: 50,
         max: 50
     }, {
-        key: "pierce-fire",
+        key: "dmg-min",
+        param_id: 10,
+        min: 30,
+        max: 40
+    }, {
+        key: "dmg-max",
+        param_id: 12
+    }],
+    requirements: {
+        level: 62
+    },
+    image: {
+        invfile: "invqvr_poison",
+        invtransform: ""
+    },
+    base: "Razor Arrows"
+}, {
+    id: 460,
+    kind: "item.unique",
+    key: "Doom's Finger",
+    base_code: "aqv3",
+    name: "Doom's Finger",
+    level: 87,
+    modifiers: [{
+        key: "deadly",
+        param_id: 1,
+        min: 20,
+        max: 30
+    }, {
+        key: "max-deadly",
+        param_id: 2,
+        min: 10,
+        max: 10
+    }, {
+        key: "dmg-max",
         param_id: 3,
+        min: 60,
+        max: 80
+    }, {
+        key: "half-freeze",
+        param_id: 4,
+        min: 1,
+        max: 1
+    }, {
+        key: "red-mag",
+        param_id: 5,
+        min: 12,
+        max: 12
+    }, {
+        key: "skilltab",
+        param_id: 6,
+        param: 1,
+        min: 2,
+        max: 2
+    }, {
+        key: "dmg-demon",
+        param_id: 7,
+        min: 60,
+        max: 80
+    }],
+    requirements: {
+        level: 68
+    },
+    image: {
+        invfile: "invqvr_deadly",
+        invtransform: ""
+    },
+    base: "Razor Arrows"
+}, {
+    id: 461,
+    kind: "item.unique",
+    key: "Ramfodder",
+    base_code: "cqv",
+    name: "Ramfodder",
+    level: 8,
+    modifiers: [{
+        key: "knock",
+        param_id: 1,
+        min: 1,
+        max: 1
+    }, {
+        key: "balance2",
+        param_id: 2,
         min: 20,
         max: 20
     }, {
-        key: "res-fire-max",
-        param_id: 4,
-        min: 5,
+        key: "swing2",
+        param_id: 3,
+        min: 10,
         max: 10
     }, {
-        key: "block",
+        key: "hp",
+        param_id: 4,
+        min: 10,
+        max: 25
+    }, {
+        key: "regen-stam",
+        param_id: 5,
+        min: 20,
+        max: 20
+    }, {
+        key: "pierce-phys",
+        param_id: 12,
+        min: 2,
+        max: 2
+    }],
+    requirements: {
+        level: 8
+    },
+    image: {
+        invfile: "invcqv",
+        invtransform: "oran"
+    },
+    base: "Light Bolts"
+}, {
+    id: 462,
+    kind: "item.unique",
+    key: "Anvilguard Strap",
+    base_code: "cqv2",
+    name: "Anvilguard Strap",
+    level: 34,
+    modifiers: [{
+        key: "red-dmg%",
+        param_id: 1,
+        min: 10,
+        max: 18
+    }, {
+        key: "gethit-skill",
+        param_id: 2,
+        min: 10,
+        max: 31
+    }, {
+        key: "noheal",
+        param_id: 3,
+        min: 1,
+        max: 1
+    }, {
+        key: "pierce",
+        param_id: 4,
+        min: 20,
+        max: 20
+    }, {
+        key: "thorns",
+        param_id: 5,
+        min: 400,
+        max: 500
+    }, {
+        key: "light",
+        param_id: 6,
+        min: 2,
+        max: 4
+    }, {
+        key: "pierce-phys",
+        param_id: 12,
+        min: 4,
+        max: 4
+    }],
+    requirements: {
+        level: 34
+    },
+    image: {
+        invfile: "invcqv",
+        invtransform: "dgld"
+    },
+    base: "Heavy Bolts"
+}, {
+    id: 463,
+    kind: "item.unique",
+    key: "Shatterhead",
+    base_code: "cqv2",
+    name: "Shatterhead",
+    level: 47,
+    modifiers: [{
+        key: "crush",
+        param_id: 1,
+        min: 20,
+        max: 30
+    }, {
+        key: "dmg%",
+        param_id: 2,
+        min: 30,
+        max: 40
+    }, {
+        key: "skilltab",
+        param_id: 3,
+        min: 2,
+        max: 2
+    }, {
+        key: "str",
+        param_id: 4,
+        min: 10,
+        max: 20
+    }, {
+        key: "crush-efficiency",
+        param_id: 5,
+        min: 15,
+        max: 25
+    }, {
+        key: "ac",
+        param_id: 6,
+        min: 145,
+        max: 145
+    }, {
+        key: "pierce-phys",
+        param_id: 12,
+        min: 4,
+        max: 4
+    }],
+    requirements: {
+        level: 47
+    },
+    image: {
+        invfile: "invcqv",
+        invtransform: "dgry"
+    },
+    base: "Heavy Bolts"
+}, {
+    id: 464,
+    kind: "item.unique",
+    key: "Abyssal Ward",
+    base_code: "cqv3",
+    name: "Abyssal Ward",
+    level: 60,
+    modifiers: [{
+        key: "pierce-phys",
+        param_id: 1,
+        min: 10,
+        max: 14
+    }, {
+        key: "swing2",
+        param_id: 2,
+        min: -20,
+        max: -20
+    }, {
+        key: "howl",
+        param_id: 3,
+        min: 8,
+        max: 8
+    }, {
+        key: "res-all",
+        param_id: 4,
+        min: 15,
+        max: 25
+    }, {
+        key: "res-fire-max",
+        param_id: 5,
+        min: 4,
+        max: 5
+    }, {
+        key: "res-cold-max",
+        param_id: 6,
+        min: 4,
+        max: 5
+    }, {
+        key: "res-ltng-max",
+        param_id: 7,
+        min: 4,
+        max: 5
+    }, {
+        key: "res-pois-max",
+        param_id: 8,
+        min: 4,
+        max: 5
+    }],
+    requirements: {
+        level: 60
+    },
+    image: {
+        invfile: "invcqv_ward",
+        invtransform: ""
+    },
+    base: "War Bolts"
+}, {
+    id: 465,
+    kind: "item.unique",
+    key: "Bannerlord's Call",
+    base_code: "cqv3",
+    name: "Bannerlord's Call",
+    level: 60,
+    modifiers: [{
+        key: "cast2",
+        param_id: 1,
+        min: 20,
+        max: 20
+    }, {
+        key: "allskills",
+        param_id: 2,
+        min: 2,
+        max: 2
+    }, {
+        key: "oskill",
+        param_id: 3,
+        min: 2,
+        max: 3
+    }, {
+        key: "all-stats",
+        param_id: 4,
+        min: 8,
+        max: 14
+    }, {
+        key: "curse-res",
         param_id: 5,
         min: 20,
         max: 30
     }, {
-        key: "all-stats",
+        key: "oskill",
         param_id: 6,
+        min: 2,
+        max: 3
+    }, {
+        key: "dmg-to-mana",
+        param_id: 7,
+        min: 18,
+        max: 18
+    }, {
+        key: "pierce-phys",
+        param_id: 12,
         min: 6,
         max: 6
-    }, {
-        key: "dmg%",
-        param_id: 7,
-        min: 280,
-        max: 320
-    }, {
-        key: "equipped-skill",
-        param_id: 8,
-        min: 30,
-        max: 30
-    }, {
-        key: "splash",
-        param_id: 12,
-        param: 358,
-        min: 100,
-        max: 1
     }],
     requirements: {
-        level: 90
+        level: 65
     },
     image: {
-        invfile: "invarmageddonblade",
+        invfile: "invcqv_banner",
+        invtransform: ""
+    },
+    base: "War Bolts"
+}, {
+    id: 466,
+    kind: "item.unique",
+    key: "Frozen Sorrow",
+    base_code: "cqv3",
+    name: "Frozen Sorrow",
+    level: 87,
+    modifiers: [{
+        key: "deadly",
+        param_id: 1,
+        min: 15,
+        max: 25
+    }, {
+        key: "coldskill",
+        param_id: 2,
+        min: 3,
+        max: 3
+    }, {
+        key: "manasteal",
+        param_id: 3,
+        min: 4,
+        max: 5
+    }, {
+        key: "res-fire",
+        param_id: 4,
+        min: 40,
+        max: 50
+    }, {
+        key: "enr",
+        param_id: 5,
+        min: 28,
+        max: 28
+    }, {
+        key: "slow",
+        param_id: 6,
+        min: 25,
+        max: 25
+    }, {
+        key: "extra-cold-arrows",
+        param_id: 7,
+        min: 3,
+        max: 4
+    }, {
+        key: "pierce-cold",
+        param_id: 12,
+        min: 6,
+        max: 6
+    }],
+    requirements: {
+        level: 72
+    },
+    image: {
+        invfile: "invcqv_cold",
+        invtransform: ""
+    },
+    base: "War Bolts"
+}, {
+    id: 467,
+    kind: "item.unique",
+    key: "unused",
+    base_code: "",
+    name: "an evil force",
+    level: null,
+    modifiers: [],
+    requirements: {
+        level: ""
+    },
+    image: {
+        invfile: "",
         invtransform: ""
     }
+}, {
+    id: 468,
+    kind: "item.unique",
+    key: "unused",
+    base_code: "",
+    name: "an evil force",
+    level: null,
+    modifiers: [],
+    requirements: {
+        level: ""
+    },
+    image: {
+        invfile: "",
+        invtransform: ""
+    }
+}, {
+    id: 469,
+    kind: "item.unique",
+    key: "unused",
+    base_code: "",
+    name: "an evil force",
+    level: null,
+    modifiers: [],
+    requirements: {
+        level: ""
+    },
+    image: {
+        invfile: "",
+        invtransform: ""
+    }
+}, {
+    id: 470,
+    kind: "item.unique",
+    key: "unused",
+    base_code: "",
+    name: "an evil force",
+    level: null,
+    modifiers: [],
+    requirements: {
+        level: ""
+    },
+    image: {
+        invfile: "",
+        invtransform: ""
+    }
+}, {
+    id: 471,
+    kind: "item.unique",
+    key: "unused",
+    base_code: "",
+    name: "an evil force",
+    level: null,
+    modifiers: [],
+    requirements: {
+        level: ""
+    },
+    image: {
+        invfile: "",
+        invtransform: ""
+    }
+}, {
+    id: 472,
+    kind: "item.unique",
+    key: "Crackleshot",
+    base_code: "6hb",
+    name: "Crackleshot",
+    level: 87,
+    modifiers: [{
+        key: "hit-skill",
+        param_id: 1,
+        min: 15,
+        max: 25
+    }, {
+        key: "hit-skill",
+        param_id: 2,
+        min: 2,
+        max: 28
+    }, {
+        key: "dmg-ltng",
+        param_id: 3,
+        min: 100,
+        max: 450
+    }, {
+        key: "mana-kill",
+        param_id: 4,
+        min: 5,
+        max: 5
+    }, {
+        key: "swing2",
+        param_id: 5,
+        min: 20,
+        max: 20
+    }, {
+        key: "dmg%",
+        param_id: 6,
+        min: 260,
+        max: 330
+    }, {
+        key: "skill",
+        param_id: 7,
+        param: 32,
+        min: 2,
+        max: 3
+    }, {
+        key: "skill",
+        param_id: 8,
+        param: 9,
+        min: 2,
+        max: 3
+    }],
+    requirements: {
+        level: 72
+    },
+    image: {
+        invfile: "invlightningbow",
+        invtransform: "lyel"
+    },
+    base: "Blade Bow"
+}, {
+    id: 473,
+    kind: "item.unique",
+    key: "Ureh City Map",
+    base_code: "t56",
+    name: "City of Ureh",
+    level: 80,
+    modifiers: [{
+        key: "map-glob-dropsocketed",
+        param_id: 1,
+        min: 100,
+        max: 100
+    }, {
+        key: "map-glob-density",
+        param_id: 2,
+        min: 100,
+        max: 140
+    }, {
+        key: "map-play-addxp",
+        param_id: 3,
+        min: 15,
+        max: 25
+    }, {
+        key: "map-play-mag-gold%",
+        param_id: 4,
+        min: 40,
+        max: 80
+    }, {
+        key: "map-mon-openwounds",
+        param_id: 5,
+        min: 10,
+        max: 20
+    }, {
+        key: "map-mon-att-cast-speed",
+        param_id: 6,
+        min: 80,
+        max: 120
+    }, {
+        key: "map-glob-monsterrarity",
+        param_id: 7,
+        min: 10,
+        max: 20
+    }, {
+        key: "map-mon-phys-as-extra-cold",
+        param_id: 8,
+        min: 40,
+        max: 50
+    }, {
+        key: "map-play-ac%",
+        param_id: 9,
+        min: -60,
+        max: -45
+    }, {
+        key: "map-mon-lifesteal-hp%",
+        param_id: 10,
+        min: 15,
+        max: 25
+    }],
+    requirements: {
+        level: 80
+    },
+    image: {
+        invfile: "invmap_urehcity",
+        invtransform: ""
+    },
+    base: "Map"
 }];
+
 
 export const setItems = [{
     id: 0,
@@ -30338,6 +31069,7 @@ export const setItems = [{
     base: "Bone Wand",
     set: "Sander's Folly"
 }];
+
 
 export const allItems = [...uniqueItems, ...setItems];
 
