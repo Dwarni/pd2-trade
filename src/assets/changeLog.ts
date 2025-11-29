@@ -1,4 +1,7 @@
 export const changeLog = {
+  "0.4.3": [
+    "🔧 Fixed an issue where the new quivers and bolts would not be found in stash",
+  ],
   "0.4.2": [
     "✨ Updated the items database to include season 12 items unqiues and sets.",
   ],

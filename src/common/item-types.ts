@@ -756,8 +756,16 @@ export const itemTypes =[
         "value": "Any"
       },
       {
-        "label": "Arrows",
+        "label": "Blunt Arrows",
         "value": "aqv"
+      },
+      {
+        "label": "Razor Arrows",
+        "value": "aqv3"
+      },
+      {
+        "label": "Sharp Arrows",
+        "value": "aqv2"
       }
     ]
   },
@@ -948,8 +956,20 @@ export const itemTypes =[
         "value": "Any"
       },
       {
-        "label": "Bolts",
+        "label": "Heavy Bolts",
+        "value": "cqv2"
+      },
+      {
+        "label": "Heavy Bolts",
+        "value": "cqv2"
+      },
+      {
+        "label": "Light Bolts",
         "value": "cqv"
+      },
+      {
+        "label": "War Bolts",
+        "value": "cqv3"
       }
     ]
   },
