@@ -92,7 +92,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
                 </span>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-xs text-center">
-                An item won't be found unless it is placed in your stash and you have made a new game.<br />
+                An item won't be found unless it is placed in your shared stash (not personal stash) and you have made a new game.<br />
               </TooltipContent>
             </Tooltip>
           </div>
