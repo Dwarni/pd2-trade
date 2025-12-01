@@ -19,8 +19,6 @@ import { shortcutFormSchema, ShortcutFormData } from './types';
 import { Form } from '@/components/ui/form';
 import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { priceTypeOptions } from './types';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
 
@@ -60,6 +58,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     resolver: zodResolver(shortcutFormSchema),
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
+
+  // Watch form values to determine if Save button should be disabled
+  const editNote = editForm.watch('note');
+  const editPrice = editForm.watch('price');
+  const hasEditNote = !!editNote && editNote.toString().trim().length > 0;
+  const hasEditPrice = !!editPrice && (typeof editPrice === 'number' ? editPrice > 0 : Number(editPrice) > 0);
+  const isEditFormValid = hasEditNote || hasEditPrice;
 
   const marketQuery = useMemo(() => {
     if (!authData || !settings) return null;
@@ -186,9 +191,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const handleEdit = (listing: MarketListingEntry) => {
     setEditingListingId(listing._id);
     editForm.reset({
-      type: listing.price.includes('obo') ? 'negotiable' :
-            typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' :
-            'note',
+      type: typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' : 'note',
       note: typeof listing.price === 'string' ? listing.price : '',
       price: listing.hr_price ?? '',
       currency: 'HR',
@@ -197,12 +200,17 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleSaveEdit = async (values: ShortcutFormData, listing: MarketListingEntry) => {
     try {
+      // Determine type based on which fields are filled
+      const hasPrice = values.price && Number(values.price) > 0;
+      const listingType = hasPrice ? 'exact' : 'note';
+      
       let updateFields: Record<string, any> = {};
-      if (values.type === 'note') {
+      if (listingType === 'note') {
         updateFields.price = values.note;
-      } else if (values.type === 'exact' || values.type === 'negotiable') {
+        updateFields.hr_price = null;
+      } else if (listingType === 'exact') {
         updateFields.hr_price = Number(values.price);
-        updateFields.price = values.type === 'negotiable' ? 'obo' : values.note;
+        updateFields.price = values.note || '';
       }
       await updateMarketListing(listing._id, updateFields);
       await updateItemByHash(listing.item.hash, updateFields);
@@ -372,63 +380,42 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                         >
                           <FormField
                             control={editForm.control}
-                            name="type"
+                            name="note"
                             render={({ field }) => (
-                              <FormItem className="m-0 p-0 min-w-50">
+                              <FormItem className="m-0 p-0 min-w-0 flex-1">
                                 <FormControl>
-                                  <Select value={field.value} onValueChange={field.onChange}>
-                                    <SelectTrigger className="w-full h-8 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {priceTypeOptions.map(opt => (
-                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                  <Input
+                                    placeholder="Note..."
+                                    {...field}
+                                    className="h-8 text-xs"
+                                    autoComplete="off"
+                                    value={editForm.getValues('note') || ''}
+                                  />
                                 </FormControl>
                               </FormItem>
                             )}
                           />
-                          {editForm.watch('type') === 'note' ? (
-                            <FormField
-                              control={editForm.control}
-                              name="note"
-                              render={({ field }) => (
-                                <FormItem className="m-0 p-0 min-w-0 w-32">
-                                  <FormControl>
-                                    <Input
-                                      placeholder="Note..."
-                                      {...field}
-                                      className="h-8 text-xs"
-                                      autoComplete="off"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          ) : (
-                            <FormField
-                              control={editForm.control}
-                              name="price"
-                              render={({ field }) => (
-                                <FormItem className="m-0 p-0 min-w-0 w-20">
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      step={0.01}
-                                      placeholder="HR"
-                                      {...field}
-                                      className="h-8 text-xs"
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          )}
+                          <FormField
+                            control={editForm.control}
+                            name="price"
+                            render={({ field }) => (
+                              <FormItem className="m-0 p-0 min-w-0 w-20">
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    step={0.01}
+                                    placeholder="HR"
+                                    {...field}
+                                    className="h-8 text-xs"
+                                    value={editForm.getValues('price') || ''}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
                           <ButtonGroup>
-                          <Button type="submit" size="sm" className="h-8 text-xs">Save</Button>
+                          <Button type="submit" size="sm" className="h-8 text-xs" disabled={isEditing && !isEditFormValid}>Save</Button>
                           <Button
                             type="button"
                             size="sm"

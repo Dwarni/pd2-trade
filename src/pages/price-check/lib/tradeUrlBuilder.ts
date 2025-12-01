@@ -16,7 +16,10 @@ export function buildTradeUrl(
   selected: Set<string>,
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
-  statMapper?: (statId: number, stat: Stat) => string | undefined
+  statMapper?: (statId: number, stat: Stat) => string | undefined,
+  searchMode: number = 0,
+  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
+  isArchive: boolean = false
 ): string {
   const searchParams = new URLSearchParams();
 
@@ -73,6 +76,9 @@ export function buildTradeUrl(
   // Basic item meta
   searchParams.set("quality", item.quality);
 
+  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
+  // Uniques, Sets, and Runewords always use name search
   if (item.type === "Jewel") {
     searchParams.set("type", "jewl");
     searchParams.set("base", "jew");
@@ -80,21 +86,42 @@ export function buildTradeUrl(
     searchParams.set("type", `{"$in": ["scha", "mcha", "lcha", "torc"]}`);
     searchParams.set("base", ItemCharmMap[item.type]);
   } else {
-    if (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior) {
-      const result = getTypeFromBaseType(item.type, false);
-      if (result && result?.type && result?.type) {
-        searchParams.set("type", result.type as any);
-        searchParams.set("base", result.base);
-      } else {
-        console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
-      }
+    // Runewords always use name search regardless of base quality
+    if (item.isRuneword) {
+      searchParams.set("name", item.runeword || mappedItem?.name || item.name);
     } else {
-      searchParams.set("name", item.isRuneword ? item.runeword : mappedItem?.name || item.name);
+      // Check if item is a base quality that supports toggle
+      const isBaseQuality = item.quality === ItemQuality.Rare ||
+                            item.quality === ItemQuality.Magic ||
+                            item.quality === ItemQuality.Crafted ||
+                            item.quality === ItemQuality.Normal ||
+                            item.quality === ItemQuality.Superior;
+      
+      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+        // Mode 1: Search by typeLabel (category type) - only for base qualities
+        const typeValue = typeof matchedItemType.typeValue === 'string' 
+          ? matchedItemType.typeValue 
+          : JSON.stringify(matchedItemType.typeValue);
+        searchParams.set("type", typeValue);
+        // Don't set base parameter when searching by typeLabel
+      } else if (isBaseQuality) {
+        // Mode 0: Default behavior (category/base) - only for base qualities
+        const result = getTypeFromBaseType(item.type, false);
+        if (result && result?.type && result?.type) {
+          const typeValue = typeof result.type === 'string' ? result.type : JSON.stringify(result.type);
+          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
+          searchParams.set("type", typeValue);
+          // Only set base parameter if it's not "Any"
+          if (baseValue !== "Any") {
+            searchParams.set("base", baseValue);
+          }
+        } else {
+          console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+        }
+      } else {
+        // Uniques, Sets: Always use name search (original functionality)
+        searchParams.set("name", mappedItem?.name || item.name);
+      }
     }
   }
 
@@ -102,7 +129,7 @@ export function buildTradeUrl(
   searchParams.set("is_hardcore", `${(settings.mode === 'hardcore')}`);
   searchParams.set("is_ladder", `${(settings.ladder === 'ladder')}`);
 
-  return `https://www.projectdiablo2.com/market/archive?${searchParams.toString()}`;
+  return `https://www.projectdiablo2.com/${isArchive ? 'market/archive' : 'market'}?${searchParams.toString()}`;
 }
 
 export function buildGetMarketListingQuery(
@@ -112,7 +139,9 @@ export function buildGetMarketListingQuery(
   filters: Record<string, { value?: string; min?: string; max?: string }>,
   settings: any,
   statMapper?: (statId: number, stat: Stat) => string | undefined,
-  isArchive: boolean = false
+  isArchive: boolean = false,
+  searchMode: number = 0,
+  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -208,6 +237,9 @@ export function buildGetMarketListingQuery(
     }
   });
 
+  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
+  // Uniques, Sets, and Runewords always use name search
   if (item.type === "Jewel") {
     query['item.base.type_code'] = "jewl";
     query['item.base_code'] = "jew";
@@ -215,24 +247,47 @@ export function buildGetMarketListingQuery(
     query['item.base.type_code'] = {"$in": ["scha", "mcha", "lcha", "torc"]}
     query['item.base_code'] = ItemCharmMap[item.type]
   } else {
-    if (
-      item.quality === ItemQuality.Rare ||
-      item.quality === ItemQuality.Magic ||
-      item.quality === ItemQuality.Crafted ||
-      item.quality === ItemQuality.Normal ||
-      item.quality === ItemQuality.Superior) {
-      const result = getTypeFromBaseType(item.type, true);
-      if (result && result?.type && result?.type) {
-        let typeValue = result.type;
-        query['item.base.type_code'] = typeValue as any;
-        query['item.base_code'] = result.base;
-      } else {
-        console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+    // Runewords always use name search regardless of base quality
+    if (item.isRuneword) {
+      query['item.name'] = {
+        $regex: item.runeword || mappedItem?.name || item.name || '',
+        $options: 'i',
       }
     } else {
-      query['item.name'] = {
-        $regex: item.isRuneword ? item.runeword : item.name ? `${mappedItem?.name || item.name}` : '',
-        $options: 'i',
+      // Check if item is a base quality that supports toggle
+      const isBaseQuality = item.quality === ItemQuality.Rare ||
+                            item.quality === ItemQuality.Magic ||
+                            item.quality === ItemQuality.Crafted ||
+                            item.quality === ItemQuality.Normal ||
+                            item.quality === ItemQuality.Superior;
+      
+      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+        // Mode 1: Search by typeLabel (category type) - only for base qualities
+        const typeValue = typeof matchedItemType.typeValue === 'string' 
+          ? matchedItemType.typeValue 
+          : JSON.stringify(matchedItemType.typeValue);
+        query['item.base.type_code'] = typeValue as any;
+        // Don't set base_code parameter when searching by typeLabel
+      } else if (isBaseQuality) {
+        // Mode 0: Default behavior (category/base) - only for base qualities
+        const result = getTypeFromBaseType(item.type, true);
+        if (result && result?.type && result?.type) {
+          let typeValue = result.type;
+          query['item.base.type_code'] = typeValue as any;
+          // Only set base_code parameter if it's not "Any"
+          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
+          if (baseValue !== "Any") {
+            query['item.base_code'] = result.base;
+          }
+        } else {
+          console.warn("[ItemOverlayWidget] No base type found for rare item:", item.name);
+        }
+      } else {
+        // Uniques, Sets: Always use name search (original functionality)
+        query['item.name'] = {
+          $regex: item.name ? `${mappedItem?.name || item.name}` : '',
+          $options: 'i',
+        }
       }
     }
   } 

@@ -1,4 +1,11 @@
 export const changeLog = {
+  "0.4.5": [
+    "✨ You can now toggle between searching by base and searching by type in the price check window.",
+    "🆕 The listing price input is more consistent with the trade website.",
+    "🔧 Fixed an issue where the quick list window would not display the correct item name.",
+    "🔧 Go to trade now goes to only the active listings instead of archive listings unless show expired is enabled.",
+    "🔧 Fixed an issue where runewords would not be searchable in the price check window.",
+  ],
   "0.4.4": [
     "✨ Price check window now supports dragging and resizing.",
     "✨ Bases, gems, currency & maps will now be searchable in the price check window.",

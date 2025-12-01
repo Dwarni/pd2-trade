@@ -4,6 +4,7 @@ import { X, Search, Loader2, AlertCircle, GripVertical } from "lucide-react";
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
+import { useItems } from '@/hooks/useItems';
 
 interface LoadingAndErrorStatesProps {
   isLoading: boolean;
@@ -20,6 +21,9 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   item,
   onRetry
 }) => {
+
+  const { findOneByName } = useItems();
+
   if (isLoading) {
     return (
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
@@ -84,7 +88,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-gray-500 gap-2">
           <div className="flex items-center gap-2">
-            <span>No items found matching "{item.name || item.type}"</span>
+            <span>No items found matching "{findOneByName(item.name, item.quality)?.name || item.name || item.type}"</span>
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>

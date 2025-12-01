@@ -45,8 +45,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  const type = form.watch('type');
-
   // Get the current window reference (Tauri v2 API)
   const appWindow = useMemo(() => getCurrentWebviewWindow(), []);
 
@@ -164,15 +162,21 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
     setSubmitLoading(true);
     try {
+      // Determine type based on which fields are filled
+      const hasPrice = values.price && Number(values.price) > 0;
+      const hasNote = values.note && values.note.trim().length > 0;
+      const listingType = hasPrice ? 'exact' : 'note';
+      
       const isAlreadyListed = !!currentListingForSelected;
       if (isAlreadyListed) {
         // Prepare update fields
         let updateFields: Record<string, any> = {};
-        if (values.type === 'note') {
+        if (listingType === 'note') {
           updateFields.price = values.note;
-        } else if (values.type === 'exact' || values.type === 'negotiable') {
+          updateFields.hr_price = null;
+        } else if (listingType === 'exact') {
           updateFields.hr_price = Number(values.price);
-          updateFields.price = values.type === 'negotiable' ? 'obo' : values.note;
+          updateFields.price = values.note || '';
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
@@ -180,8 +184,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await emit('toast-event', 'Listing updated!');
         appWindow.hide();
       } else {
-        const listing = await listSpecificItem(selectedItem, Number(values.price), values.note, values?.type);
-        form.reset({ type: 'note', note: '', price: '', currency: 'HR' });
+        const listing = await listSpecificItem(selectedItem, hasPrice ? Number(values.price) : 0, values.note || '', listingType);
+        form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
         
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
@@ -249,9 +253,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   
     const resetValues: ShortcutFormData = currentListingForSelected
       ? { 
-          type: currentListingForSelected.price.includes('obo') ? 'negotiable' :
-                typeof currentListingForSelected.hr_price === 'number' && currentListingForSelected.hr_price > 0  ? 'exact' :
-                'note',
+          type: typeof currentListingForSelected.hr_price === 'number' && currentListingForSelected.hr_price > 0  ? 'exact' : 'note',
           note: typeof currentListingForSelected.price === 'string' ? currentListingForSelected.price : '',
           price: currentListingForSelected.hr_price ?? '',
           currency: 'HR',
@@ -353,7 +355,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
               <ListingFormFields
                 form={form}
-                type={type}
                 selectedItem={selectedItem}
                 currentListings={currentListings}
                 submitLoading={submitLoading}

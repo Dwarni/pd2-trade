@@ -118,8 +118,8 @@ export function useStashCache(authData, settings) {
           }
         }
       }
-      });
-    }
+    });
+  }
 
     // Handle sockets
     if (priceCheckItem.sockets !== undefined && stashItem.socket_count !== undefined) {
