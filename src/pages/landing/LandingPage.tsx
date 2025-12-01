@@ -60,7 +60,15 @@ const LandingPage: React.FC = () => {
     }
     await sleep(100);
     const raw = await read();
-    if (!clipboardContainsValidItem(raw)) return;
+    if (!clipboardContainsValidItem(raw)) {
+      const errorToastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'Item is not supported or invalid.',
+        variant: 'error',
+      };
+      emit('toast-event', errorToastPayload);
+      return;
+    }
 
     const encoded = encodeItem(raw);
 
@@ -103,12 +111,21 @@ const LandingPage: React.FC = () => {
     if (!(await checkDiabloFocus())) return;
 
     const raw = await copyAndValidateItem();
-    if (!raw) return;
+    if (!raw) {
+      const errorToastPayload: GenericToastPayload = {
+        title: 'PD2 Trader',
+        description: 'Item is not supported or invalid.',
+        variant: 'error',
+      };
+      emit('toast-event', errorToastPayload);
+      return;
+    }
 
     if (!isStashItem(raw)) {
       const errorToastPayload: GenericToastPayload = {
         title: 'PD2 Trader',
         description: 'Item must be located in stash in order to list',
+        variant: 'error',
       };
       emit('toast-event', errorToastPayload);
       return;

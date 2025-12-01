@@ -84,7 +84,7 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-gray-500 gap-2">
           <div className="flex items-center gap-2">
-            <span>No items found matching "{item.name}"</span>
+            <span>No items found matching "{item.name || item.type}"</span>
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>

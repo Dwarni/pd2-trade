@@ -90,4 +90,5 @@ export interface GenericToastPayload {
     title?: string;
     description?: string;
     duration?: number;
+    variant?: 'default' | 'error' | 'success' | 'warning';
 }

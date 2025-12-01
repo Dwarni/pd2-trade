@@ -264,7 +264,7 @@ export function useStatSelection(item: any) {
 
     // Apply name-based remapping first (e.g., "to Strength" -> stat_id 0)
     // This must happen before combining attributes so the combination can find the remapped stats
-    let combinedStats = item.stats.map((stat: Stat) => {
+    let combinedStats = (item.stats || []).map((stat: Stat) => {
       if (stat.name in statRemapByName) {
         return {...stat, ...statRemapByName[stat.name]};
       }

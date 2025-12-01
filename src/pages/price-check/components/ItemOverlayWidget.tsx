@@ -68,7 +68,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived);
   }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item]);
 
-
   useEffect(() => {
     if (item) {
       // clear market listing result if new item is loaded
@@ -76,6 +75,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSelected(new Set());
       setFilters({})
       
+      console.log('[ItemOverlayWidget] Item loaded:', item);
     }
   }, [item])
 
@@ -102,7 +102,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   return (
     <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
+      <div 
+      data-tauri-drag-region
+      id="titlebar-drag-handle"
+      className="flex items-center justify-between border-neutral-700 bg-neutral-800/50">
         {/* Rune Information Popover */}
         <div className="flex flex-row items-center">
           <RunePricePopover

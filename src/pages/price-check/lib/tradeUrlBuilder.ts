@@ -1,6 +1,6 @@
 import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
-import { fuzzyCharacterSkill, fuzzyMatchCharacterSkill, skillNameToIdMap } from "@/assets/character-skills";
+import { fuzzyMatchCharacterSkill, skillNameToIdMap } from "@/assets/character-skills";
 import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
@@ -509,7 +509,7 @@ function getSortedStats(item: any): Stat[] {
 
   // Apply name-based remapping first (e.g., "to Strength" -> stat_id 0)
   // This must happen before combining attributes so the combination can find the remapped stats
-  let combinedStats = item.stats.map((stat: Stat) => {
+  let combinedStats = (item.stats || []).map((stat: Stat) => {
     if (stat.name in statRemapByName) {
       return {...stat, ...statRemapByName[stat.name]};
     }

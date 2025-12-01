@@ -40,14 +40,25 @@ const ToastPage: React.FC = () => {
           // Check if it's a generic toast payload (no action)
           if (!('action' in payload)) {
             const genericPayload = payload as GenericToastPayload;
-            toast(genericPayload.title || 'PD2 Trader', {
-              position: 'bottom-right',
+            const toastOptions = {
+              position: 'bottom-right' as const,
               description: genericPayload.description,
               duration: genericPayload.duration,
               closeButton: true,
               onDismiss: () => closeToastWebview(),
               onAutoClose: () => closeToastWebview(),
-            });
+            };
+
+            // Use appropriate toast variant
+            if (genericPayload.variant === 'error') {
+              toast.error(genericPayload.title || 'PD2 Trader', toastOptions);
+            } else if (genericPayload.variant === 'success') {
+              toast.success(genericPayload.title || 'PD2 Trader', toastOptions);
+            } else if (genericPayload.variant === 'warning') {
+              toast.warning(genericPayload.title || 'PD2 Trader', toastOptions);
+            } else {
+              toast(genericPayload.title || 'PD2 Trader', toastOptions);
+            }
             return;
           }
 

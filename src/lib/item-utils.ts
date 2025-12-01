@@ -1,4 +1,6 @@
 import { ItemLocation } from '@/common/types/Location';
+import { ItemQuality } from '@/common/types/Item';
+import { getTypeFromBaseType } from '@/pages/price-check/lib/utils';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -19,12 +21,38 @@ export const clipboardContainsValidItem = (jsonString: string): boolean => {
     const item = JSON.parse(jsonString);
     if (typeof item !== 'object' || item === null) return false;
     
-    return (
-      typeof item.quality === 'string' &&
-      typeof item.type === 'string' &&
-      typeof item.iLevel === 'number' &&
-      Array.isArray(item.stats)
-    );
+    // Basic validation
+    if (
+      typeof item.quality !== 'string' ||
+      typeof item.type !== 'string' ||
+      typeof item.iLevel !== 'number'
+    ) {
+      return false;
+    }
+
+    // Check if item has no stats (or empty stats array)
+    const hasNoStats = !item.stats || 
+                       (Array.isArray(item.stats) && item.stats.length === 0) ||
+                       item.stats === null ||
+                       item.stats === undefined;
+
+    // If item has no stats, validate it's a base item (Normal or Superior quality)
+    if (hasNoStats) {
+      const isBaseQuality = item.quality === ItemQuality.Normal || 
+                           item.quality === ItemQuality.Superior;
+      
+      if (!isBaseQuality) {
+        return false;
+      }
+
+      // Validate that the type exists in the base item types
+      const baseTypeResult = getTypeFromBaseType(item.type, false);
+      if (!baseTypeResult) {
+        return false;
+      }
+    }
+
+    return true;
   } catch {
     return false;
   }

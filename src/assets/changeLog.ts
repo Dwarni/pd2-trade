@@ -1,4 +1,10 @@
 export const changeLog = {
+  "0.4.4": [
+    "✨ Price check window now supports dragging and resizing.",
+    "✨ Bases, gems, currency & maps will now be searchable in the price check window.",
+    "✨ Bases, gems, currency & maps , etc. will are now listable",
+    "🆕 Items that are not listable will now display an error toast.",
+  ],
   "0.4.3": [
     "🔧 Fixed an issue where the new quivers and bolts would not be found in stash",
   ],

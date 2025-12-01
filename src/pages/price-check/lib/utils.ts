@@ -4,7 +4,7 @@ import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 
 // parseTypeValue: If true, will parse typeValue as JSON if it contains $in. This is needed for query objects (e.g., buildGetMarketListingQuery),
 // but should be left false for URL string building (e.g., buildTradeUrl), which expects a string.
-export function getTypeFromBaseType(baseType: string, parseTypeValue: boolean = false): { type: string | object, base: string } | undefined {
+export function getTypeFromBaseType(baseType: string, parseTypeValue: boolean = false): { type: string | object, base: string | object, label: string } | undefined {
   const baseName = baseType.toLowerCase();
 
   const matchedType = itemTypes.find(type =>
@@ -14,6 +14,8 @@ export function getTypeFromBaseType(baseType: string, parseTypeValue: boolean = 
   if (!matchedType) return;
 
   const base = matchedType.bases.find(b => b.label.toLowerCase() === baseName);
+  if (!base) return;
+
   let typeValue: string | object = matchedType.typeValue;
   if (parseTypeValue && typeof typeValue === 'string' && typeValue.trim().startsWith('{') && typeValue.includes('$in')) {
     try {
@@ -22,7 +24,16 @@ export function getTypeFromBaseType(baseType: string, parseTypeValue: boolean = 
       // fallback to string if parsing fails
     }
   }
-  return {type: typeValue, base: base.value};
+  let baseValue: string | object = base.value;
+  if (parseTypeValue && typeof baseValue === 'string' && baseValue.trim().startsWith('{') && baseValue.includes('$in')) {
+    try {
+      baseValue = JSON.parse(baseValue);
+    } catch (e) {
+      // fallback to string if parsing fails
+    }
+  }
+
+  return {type: typeValue, base: baseValue, label: base.label};
 }
 
 export function getStatKey(stat: Stat): string {

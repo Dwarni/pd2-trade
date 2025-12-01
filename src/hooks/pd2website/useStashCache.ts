@@ -54,12 +54,15 @@ export function useStashCache(authData, settings) {
 
     // Create a map of stash item modifiers for quick lookup
     const stashModifierMap = new Map<string, number>();
-    stashItem.modifiers.forEach(mod => {
-      stashModifierMap.set(mod.name, mod.values[0] || 0);
-    });
+    if (stashItem.modifiers) {
+      stashItem.modifiers.forEach(mod => {
+        stashModifierMap.set(mod.name, mod.values[0] || 0);
+      });
+    }
 
     // Compare each stat from the PriceCheckItem with stash item modifiers
-    priceCheckItem.stats.forEach(stat => {
+    if (priceCheckItem.stats) {
+      priceCheckItem.stats.forEach(stat => {
       maxPossibleScore += 1;
 
       // Handle skill stats
@@ -76,7 +79,7 @@ export function useStashCache(authData, settings) {
           }
         }
         
-        if (!foundSkillMatch) {
+        if (!foundSkillMatch && stashItem.modifiers) {
           // Try fuzzy matching on skill name
           const fuse = new Fuse(stashItem.modifiers, {
             keys: ['label'],
@@ -103,7 +106,7 @@ export function useStashCache(authData, settings) {
           const valueSimilarity = Math.max(0, 1 - (valueDiff / maxValue));
           
           totalScore += valueSimilarity;
-        } else {
+        } else if (stashItem.modifiers) {
           // Try fuzzy matching on stat name
           const fuse = new Fuse(stashItem.modifiers, {
             keys: ['label'],
@@ -115,7 +118,8 @@ export function useStashCache(authData, settings) {
           }
         }
       }
-    });
+      });
+    }
 
     // Handle sockets
     if (priceCheckItem.sockets !== undefined && stashItem.socket_count !== undefined) {
@@ -155,12 +159,13 @@ export function useStashCache(authData, settings) {
       const typeBaseInfo = getTypeFromBaseType(item.type);
       if (typeBaseInfo) {
         const fuse = new Fuse(stashItems, {
-          keys: ['base.type_code', 'base_code'],
+          keys: ['base.name'],
           threshold: 0.1, // Adjust for strictness (lower = stricter)
         });
         
         // Search for items matching only the base
-        matchingItems = fuse.search(typeBaseInfo.base).map(result => result.item);
+        matchingItems = fuse.search(typeBaseInfo.label).map(result => result.item);
+        console.log('[useStashCache] Matching items:', typeBaseInfo.base, stashItems, matchingItems, typeBaseInfo.label);
       }
     } else {
       // For other item qualities, search by name as before
