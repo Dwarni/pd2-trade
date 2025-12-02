@@ -1,4 +1,7 @@
 export const changeLog = {
+  "0.4.8": [
+    "🔧 Fixed an issue where the price input caused an error when updating a listing",
+  ],
   "0.4.7": [
     "🔧 Fixed an issue where class skills were incorrectly mapped.",
     "🔧 Fixed an issue that caused an error while updating the pricing of a listing",

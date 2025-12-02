@@ -229,15 +229,20 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     const startTime = performance.now();
     try {
       // Determine type based on which fields are filled
-      const hasPrice = values.price && Number(values.price) > 0;
+      // Normalize price: handle empty strings, whitespace, undefined, null
+      const priceValue = values.price === null || values.price === undefined || values.price === '' 
+        ? null 
+        : (typeof values.price === 'string' ? values.price.trim() : values.price);
+      const numericPrice = priceValue !== null ? Number(priceValue) : null;
+      const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
       
       let updateFields: Record<string, any> = {};
       if (listingType === 'note') {
-        updateFields.price = values.note;
+        updateFields.price = values.note || '';
         updateFields.hr_price = 0;
       } else if (listingType === 'exact') {
-        updateFields.hr_price = Number(values.price);
+        updateFields.hr_price = numericPrice;
         updateFields.price = values.note || '';
       }
       await updateMarketListing(listing._id, updateFields);
@@ -247,8 +252,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.edit_saved', 1, { status: 'success', listing_type: listingType });
       distributionMetric('listed_items.edit_duration_ms', duration);
-      if (hasPrice) {
-        distributionMetric('listed_items.edit_price_hr', Number(values.price));
+      if (hasPrice && numericPrice !== null) {
+        distributionMetric('listed_items.edit_price_hr', numericPrice);
       }
       emit('toast-event', 'Listing updated!');
     } catch (err) {

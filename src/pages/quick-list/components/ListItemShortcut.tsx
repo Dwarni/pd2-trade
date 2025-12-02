@@ -178,7 +178,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     const startTime = performance.now();
     try {
       // Determine type based on which fields are filled
-      const hasPrice = values.price && Number(values.price) > 0;
+      // Normalize price: handle empty strings, whitespace, undefined, null
+      const priceValue = values.price === null || values.price === undefined || values.price === '' 
+        ? null 
+        : (typeof values.price === 'string' ? values.price.trim() : values.price);
+      const numericPrice = priceValue !== null ? Number(priceValue) : null;
+      const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const hasNote = values.note && values.note.trim().length > 0;
       const listingType = hasPrice ? 'exact' : 'note';
       
@@ -187,10 +192,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         // Prepare update fields
         let updateFields: Record<string, any> = {};
         if (listingType === 'note') {
-          updateFields.price = values.note;
+          updateFields.price = values.note || '';
           updateFields.hr_price = 0;
         } else if (listingType === 'exact') {
-          updateFields.hr_price = Number(values.price);
+          updateFields.hr_price = numericPrice;
           updateFields.price = values.note || '';
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
@@ -201,20 +206,20 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         const duration = performance.now() - startTime;
         incrementMetric('list_item.update', 1, { status: 'success', listing_type: listingType });
         distributionMetric('list_item.update_duration_ms', duration);
-        if (hasPrice) {
-          distributionMetric('list_item.update_price_hr', Number(values.price));
+        if (hasPrice && numericPrice !== null) {
+          distributionMetric('list_item.update_price_hr', numericPrice);
         }
         
         appWindow.hide();
       } else {
-        const listing = await listSpecificItem(selectedItem, hasPrice ? Number(values.price) : 0, values.note || '', listingType);
+        const listing = await listSpecificItem(selectedItem, hasPrice && numericPrice !== null ? numericPrice : 0, values.note || '', listingType);
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
         
         const duration = performance.now() - startTime;
         incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType });
         distributionMetric('list_item.create_duration_ms', duration);
-        if (hasPrice) {
-          distributionMetric('list_item.create_price_hr', Number(values.price));
+        if (hasPrice && numericPrice !== null) {
+          distributionMetric('list_item.create_price_hr', numericPrice);
         }
         
         // Emit custom toast with listing data
