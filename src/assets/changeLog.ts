@@ -1,6 +1,7 @@
 export const changeLog = {
   "0.4.7": [
     "🔧 Fixed an issue where class skills were incorrectly mapped.",
+    "🔧 Fixed an issue that caused an error while updating the pricing of a listing",
   ],
   "0.4.6": [
     "🔧 Fixed an issue where rare jewels would not befound when listing an item",

@@ -235,7 +235,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       let updateFields: Record<string, any> = {};
       if (listingType === 'note') {
         updateFields.price = values.note;
-        updateFields.hr_price = null;
+        updateFields.hr_price = 0;
       } else if (listingType === 'exact') {
         updateFields.hr_price = Number(values.price);
         updateFields.price = values.note || '';
