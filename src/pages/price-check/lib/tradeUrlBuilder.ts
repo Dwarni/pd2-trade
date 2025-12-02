@@ -1,7 +1,7 @@
 import { Item, Stat } from "./interfaces";
 import { StatId, statIdToProperty, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from "./stat-mappings";
-import { fuzzyMatchCharacterSkill, skillNameToIdMap } from "@/assets/character-skills";
-import {classSkillNameToIdMap, classSubSkillNameToIdMap, fuzzyClassSkillByName, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
+import { skillNameToIdMap } from "@/assets/character-skills";
+import {classSkillNameToIdMap, fuzzyClassSubSkillByName, getSkillTabIndex} from "@/assets/class-skills";
 import { ItemCharmMap, ItemQuality } from "@/common/types/Item";
 import { getTypeFromBaseType, getStatKey } from "./utils";
 import { MarketListingQuery } from "@/common/types/pd2-website/GetMarketListingsCommand";
@@ -34,17 +34,19 @@ export function buildTradeUrl(
     let propKey = "stat_undefined";
 
     if ('skill' in stat && stat.skill) {
-      const skillEntry = fuzzyMatchCharacterSkill(stat.skill.toLowerCase());
+      const skillEntry = skillNameToIdMap[stat.skill.toLowerCase()];
       if (skillEntry) {
         propKey = `item_singleskill{${skillEntry.id}}`;
-      }
-      const classEntry = fuzzyClassSkillByName(stat.skill.toLowerCase());
-      if (classEntry) {
-        propKey = `item_addclassskills{${classEntry.id}}`;
-      }
-      const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase())
-      if (subClassEntry) {
-        propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
+      } else {
+        const classEntry = classSkillNameToIdMap[stat.skill.toLowerCase()];
+        if (classEntry) {
+          propKey = `item_addclassskills{${classEntry.id}}`;
+        } else {
+          const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase());
+          if (subClassEntry) {
+            propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
+          }
+        }
       }
 
     } else if (stat.stat_id !== undefined) {
@@ -206,7 +208,7 @@ export function buildGetMarketListingQuery(
         modifiers.push({ $elemMatch: mod });
         return;
       }
-      const subClassEntry = classSubSkillNameToIdMap[stat.skill.toLowerCase()];
+      const subClassEntry = fuzzyClassSubSkillByName(stat.skill.toLowerCase());
       if (subClassEntry) {
         // Subclass skill
         const mod: any = { name: 'item_addskill_tab', 'values.0': getSkillTabIndex(subClassEntry.id) };
