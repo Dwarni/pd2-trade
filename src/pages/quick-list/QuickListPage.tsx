@@ -23,7 +23,6 @@ export const QuickListPage: React.FC<any> = () => {
           try {
             const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
             setItem(json);
-            console.log('[QuickListPage] Item: ' + json);
           } catch (err) {
             console.error("[QuickListPage] Failed to parse initial payload:", err);``
           }
@@ -51,7 +50,7 @@ export const QuickListPage: React.FC<any> = () => {
             <ListItemShortcutForm item={item} />
           </Pd2WebsiteProvider>
           </ItemsProvider>
-      
+
         </OptionsProvider>
       </TooltipProvider>
     )

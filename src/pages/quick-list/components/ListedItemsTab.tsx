@@ -21,6 +21,7 @@ import { FormField, FormItem, FormControl, FormMessage } from '@/components/ui/f
 import { Input } from '@/components/ui/input';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 interface ListedItemsTabProps {
   onClose: () => void;
@@ -94,10 +95,18 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     
     setIsLoading(true);
     setError(null);
+    const startTime = performance.now();
     try {
       const result = await getMarketListings(marketQuery);
+      const duration = performance.now() - startTime;
       setListings(result.data);
       setTotalCount(result.total);
+      
+      incrementMetric('listed_items.fetch', 1, { status: 'success', page: currentPage.toString() });
+      distributionMetric('listed_items.fetch_duration_ms', duration);
+      distributionMetric('listed_items.fetch_count', result.data.length);
+      distributionMetric('listed_items.total_count', result.total);
+      
       // Update parent component if callbacks provided
       if (onTotalCountChange) {
         onTotalCountChange(result.total);
@@ -107,6 +116,9 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         onListingsChange(result.data);
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.fetch', 1, { status: 'error', page: currentPage.toString() });
+      distributionMetric('listed_items.fetch_duration_ms', duration);
       console.error('Failed to fetch market listings:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch listings');
     } finally {
@@ -164,12 +176,19 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleBump = async (listing: MarketListingEntry) => {
     setBumpingListingId(listing._id);
+    const startTime = performance.now();
     try {
       await updateMarketListing(listing._id, { bumped_at: new Date().toISOString() });
       await updateItemByHash(listing.item.hash, { bumped_at: new Date().toISOString() });
       await fetchListings();
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump', 1, { status: 'success', source: 'listed_items_tab' });
+      distributionMetric('listed_items.bump_duration_ms', duration);
       emit('toast-event', 'Item bumped successfully!');
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump', 1, { status: 'error', source: 'listed_items_tab' });
+      distributionMetric('listed_items.bump_duration_ms', duration);
       console.error('Failed to bump item:', err);
       emit('toast-event', 'Failed to bump item');
     } finally {
@@ -178,11 +197,18 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   };
 
   const handleDelete = async (listing: MarketListingEntry) => {
+    const startTime = performance.now();
     try {
       await deleteMarketListing(listing._id);
       await fetchListings();
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.delete', 1, { status: 'success' });
+      distributionMetric('listed_items.delete_duration_ms', duration);
       emit('toast-event', `Removed ${listing.item.name} market listing.`);
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.delete', 1, { status: 'error' });
+      distributionMetric('listed_items.delete_duration_ms', duration);
       console.error('Failed to delete listing:', err);
       emit('toast-event', 'Failed to delete listing');
     }
@@ -190,6 +216,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   const handleEdit = (listing: MarketListingEntry) => {
     setEditingListingId(listing._id);
+    incrementMetric('listed_items.edit_started', 1);
     editForm.reset({
       type: typeof listing.hr_price === 'number' && listing.hr_price > 0 ? 'exact' : 'note',
       note: typeof listing.price === 'string' ? listing.price : '',
@@ -199,6 +226,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   };
 
   const handleSaveEdit = async (values: ShortcutFormData, listing: MarketListingEntry) => {
+    const startTime = performance.now();
     try {
       // Determine type based on which fields are filled
       const hasPrice = values.price && Number(values.price) > 0;
@@ -216,8 +244,17 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       await updateItemByHash(listing.item.hash, updateFields);
       setEditingListingId(null);
       await fetchListings();
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.edit_saved', 1, { status: 'success', listing_type: listingType });
+      distributionMetric('listed_items.edit_duration_ms', duration);
+      if (hasPrice) {
+        distributionMetric('listed_items.edit_price_hr', Number(values.price));
+      }
       emit('toast-event', 'Listing updated!');
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.edit_saved', 1, { status: 'error' });
+      distributionMetric('listed_items.edit_duration_ms', duration);
       console.error('Failed to update listing:', err);
       emit('toast-event', 'Failed to update listing');
     }
@@ -317,8 +354,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             placeholder="Search item by name..."
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value);
+              const newQuery = e.target.value;
+              setSearchQuery(newQuery);
               setCurrentPage(0); // Reset to first page when searching
+              if (newQuery.trim().length > 0) {
+                incrementMetric('listed_items.search', 1);
+                distributionMetric('listed_items.search_query_length', newQuery.length);
+              }
             }}
             className="pl-8 pr-8 h-8 text-sm"
           />
@@ -495,7 +537,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                           <TooltipTrigger asChild>
                             <SquareArrowOutUpRight
                               className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
-                              onClick={() => openUrl(`${PD2Website.Website}/market/listing/${listing._id}`)}
+                              onClick={() => {
+                                incrementMetric('listed_items.open_trade_url', 1);
+                                openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+                              }}
                             />
                           </TooltipTrigger>
                           <TooltipContent>Go to trade website</TooltipContent>
@@ -531,7 +576,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+            onClick={() => {
+              setCurrentPage(prev => {
+                const newPage = Math.max(0, prev - 1);
+                incrementMetric('listed_items.pagination', 1, { direction: 'previous', page: newPage.toString() });
+                return newPage;
+              });
+            }}
             disabled={currentPage === 0 || isLoading || isLoadingAllListings}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -544,7 +595,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            onClick={() => {
+              setCurrentPage(prev => {
+                const newPage = Math.min(totalPages - 1, prev + 1);
+                incrementMetric('listed_items.pagination', 1, { direction: 'next', page: newPage.toString() });
+                return newPage;
+              });
+            }}
             disabled={currentPage >= totalPages - 1 || isLoading || isLoadingAllListings}
           >
             Next

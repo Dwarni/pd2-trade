@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.4.6": [
+    "🔧 Fixed an issue where rare jewels would not befound when listing an item",
+    "🔧 Fixed an issue where some uniques/sets would not found when listing an item",
+  ],
   "0.4.5": [
     "✨ You can now toggle between searching by base and searching by type in the price check window.",
     "🆕 The listing price input is more consistent with the trade website.",

@@ -66,7 +66,7 @@ export function useMarketActions({
       }
     }
     const stashData = await fetchAndCacheStash();
-    items = stashData.items|| [];
+    items = stashData.items || [];
     const matching = findItemsByName(items, item);
     return matching;
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);

@@ -47,8 +47,6 @@ export function buildTradeUrl(
         propKey = `item_addskill_tab{${getSkillTabIndex(subClassEntry.id)}}`;
       }
 
-      console.log('[tradeUrlBuilder] Skill entry:', skillEntry, 'Class entry:', classEntry, 'Subclass entry:', subClassEntry);
-
     } else if (stat.stat_id !== undefined) {
       propKey = getPropertyKey(stat.stat_id, stat, statMapper);
     }

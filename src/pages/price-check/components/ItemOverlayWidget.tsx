@@ -28,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { openCenteredWindow } from "@/lib/window";
 import { itemTypes } from "@/common/item-types";
 import { ItemQuality } from "@/common/types/Item";
+import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -101,8 +102,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSelected(new Set());
       setFilters({})
       setSearchMode(0); // Reset to default mode
-      
-      console.log('[ItemOverlayWidget] Item loaded:', item);
     }
   }, [item])
   
@@ -250,12 +249,30 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     setMarketError(null);
                     setMarketLoading(true);
                     setMarketListingsResult(null);
+                    const startTime = performance.now();
                     try {
                       const result = searchArchived 
                         ? await getMarketListingsArchive(pd2MarketQuery)
                         : await getMarketListings(pd2MarketQuery);
+                      const duration = performance.now() - startTime;
                       setMarketListingsResult(result);
+                      
+                      incrementMetric('item_overlay.market_search', 1, { 
+                        status: 'success', 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      distributionMetric('item_overlay.market_search_duration_ms', duration);
+                      distributionMetric('item_overlay.market_search_results_count', result.total);
+                      distributionMetric('item_overlay.market_search_results_returned', result.data.length);
                     } catch (e: any) {
+                      const duration = performance.now() - startTime;
+                      incrementMetric('item_overlay.market_search', 1, { 
+                        status: 'error', 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      distributionMetric('item_overlay.market_search_duration_ms', duration);
                       console.log(e.message || 'Failed to fetch market listings')
                       setMarketError(e.message || 'Failed to fetch market listings');
                     } finally {
@@ -269,7 +286,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 variant="secondary"
                   className="mt-2 flex flex-row justify-center gap-2"
                   onClick={() => {
-                    if (tradeUrl) openUrl(tradeUrl);
+                    if (tradeUrl) {
+                      incrementMetric('item_overlay.trade_url_opened', 1, { 
+                        archived: searchArchived.toString(),
+                        search_mode: shouldUseToggle ? searchMode.toString() : '0',
+                      });
+                      openUrl(tradeUrl);
+                    }
                   }}
                 >
                   <SquareArrowOutUpRight className="w-4 h-4"/>
@@ -281,7 +304,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               
               id="archived-toggle"
               checked={searchArchived}
-              onCheckedChange={setSearchArchived}
+              onCheckedChange={(checked) => {
+                setSearchArchived(checked);
+              }}
             />
            <Label htmlFor="archived-toggle" className="text-sm text-gray-300">Show Expired</Label>
           </div>

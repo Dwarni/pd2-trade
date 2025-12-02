@@ -16,6 +16,7 @@ import { useChangelog } from '@/hooks/useChangelog';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
+import { ItemsProvider } from '@/hooks/useItems';
 
 const LandingPage: React.FC = () => {
   const [showTitle, setShowTitle] = useState(true);
@@ -165,15 +166,17 @@ const LandingPage: React.FC = () => {
   useChangelog();
 
   return (
-    <Pd2WebsiteProvider>
-      <div>
-        {showTitle && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
-          </div>
-        )}
-      </div>
-    </Pd2WebsiteProvider>
+    <ItemsProvider>
+      <Pd2WebsiteProvider>
+        <div>
+          {showTitle && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <img src={iconPath} style={{ width: 400 }} alt="PD2 Trader" />
+            </div>
+          )}
+        </div>
+      </Pd2WebsiteProvider>
+    </ItemsProvider>
   );
 };
 

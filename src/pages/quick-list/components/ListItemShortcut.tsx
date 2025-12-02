@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import ListedItemsTab from './ListedItemsTab';
 import { Badge } from '@/components/ui/badge';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
+import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -72,15 +73,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     
     setIsLoading(true);
     setError(null);
+    const startTime = performance.now();
     try {
       const items = await findMatchingItems(item);
+      const duration = performance.now() - startTime;
+      
+      // Track matching items found
+      incrementMetric('list_item.matching_items.search', 1, { status: 'success' });
+      distributionMetric('list_item.matching_items.count', items.length);
+      distributionMetric('list_item.matching_items.search_duration_ms', duration);
+      
       setMatchingItems(items);
       if (items.length === 1) {
         setSelectedItem(items[0]);
+        incrementMetric('list_item.auto_selected', 1);
       } else {
         setSelectedItem(null);
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('list_item.matching_items.search', 1, { status: 'error' });
+      distributionMetric('list_item.matching_items.search_duration_ms', duration);
       console.error(err instanceof Error ? err.message : 'Failed to find items');
       setError(err instanceof Error ? err.message : 'Failed to find items');
     } finally {
@@ -158,9 +171,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const handleSubmit = async (values: ShortcutFormData) => {
     if (!selectedItem) {
       setError('Please select an item to list');
+      incrementMetric('list_item.submit_attempt', 1, { status: 'validation_error', reason: 'no_item_selected' });
       return;
     }
     setSubmitLoading(true);
+    const startTime = performance.now();
     try {
       // Determine type based on which fields are filled
       const hasPrice = values.price && Number(values.price) > 0;
@@ -182,10 +197,25 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         await updateItemByHash(selectedItem.hash, updateFields);
         await fetchAllListings(); // Refresh all listings
         await emit('toast-event', 'Listing updated!');
+        
+        const duration = performance.now() - startTime;
+        incrementMetric('list_item.update', 1, { status: 'success', listing_type: listingType });
+        distributionMetric('list_item.update_duration_ms', duration);
+        if (hasPrice) {
+          distributionMetric('list_item.update_price_hr', Number(values.price));
+        }
+        
         appWindow.hide();
       } else {
         const listing = await listSpecificItem(selectedItem, hasPrice ? Number(values.price) : 0, values.note || '', listingType);
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
+        
+        const duration = performance.now() - startTime;
+        incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType });
+        distributionMetric('list_item.create_duration_ms', duration);
+        if (hasPrice) {
+          distributionMetric('list_item.create_price_hr', Number(values.price));
+        }
         
         // Emit custom toast with listing data
         const toastPayload: CustomToastPayload = {
@@ -205,6 +235,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         appWindow.hide();
       }
     } catch (err) {
+      const duration = performance.now() - startTime;
+      const isAlreadyListed = !!currentListingForSelected;
+      const action = isAlreadyListed ? 'update' : 'create';
+      incrementMetric(`list_item.${action}`, 1, { status: 'error' });
+      distributionMetric(`list_item.${action}_duration_ms`, duration);
       console.error(err instanceof Error ? err.message : 'Failed to list/update item');
       setError(err instanceof Error ? err.message : 'Failed to list/update item');
     } finally {
@@ -232,11 +267,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   const handleBump = async (marketId: string, itemHash: string) => {
-    await updateMarketListing(marketId, { bumped_at: new Date().toISOString() });
-    await updateItemByHash(itemHash, { bumped_at: new Date().toISOString() });
+    const startTime = performance.now();
+    try {
+      await updateMarketListing(marketId, { bumped_at: new Date().toISOString() });
+      await updateItemByHash(itemHash, { bumped_at: new Date().toISOString() });
+      const duration = performance.now() - startTime;
+      incrementMetric('list_item.bump', 1, { status: 'success', source: 'list_item_shortcut' });
+      distributionMetric('list_item.bump_duration_ms', duration);
+    } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('list_item.bump', 1, { status: 'error', source: 'list_item_shortcut' });
+      distributionMetric('list_item.bump_duration_ms', duration);
+      throw err;
+    }
   };
 
   const handleRefresh = async () => {
+    incrementMetric('list_item.refresh', 1);
     await getMarketListingsForStashItems();
     await findMatchingItemsInStash();
   };
