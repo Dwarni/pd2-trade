@@ -86,14 +86,14 @@ export const useWhisperNotifications = (enabled: boolean) => {
           // Check if Diablo is focused
           const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
           
-          // For trade whispers, always notify
+          // For trade whispers, always play sound but only show toast if Diablo is not focused
           // For normal whispers, only notify if Diablo is not focused
           if (whisper.isTrade || !isDiabloFocused) {
             // Play notification sound
             playNotificationSound();
 
-            // For trade whispers, show toast with item name
-            if (whisper.isTrade && whisper.itemName) {
+            // For trade whispers, show toast with item name only if Diablo is not focused
+            if (whisper.isTrade && whisper.itemName && !isDiabloFocused) {
               const toastPayload: GenericToastPayload = {
                 title: 'Trade Whisper',
                 description: `${whisper.from}: ${whisper.itemName}`,
