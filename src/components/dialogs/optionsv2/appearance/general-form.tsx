@@ -23,6 +23,8 @@ import {
   SelectItem
 } from '@/components/ui/select';
 import { emit } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@tauri-apps/api/core';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -32,6 +34,7 @@ const appearanceFormSchema = z.object({
     required_error: 'Please select a ladder.',
   }),
   fillStatValue: z.number().int().min(0).max(100).optional(),
+  diablo2Directory: z.string().optional(),
 });
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
@@ -39,6 +42,7 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 export function GeneralForm() {
   const { settings, isLoading, updateSettings } = useOptions();
   const [saving, setSaving] = React.useState(false);
+  const [detectedDirectory, setDetectedDirectory] = React.useState<string | null>(null);
 
   // Always call hooks at the top level
   const form = useForm<AppearanceFormValues>({
@@ -47,6 +51,7 @@ export function GeneralForm() {
       mode: settings?.mode || 'softcore',
       ladder: settings?.ladder || 'non-ladder',
       fillStatValue: settings?.fillStatValue ?? 5,
+      diablo2Directory: settings?.diablo2Directory || '',
     },
   });
 
@@ -57,9 +62,23 @@ export function GeneralForm() {
         mode: settings.mode || 'softcore',
         ladder: settings.ladder || 'non-ladder',
         fillStatValue: settings.fillStatValue ?? 5,
+        diablo2Directory: settings.diablo2Directory || '',
       });
     }
   }, [settings, form]);
+
+  // Auto-detect directory on mount
+  React.useEffect(() => {
+    if (isTauri() && !detectedDirectory) {
+      invoke<string | null>('auto_detect_diablo2_directory')
+        .then((dir) => {
+          if (dir) {
+            setDetectedDirectory(dir);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [detectedDirectory]);
 
   if (isLoading || !settings) {
     return null;
@@ -150,6 +169,59 @@ export function GeneralForm() {
               </FormControl>
               <FormDescription>
                 Percentage used to automatically populate stat value ranges when selecting stats with ranges.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="diablo2Directory"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Diablo II Directory</FormLabel>
+              <FormControl>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="C:\Diablo II"
+                    className="flex-1"
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      if (isTauri()) {
+                        try {
+                          const detected = await invoke<string | null>('auto_detect_diablo2_directory');
+                          if (detected) {
+                            field.onChange(detected);
+                            setDetectedDirectory(detected);
+                          } else {
+                            emit('toast-event', {
+                              title: 'Detection Failed',
+                              description: 'Could not auto-detect Diablo II directory. Please enter it manually.',
+                              variant: 'warning',
+                            });
+                          }
+                        } catch (error) {
+                          console.error('Failed to detect directory:', error);
+                        }
+                      }
+                    }}
+                  >
+                    Auto-Detect
+                  </Button>
+                </div>
+              </FormControl>
+              <FormDescription>
+                {detectedDirectory && !field.value
+                  ? `Detected: ${detectedDirectory}`
+                  : 'Path to your Diablo II installation directory. Leave empty to auto-detect.'}
               </FormDescription>
               <FormMessage />
             </FormItem>

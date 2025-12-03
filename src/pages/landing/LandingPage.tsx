@@ -13,6 +13,7 @@ import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
+import { useWhisperNotifications } from '@/hooks/useWhisperNotifications';
 import { clipboardContainsValidItem, isStashItem, encodeItem, encodeItemForQuickList, sleep } from '@/lib/item-utils';
 import { GenericToastPayload } from '@/common/types/Events';
 import iconPath from '@/assets/img_1.png';
@@ -164,6 +165,34 @@ const LandingPage: React.FC = () => {
 
   // Handle changelog
   useChangelog();
+
+  // Handle whisper notifications
+  useWhisperNotifications(settings.whisperNotificationsEnabled ?? true);
+
+  // Start/stop chat watcher based on settings
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    const manageWatcher = async () => {
+      try {
+        if (settings.whisperNotificationsEnabled ?? true) {
+          await invoke('start_chat_watcher', { custom_d2_dir: settings.diablo2Directory });
+        } else {
+          await invoke('stop_chat_watcher');
+        }
+      } catch (error) {
+        console.error('Failed to manage chat watcher:', error);
+      }
+    };
+
+    manageWatcher();
+
+    return () => {
+      if (isTauri()) {
+        invoke('stop_chat_watcher').catch(console.error);
+      }
+    };
+  }, [settings.whisperNotificationsEnabled, settings.diablo2Directory]);
 
   return (
     <ItemsProvider>

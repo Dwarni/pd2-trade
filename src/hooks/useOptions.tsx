@@ -24,6 +24,9 @@ export interface ISettings {
   hotkeyModifierCurrencyValuation: 'ctrl' | 'alt';
   hotkeyKeyCurrencyValuation: string;
   fillStatValue?: number;
+  whisperNotificationsEnabled?: boolean;
+  diablo2Directory?: string;
+  whisperIgnoreList?: string[];
 }
 
 interface OptionsContextProps {
@@ -47,6 +50,7 @@ const DEFAULT_SETTINGS: ISettings = {
   hotkeyModifierCurrencyValuation: 'ctrl',
   hotkeyKeyCurrencyValuation: 'x',
   fillStatValue: 5,
+  whisperNotificationsEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
