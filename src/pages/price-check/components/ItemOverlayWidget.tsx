@@ -51,7 +51,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     updateFilter,
     setSelected,
     setFilters,
-    toggle
+    toggle,
+    corruptedState,
+    setCorruptedState
   } = useStatSelection(item);
 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName])
@@ -86,14 +88,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const tradeUrl = useMemo(() => {
     // Only use searchMode for items that support toggle, otherwise use default (0)
     const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
-    return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper, effectiveSearchMode, matchedItemType, searchArchived);
-  }, [selected, filters, item, statMapper, settings, pd2Item, searchMode, matchedItemType, shouldUseToggle, searchArchived]);
+    return buildTradeUrl(item, pd2Item, selected, filters, settings, statMapper, effectiveSearchMode, matchedItemType, searchArchived, corruptedState);
+  }, [selected, filters, item, statMapper, settings, pd2Item, searchMode, matchedItemType, shouldUseToggle, searchArchived, corruptedState]);
 
   const pd2MarketQuery = useMemo(() => {
     // Only use searchMode for items that support toggle, otherwise use default (0)
     const effectiveSearchMode = shouldUseToggle ? searchMode : 0;
-    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived, effectiveSearchMode, matchedItemType);
-  }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item, searchMode, matchedItemType, shouldUseToggle]);
+    return buildGetMarketListingQuery(item, pd2Item, selected, filters, settings, statMapper, searchArchived, effectiveSearchMode, matchedItemType, corruptedState);
+  }, [selected, filters, item, statMapper, settings, searchArchived, pd2Item, searchMode, matchedItemType, shouldUseToggle, corruptedState]);
 
   useEffect(() => {
     if (item) {
@@ -102,8 +104,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setSelected(new Set());
       setFilters({})
       setSearchMode(0); // Reset to default mode
+      setCorruptedState(0); // Reset corrupted state to default (both)
     }
-  }, [item])
+  }, [item, setSelected, setFilters, setCorruptedState])
   
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
@@ -234,6 +237,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 updateFilter={updateFilter}
                 filters={filters}
                 selected={selected}
+                corruptedState={corruptedState}
               />
             ))}
           </div>

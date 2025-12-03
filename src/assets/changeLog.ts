@@ -1,4 +1,9 @@
 export const changeLog = {
+  "0.4.9": [
+    "✨ Corrupted filter now has three states: show all items (unchecked), show only corrupted items (checked), or show only non-corrupted items (X icon).",
+    "🆕 Show a warning toast when the user tries to list an item and they have reached the maximum number of listings (50).",
+    "🔧 Fixed an issue where when deleting a listing, the item would not be removed from the quick list window.",
+  ],
   "0.4.8": [
     "🔧 Fixed an issue where the price input caused an error when updating a listing",
   ],

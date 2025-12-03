@@ -19,7 +19,8 @@ export function buildTradeUrl(
   statMapper?: (statId: number, stat: Stat) => string | undefined,
   searchMode: number = 0,
   matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
-  isArchive: boolean = false
+  isArchive: boolean = false,
+  corruptedState: number = 0
 ): string {
   const searchParams = new URLSearchParams();
 
@@ -60,7 +61,13 @@ export function buildTradeUrl(
     }
 
     if (stat.stat_id === StatId.Corrupted) {
-      searchParams.set("corrupted", "true");
+      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+      if (corruptedState === 1) {
+        searchParams.set("corrupted", "true");
+      } else if (corruptedState === 2) {
+        searchParams.set("corrupted", "false");
+      }
+      // If corruptedState === 0, don't add any corrupted filter
       return;
     }
 
@@ -141,7 +148,8 @@ export function buildGetMarketListingQuery(
   statMapper?: (statId: number, stat: Stat) => string | undefined,
   isArchive: boolean = false,
   searchMode: number = 0,
-  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null
+  matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null,
+  corruptedState: number = 0
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -174,7 +182,13 @@ export function buildGetMarketListingQuery(
       return;
     }
     if (stat.stat_id === StatId.Corrupted) {
-      query['item.corrupted'] = true;
+      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+      if (corruptedState === 1) {
+        query['item.corrupted'] = true;
+      } else if (corruptedState === 2) {
+        query['item.corrupted'] = false;
+      }
+      // If corruptedState === 0, don't add any corrupted filter
       return;
     }
     if (stat.stat_id === StatId.Ethereal || item.isEthereal) {

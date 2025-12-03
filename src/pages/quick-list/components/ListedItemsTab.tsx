@@ -200,7 +200,27 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     const startTime = performance.now();
     try {
       await deleteMarketListing(listing._id);
+      
+      // Optimistically remove the item from local state
+      const updatedListings = listings.filter(l => l._id !== listing._id);
+      setListings(updatedListings);
+      setAllListingsForSearch(prev => prev.filter(l => l._id !== listing._id));
+      
+      // Decrement total count
+      const newTotalCount = Math.max(0, totalCount - 1);
+      setTotalCount(newTotalCount);
+      
+      // Update parent component if callbacks provided
+      if (onTotalCountChange) {
+        onTotalCountChange(newTotalCount);
+      }
+      if (onListingsChange) {
+        onListingsChange(updatedListings);
+      }
+      
+      // Refresh to ensure consistency
       await fetchListings();
+      
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.delete', 1, { status: 'success' });
       distributionMetric('listed_items.delete_duration_ms', duration);
@@ -211,6 +231,8 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       distributionMetric('listed_items.delete_duration_ms', duration);
       console.error('Failed to delete listing:', err);
       emit('toast-event', 'Failed to delete listing');
+      // Refresh on error to restore correct state
+      await fetchListings();
     }
   };
 

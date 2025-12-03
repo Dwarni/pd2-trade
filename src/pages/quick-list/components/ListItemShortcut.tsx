@@ -12,7 +12,7 @@ import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListings
 import { emit } from '@tauri-apps/api/event';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
-import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
+import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
@@ -212,6 +212,17 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         
         appWindow.hide();
       } else {
+        // Check if user has reached the maximum number of listings (50)
+        if (totalListingsCount >= 50) {
+          const warningToast: GenericToastPayload = {
+            title: 'Maximum listings reached',
+            description: 'You can only have 50 active listings. Please remove an existing listing before adding a new one.',
+            variant: 'error'
+          };
+          await emit('toast-event', warningToast);
+          setSubmitLoading(false);
+          return;
+        }
         const listing = await listSpecificItem(selectedItem, hasPrice && numericPrice !== null ? numericPrice : 0, values.note || '', listingType);
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
         
