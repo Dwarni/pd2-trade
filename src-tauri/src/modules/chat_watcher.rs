@@ -15,6 +15,7 @@ pub struct WhisperEvent {
     pub from: String,
     pub message: String,
     pub item_name: Option<String>,
+    pub is_join: bool,
 }
 
 static WATCHER_HANDLE: Mutex<Option<Arc<Mutex<Option<RecommendedWatcher>>>>> = Mutex::new(None);
@@ -111,7 +112,47 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
 
 /// Parse a whisper from a log line
 /// Format: "2,From <character> (*<account>): Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Format: "4,<character>(<account>) joined our world. Diablo's minions grow stronger."
 fn parse_whisper(line: &str) -> Option<WhisperEvent> {
+    // Check for join messages (starts with "4,")
+    if line.starts_with("4,") {
+        // Format: "4,shrackx(shrack) joined our world. Diablo's minions grow stronger."
+        if line.contains(" joined our world") {
+            let after_prefix = &line[2..]; // Skip "4,"
+            if let Some(joined_pos) = after_prefix.find(" joined our world") {
+                let player_part = after_prefix[..joined_pos].trim();
+                // Extract character name and account name
+                let (character, account) = if let Some(paren_start) = player_part.find('(') {
+                    let character_name = player_part[..paren_start].trim();
+                    if let Some(paren_end) = player_part[paren_start..].find(')') {
+                        let account_name = player_part[paren_start + 1..paren_start + paren_end].trim();
+                        (character_name, account_name)
+                    } else {
+                        (character_name, "")
+                    }
+                } else {
+                    (player_part, "")
+                };
+                
+                // Use account name if available, otherwise character name
+                let sender = if !account.is_empty() {
+                    account.strip_prefix('*').unwrap_or(account)
+                } else {
+                    character
+                };
+                
+                return Some(WhisperEvent {
+                    is_trade: false,
+                    from: sender.to_string(),
+                    message: after_prefix.to_string(),
+                    item_name: None,
+                    is_join: true,
+                });
+            }
+        }
+        return None; // Other type 4 messages, ignore
+    }
+
     // Check if it's a whisper (starts with "2,")
     if !line.starts_with("2,") {
         return None;
@@ -125,6 +166,11 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
     let colon_pos = after_from.find(':')?;
     let sender_part = &after_from[..colon_pos].trim();
     let message = after_from[colon_pos + 1..].trim();
+
+    // Ignore friend online/offline messages
+    if message.contains("Your friend") && (message.contains("has left Project Diablo 2") || message.contains("has entered Project Diablo 2")) {
+        return None;
+    }
 
     // Extract sender name - prefer account name from parentheses, otherwise use character name
     // Format: "shrackx (*shrack)" or "shrackx (*shrack)" or just "shrackx"
@@ -170,6 +216,7 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
         from: sender.to_string(),
         message: message.to_string(),
         item_name,
+        is_join: false,
     })
 }
 

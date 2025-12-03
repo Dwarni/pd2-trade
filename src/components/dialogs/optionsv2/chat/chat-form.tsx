@@ -15,6 +15,7 @@ const chatFormSchema = z.object({
   whisperNotificationsEnabled: z.boolean().optional(),
   whisperIgnoreList: z.array(z.string()).optional(),
   whisperAnnouncementsEnabled: z.boolean().optional(),
+  whisperJoinNotificationsEnabled: z.boolean().optional(),
 });
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
@@ -30,6 +31,7 @@ export function ChatForm() {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
+      whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
     },
   });
 
@@ -40,6 +42,7 @@ export function ChatForm() {
         whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
         whisperIgnoreList: settings.whisperIgnoreList || [],
         whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
+        whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
       });
     }
   }, [settings, form]);
@@ -112,6 +115,26 @@ export function ChatForm() {
               </div>
               <FormDescription>
                 Enable notifications for messages from *announcements. By default, announcements are ignored.
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="whisperJoinNotificationsEnabled"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center gap-2">
+                <FormLabel>Join Notifications</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </div>
+              <FormDescription>
+                Show a notification popup when a player joins the game (only when Diablo is not focused). By default, join notifications are disabled.
               </FormDescription>
             </FormItem>
           )}

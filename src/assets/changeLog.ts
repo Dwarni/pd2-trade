@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.4.10": [
+    "🆕 Added join notifications - get notified when players join the game (disabled by default, only when Diablo is not focused).",
+    "🆕 Friend online/offline messages are now automatically ignored.",
+  ],
   "0.4.9": [
     "✨ Corrupted filter now has three states: show all items (unchecked), show only corrupted items (checked), or show only non-corrupted items (X icon).",
     "🆕 Added whisper notifications - play a sound when you receive whispers in-game.",

@@ -12,6 +12,7 @@ interface WhisperEvent {
   from: string;
   message: string;
   itemName?: string;
+  isJoin: boolean;
 }
 
 // Play the notification sound from assets
@@ -42,6 +43,25 @@ export const useWhisperNotifications = (enabled: boolean) => {
       try {
         unlisten = await listen<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
+          
+          // Handle join messages separately
+          if (whisper.isJoin) {
+            // Only notify if join notifications are enabled and Diablo is not focused
+            const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
+            if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
+              // Play notification sound
+              playNotificationSound();
+              
+              const toastPayload: GenericToastPayload = {
+                title: 'Player Joined',
+                description: `${whisper.from} joined the game`,
+                duration: 5000,
+                variant: 'default',
+              };
+              emit('toast-event', toastPayload);
+            }
+            return; // Don't process join messages as regular whispers
+          }
           
           // Normalize name (case-insensitive, ignore "*" prefix)
           const normalizeName = (name: string) => name.toLowerCase().replace(/^\*/, '');
@@ -99,6 +119,6 @@ export const useWhisperNotifications = (enabled: boolean) => {
         unlistenRef.current = null;
       }
     };
-  }, [enabled, settings?.whisperIgnoreList, settings?.whisperAnnouncementsEnabled]);
+  }, [enabled, settings?.whisperIgnoreList, settings?.whisperAnnouncementsEnabled, settings?.whisperJoinNotificationsEnabled]);
 };
 
