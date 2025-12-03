@@ -43,10 +43,18 @@ export const useWhisperNotifications = (enabled: boolean) => {
         unlisten = await listen<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
           
-          // Check if player is in ignore list (case-insensitive, ignore "*" prefix)
-          const ignoreList = settings?.whisperIgnoreList || [];
+          // Normalize name (case-insensitive, ignore "*" prefix)
           const normalizeName = (name: string) => name.toLowerCase().replace(/^\*/, '');
           const whisperFromNormalized = normalizeName(whisper.from);
+          
+          // Check if it's an announcement (default: ignore unless enabled)
+          const isAnnouncement = whisperFromNormalized === 'announcements';
+          if (isAnnouncement && !(settings?.whisperAnnouncementsEnabled ?? false)) {
+            return; // Skip announcements by default
+          }
+          
+          // Check if player is in ignore list
+          const ignoreList = settings?.whisperIgnoreList || [];
           const isIgnored = ignoreList.some(
             (ignoredPlayer) => normalizeName(ignoredPlayer) === whisperFromNormalized
           );
@@ -91,6 +99,6 @@ export const useWhisperNotifications = (enabled: boolean) => {
         unlistenRef.current = null;
       }
     };
-  }, [enabled, settings?.whisperIgnoreList]);
+  }, [enabled, settings?.whisperIgnoreList, settings?.whisperAnnouncementsEnabled]);
 };
 

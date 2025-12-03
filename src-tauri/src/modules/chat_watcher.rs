@@ -110,7 +110,7 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
 }
 
 /// Parse a whisper from a log line
-/// Format: "2,From shrackx (*shrack): Hi, I'm interested in your Frostburn listed for 2 wss"
+/// Format: "2,From <character> (*<account>): Hi, I'm interested in your Frostburn listed for 2 wss"
 fn parse_whisper(line: &str) -> Option<WhisperEvent> {
     // Check if it's a whisper (starts with "2,")
     if !line.starts_with("2,") {

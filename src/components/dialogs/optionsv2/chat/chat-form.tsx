@@ -14,6 +14,7 @@ import { emit } from '@tauri-apps/api/event';
 const chatFormSchema = z.object({
   whisperNotificationsEnabled: z.boolean().optional(),
   whisperIgnoreList: z.array(z.string()).optional(),
+  whisperAnnouncementsEnabled: z.boolean().optional(),
 });
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
@@ -28,6 +29,7 @@ export function ChatForm() {
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
+      whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
     },
   });
 
@@ -37,6 +39,7 @@ export function ChatForm() {
       form.reset({
         whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
         whisperIgnoreList: settings.whisperIgnoreList || [],
+        whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
       });
     }
   }, [settings, form]);
@@ -89,6 +92,26 @@ export function ChatForm() {
               </div>
               <FormDescription>
                 Play a notification sound when you receive whispers in-game.
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="whisperAnnouncementsEnabled"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center gap-2">
+                <FormLabel>Announcement Notifications</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </div>
+              <FormDescription>
+                Enable notifications for messages from *announcements. By default, announcements are ignored.
               </FormDescription>
             </FormItem>
           )}

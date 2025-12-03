@@ -27,6 +27,7 @@ export interface ISettings {
   whisperNotificationsEnabled?: boolean;
   diablo2Directory?: string;
   whisperIgnoreList?: string[];
+  whisperAnnouncementsEnabled?: boolean;
 }
 
 interface OptionsContextProps {
