@@ -1,4 +1,8 @@
 export const changeLog = {
+  "0.4.11": [
+    "🔧 Fixed stat range filters - min/max parameters are now only added when values are entered.",
+    "🔧 Fixed issue where chat message notifications were not shown after restarting the game.",
+  ],
   "0.4.10": [
     "✨ Join notifications - get notified when players join the game (disabled by default, only when Diablo is not focused).",
     "🔧Prevent trade whispers from stealing focus from Diablo when diablo is focused.",

@@ -92,8 +92,7 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
     
     // Create directories if they don't exist
-    if let Err(e) = fs::create_dir_all(&logs_dir) {
-        eprintln!("Failed to create logs directory: {}", e);
+    if let Err(_e) = fs::create_dir_all(&logs_dir) {
         return None;
     }
 
@@ -101,8 +100,29 @@ pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
     
     // Create file if it doesn't exist
     if !log_file.exists() {
-        if let Err(e) = fs::File::create(&log_file) {
-            eprintln!("Failed to create chat log file: {}", e);
+        if let Err(_e) = fs::File::create(&log_file) {
+            return None;
+        }
+    }
+
+    Some(log_file)
+}
+
+/// Get the game log file path, creating directories if needed
+pub fn get_game_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
+    let d2_dir = find_diablo2_directory(custom_d2_dir)?;
+    let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
+    
+    // Create directories if they don't exist
+    if let Err(_e) = fs::create_dir_all(&logs_dir) {
+        return None;
+    }
+
+    let log_file = logs_dir.join("pd2_game.log");
+    
+    // Create file if it doesn't exist
+    if !log_file.exists() {
+        if let Err(_e) = fs::File::create(&log_file) {
             return None;
         }
     }
@@ -155,15 +175,26 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
 
     // Check if it's a whisper (starts with "2,")
     if !line.starts_with("2,") {
+        return None; // Not a whisper line, ignore
+    }
+
+    // Ignore "Sent to" messages (outgoing whispers)
+    if line.contains("Sent to ") {
         return None;
     }
 
     // Extract the message part after "From"
-    let from_start = line.find("From ")?;
+    let from_start = match line.find("From ") {
+        Some(pos) => pos,
+        None => return None, // Not a "From" message, ignore
+    };
     let after_from = &line[from_start + 5..]; // Skip "From "
     
     // Find the colon that separates sender from message
-    let colon_pos = after_from.find(':')?;
+    let colon_pos = match after_from.find(':') {
+        Some(pos) => pos,
+        None => return None, // No colon found, malformed line, ignore
+    };
     let sender_part = &after_from[..colon_pos].trim();
     let message = after_from[colon_pos + 1..].trim();
 
@@ -222,25 +253,84 @@ fn parse_whisper(line: &str) -> Option<WhisperEvent> {
 
 /// Read new lines from the chat log file
 fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    // Check file size first
+    let file_size = file_path.metadata().map(|m| m.len()).unwrap_or(0);
+    
     let file = fs::File::open(file_path)?;
     let mut reader = BufReader::new(file);
     
     let mut last_pos = LAST_POSITION.lock().unwrap();
     
-    // Seek to last position
-    reader.seek(SeekFrom::Start(*last_pos))?;
-    
-    let mut line = String::new();
-    while reader.read_line(&mut line)? > 0 {
-        if let Some(whisper) = parse_whisper(&line) {
-            // Emit whisper event to frontend
-            let _ = app_handle.emit("whisper-received", whisper.clone());
-        }
-        line.clear();
+    // If file size is less than last position, file might have been truncated/reset (new game created)
+    if file_size < *last_pos {
+        *last_pos = file_size;
+        return Ok(()); // Don't read old messages, just update position
     }
     
-    // Update last position
-    *last_pos = reader.seek(SeekFrom::Current(0))?;
+    // If file was reset to 0 and hasn't grown yet, nothing to read
+    if file_size == 0 {
+        *last_pos = 0;
+        return Ok(());
+    }
+    
+    // If we're already at the end, nothing to read
+    if *last_pos >= file_size {
+        return Ok(());
+    }
+    
+    // Seek to last position
+    if let Err(_e) = reader.seek(SeekFrom::Start(*last_pos)) {
+        // If seek fails, try to get current file size and start from there
+        if let Ok(metadata) = file_path.metadata() {
+            *last_pos = metadata.len();
+            if let Err(_e2) = reader.seek(SeekFrom::Start(*last_pos)) {
+                return Ok(()); // Return early if we can't seek
+            }
+        } else {
+            return Ok(()); // Return early if we can't get metadata
+        }
+    }
+    
+    let mut line = Vec::new();
+    
+    loop {
+        // Read line - handle errors gracefully
+        match reader.read_until(b'\n', &mut line) {
+            Ok(0) => break, // EOF
+            Ok(_bytes_read) => {
+                // Convert bytes to string, replacing invalid UTF-8 sequences with replacement characters
+                let line_str = String::from_utf8_lossy(&line);
+                
+                // Parse whisper - if it returns None, just skip the line (it's not a whisper we care about)
+                if let Some(whisper) = parse_whisper(&line_str) {
+                    // Emit whisper event to frontend
+                    let _ = app_handle.emit("whisper-received", whisper.clone());
+                }
+                // Always clear the line buffer for next iteration
+                line.clear();
+            }
+            Err(_e) => {
+                // Try to update position and continue
+                if let Ok(current_pos) = reader.seek(SeekFrom::Current(0)) {
+                    *last_pos = current_pos;
+                }
+                break; // Exit loop on read error
+            }
+        }
+    }
+    
+    // Always update last position, even if there were errors
+    match reader.seek(SeekFrom::Current(0)) {
+        Ok(current_pos) => {
+            *last_pos = current_pos;
+        }
+        Err(_e) => {
+            // Try to get position from file metadata as fallback
+            if let Ok(metadata) = file_path.metadata() {
+                *last_pos = metadata.len();
+            }
+        }
+    }
     
     Ok(())
 }
@@ -248,6 +338,9 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
 /// Start watching the chat log file
 pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
     let log_path = get_chat_log_path(custom_d2_dir.as_deref()).ok_or("Could not find or create chat log file")?;
+    
+    // Also create the game log file
+    let _ = get_game_log_path(custom_d2_dir.as_deref());
     
     // Initialize last position to end of file
     if let Ok(file) = fs::File::open(&log_path) {
@@ -258,6 +351,7 @@ pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String
 
     // Create watcher
     let log_path_for_watcher = log_path.clone();
+    
     let mut watcher: RecommendedWatcher = notify::recommended_watcher(move |result: Result<Event, notify::Error>| {
         match result {
             Ok(event) => {
@@ -268,13 +362,11 @@ pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String
                     // Small delay to ensure file is fully written
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     
-                    if let Err(e) = read_new_lines(&log_path_clone, app_handle_clone) {
-                        eprintln!("Error reading chat log: {}", e);
-                    }
+                    let _ = read_new_lines(&log_path_clone, app_handle_clone);
                 }
             }
-            Err(e) => {
-                eprintln!("Watcher error: {}", e);
+            Err(_e) => {
+                // Silently ignore watcher errors
             }
         }
     }).map_err(|e| format!("Failed to create file watcher: {}", e))?;

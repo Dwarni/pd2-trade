@@ -55,8 +55,12 @@ export function buildTradeUrl(
     }
 
     if (stat.stat_id === StatId.Socket) {
-      searchParams.set("sockets_min", String(f.min ?? 0));
-      searchParams.set("sockets_max", String(f.max ?? 0));
+      if (f.min !== undefined && f.min !== '') {
+        searchParams.set("sockets_min", String(f.min));
+      }
+      if (f.max !== undefined && f.max !== '') {
+        searchParams.set("sockets_max", String(f.max));
+      }
       return;
     }
 
@@ -177,8 +181,12 @@ export function buildGetMarketListingQuery(
 
     // Sockets, Corrupted, Ethereal handled as top-level query fields
     if (stat.stat_id === StatId.Socket) {
-      if (f.min !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $gte: Number(f.min) };
-      if (f.max !== undefined) query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $lte: Number(f.max) };
+      if (f.min !== undefined && f.min !== '') {
+        query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $gte: Number(f.min) };
+      }
+      if (f.max !== undefined && f.max !== '') {
+        query['item.socket_count'] = { ...(query['item.socket_count'] || {}), $lte: Number(f.max) };
+      }
       return;
     }
     if (stat.stat_id === StatId.Corrupted) {
@@ -202,10 +210,10 @@ export function buildGetMarketListingQuery(
       if (skillEntry) {
         // Single skill
         const mod: any = { name: 'item_singleskill', 'values.0': skillEntry.id };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
@@ -214,10 +222,10 @@ export function buildGetMarketListingQuery(
       if (classEntry) {
         // Class skill
         const mod: any = { name: 'item_addclassskills', 'values.0': classEntry.id };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
@@ -226,10 +234,10 @@ export function buildGetMarketListingQuery(
       if (subClassEntry) {
         // Subclass skill
         const mod: any = { name: 'item_addskill_tab', 'values.0': getSkillTabIndex(subClassEntry.id) };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.1'] = {};
-          if (f.min !== undefined) mod['values.1'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.1'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.1'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.1'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
         return;
@@ -241,10 +249,10 @@ export function buildGetMarketListingQuery(
       const prop = statIdToProperty[stat.stat_id];
       if (prop) {
         const mod: any = { name: prop };
-        if (f.min !== undefined || f.max !== undefined) {
+        if ((f.min !== undefined && f.min !== '') || (f.max !== undefined && f.max !== '')) {
           mod['values.0'] = {};
-          if (f.min !== undefined) mod['values.0'].$gte = Number(f.min);
-          if (f.max !== undefined) mod['values.0'].$lte = Number(f.max);
+          if (f.min !== undefined && f.min !== '') mod['values.0'].$gte = Number(f.min);
+          if (f.max !== undefined && f.max !== '') mod['values.0'].$lte = Number(f.max);
         }
         modifiers.push({ $elemMatch: mod });
       }
