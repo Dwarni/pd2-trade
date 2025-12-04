@@ -110,6 +110,7 @@ pub fn run() {
                 .shadow(false)
                 .always_on_top(true)
                 .skip_taskbar(true)
+                .focusable(false)
                 .build()
                 .unwrap();
             

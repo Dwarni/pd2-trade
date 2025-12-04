@@ -81,7 +81,8 @@ const LandingPage: React.FC = () => {
         skipTaskbar: true,
         alwaysOnTop: true,
         shadow: false,
-        focus: true,
+        focus: false,
+        focusable: false,
       });
       attachWindowCloseHandler(winRef.current, () => {
         winRef.current = null;
@@ -139,9 +140,10 @@ const LandingPage: React.FC = () => {
       quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
         decorations: false,
         transparent: true,
-        focus: true,
+        focus: false,
         shadow: false,
         skipTaskbar: true,
+        focusable: false,
         width: 600,
         height: 512,
         resizable: true,

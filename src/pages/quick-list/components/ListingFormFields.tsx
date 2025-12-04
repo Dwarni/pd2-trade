@@ -14,6 +14,7 @@ interface ListingFormFieldsProps {
   currentListings: MarketListingEntry[];
   submitLoading: boolean;
   onSubmit: (values: ShortcutFormData) => Promise<void>;
+  allowQueue?: boolean; // Allow submission when no item selected (for queuing)
 }
 
 const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
@@ -21,7 +22,8 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   selectedItem,
   currentListings,
   submitLoading,
-  onSubmit
+  onSubmit,
+  allowQueue = false
 }) => {
   const isAlreadyListed = selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash);
   
@@ -73,9 +75,9 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           Update
         </Button>
       ) : (
-        <Button type="submit" disabled={!selectedItem || submitLoading || !isFormValid} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+        <Button type="submit" disabled={(!selectedItem && !allowQueue) || submitLoading || !isFormValid} style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
           {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
-          Post
+          {allowQueue && !selectedItem ? 'Queue Item' : 'Post'}
         </Button>
       )}
     </div>
