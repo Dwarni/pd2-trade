@@ -167,15 +167,20 @@ const LandingPage: React.FC = () => {
   useChangelog();
 
   // Handle whisper notifications
-  useWhisperNotifications(settings.whisperNotificationsEnabled ?? true);
+  // Always enable the hook - it handles the logic internally based on settings
+  useWhisperNotifications(true);
 
-  // Start/stop chat watcher based on settings
+  // Start/stop chat watcher based on settings (start if either general or trade notifications are enabled)
   useEffect(() => {
     if (!isTauri()) return;
 
+    const generalEnabled = settings.whisperNotificationsEnabled ?? true;
+    const tradeEnabled = settings.tradeNotificationsEnabled ?? true;
+    const shouldWatch = generalEnabled || tradeEnabled;
+
     const manageWatcher = async () => {
       try {
-        if (settings.whisperNotificationsEnabled ?? true) {
+        if (shouldWatch) {
           await invoke('start_chat_watcher', { custom_d2_dir: settings.diablo2Directory });
         } else {
           await invoke('stop_chat_watcher');
@@ -192,7 +197,7 @@ const LandingPage: React.FC = () => {
         invoke('stop_chat_watcher').catch(console.error);
       }
     };
-  }, [settings.whisperNotificationsEnabled, settings.diablo2Directory]);
+  }, [settings.whisperNotificationsEnabled, settings.tradeNotificationsEnabled, settings.diablo2Directory]);
 
   return (
     <ItemsProvider>

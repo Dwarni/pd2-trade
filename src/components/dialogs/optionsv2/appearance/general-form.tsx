@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useOptions } from '@/hooks/useOptions';
 import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
 import {Input} from "@/components/ui/input";
+import { Switch } from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
@@ -25,6 +26,7 @@ import {
 import { emit } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@tauri-apps/api/core';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const appearanceFormSchema = z.object({
   mode: z.enum(['softcore', 'hardcore'], {
@@ -94,8 +96,9 @@ export function GeneralForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-y-4">
+      <ScrollArea className="pr-2">
+        <form onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-y-4 max-h-[330px]">
         <FormField
           control={form.control}
           name="ladder"
@@ -227,14 +230,16 @@ export function GeneralForm() {
             </FormItem>
           )}
         />
-        <Button type="submit"
-          className={'self-start cursor-pointer mt-2'}
-          disabled={saving}
-        >
-          {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-          {saving ? 'Saving...' : 'Update preferences'}
-        </Button>
-      </form>
+        </form>
+      </ScrollArea>
+      <Button type="submit"
+        className={'self-start cursor-pointer mt-2'}
+        disabled={saving}
+        onClick={form.handleSubmit(onSubmit)}
+      >
+        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
+        {saving ? 'Saving...' : 'Update preferences'}
+      </Button>
     </Form>
   );
 }

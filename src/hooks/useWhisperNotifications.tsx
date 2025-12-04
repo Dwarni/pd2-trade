@@ -16,10 +16,10 @@ interface WhisperEvent {
 }
 
 // Play the notification sound from assets
-function playNotificationSound() {
+function playNotificationSound(volume: number = 70) {
   try {
     const audio = new Audio(poeWhisperSound);
-    audio.volume = 0.7; // Set volume to 70%
+    audio.volume = volume / 100; // Convert 0-100 to 0-1
     audio.play().catch((error) => {
       console.error('Failed to play notification sound:', error);
     });
@@ -50,7 +50,8 @@ export const useWhisperNotifications = (enabled: boolean) => {
             const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
             if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
               // Play notification sound
-              playNotificationSound();
+              const volume = settings?.whisperNotificationVolume ?? 70;
+              playNotificationSound(volume);
               
               const toastPayload: GenericToastPayload = {
                 title: 'Player Joined',
@@ -86,22 +87,51 @@ export const useWhisperNotifications = (enabled: boolean) => {
           // Check if Diablo is focused
           const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
           
-          // For trade whispers, always play sound but only show toast if Diablo is not focused
-          // For normal whispers, only notify if Diablo is not focused
-          if (whisper.isTrade || !isDiabloFocused) {
-            // Play notification sound
-            playNotificationSound();
-
-            // For trade whispers, show toast with item name only if Diablo is not focused
-            if (whisper.isTrade && whisper.itemName && !isDiabloFocused) {
-              const toastPayload: GenericToastPayload = {
-                title: 'Trade Whisper',
-                description: `${whisper.from}: ${whisper.itemName}`,
-                duration: 5000,
-                variant: 'success',
-              };
-              emit('toast-event', toastPayload);
+          // Determine if we should notify based on timing setting
+          const timing = settings?.whisperNotificationTiming || 'both';
+          
+          // If timing is 'never', don't notify at all
+          if (timing === 'never') {
+            return;
+          }
+          
+          const shouldNotifyByTiming = 
+            timing === 'both' ||
+            (timing === 'in-game' && isDiabloFocused) ||
+            (timing === 'out-of-game' && !isDiabloFocused);
+          
+          if (!shouldNotifyByTiming) {
+            return; // Don't notify based on timing setting
+          }
+          
+          // Handle trade whispers
+          if (whisper.isTrade) {
+            const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
+            if (tradeEnabled) {
+              // Play notification sound
+              const volume = settings?.whisperNotificationVolume ?? 70;
+              playNotificationSound(volume);
+              
+              // Show toast with item name only if Diablo is not focused
+              if (whisper.itemName && !isDiabloFocused) {
+                const toastPayload: GenericToastPayload = {
+                  title: 'Trade Whisper',
+                  description: `${whisper.from}: ${whisper.itemName}`,
+                  duration: 5000,
+                  variant: 'success',
+                };
+                emit('toast-event', toastPayload);
+              }
             }
+            return; // Trade whispers handled
+          }
+          
+          // Handle general whispers (non-trade)
+          const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
+          if (generalEnabled) {
+            // Play notification sound
+            const volume = settings?.whisperNotificationVolume ?? 70;
+            playNotificationSound(volume);
           }
         });
 
@@ -119,6 +149,6 @@ export const useWhisperNotifications = (enabled: boolean) => {
         unlistenRef.current = null;
       }
     };
-  }, [enabled, settings?.whisperIgnoreList, settings?.whisperAnnouncementsEnabled, settings?.whisperJoinNotificationsEnabled]);
+  }, [enabled, settings?.whisperIgnoreList, settings?.whisperAnnouncementsEnabled, settings?.whisperJoinNotificationsEnabled, settings?.whisperNotificationsEnabled, settings?.tradeNotificationsEnabled, settings?.whisperNotificationTiming, settings?.whisperNotificationVolume]);
 };
 

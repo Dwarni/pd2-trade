@@ -10,12 +10,24 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { emit } from '@tauri-apps/api/event';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
 
 const chatFormSchema = z.object({
   whisperNotificationsEnabled: z.boolean().optional(),
+  tradeNotificationsEnabled: z.boolean().optional(),
   whisperIgnoreList: z.array(z.string()).optional(),
   whisperAnnouncementsEnabled: z.boolean().optional(),
   whisperJoinNotificationsEnabled: z.boolean().optional(),
+  whisperNotificationTiming: z.enum(['in-game', 'out-of-game', 'both', 'never']).optional(),
+  whisperNotificationVolume: z.number().int().min(0).max(100).optional(),
 });
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
@@ -29,9 +41,12 @@ export function ChatForm() {
     resolver: zodResolver(chatFormSchema),
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
+      tradeNotificationsEnabled: settings?.tradeNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
+      whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
+      whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
     },
   });
 
@@ -40,14 +55,19 @@ export function ChatForm() {
     if (settings) {
       form.reset({
         whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
+        tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
         whisperIgnoreList: settings.whisperIgnoreList || [],
         whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
         whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
+        whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
+        whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
       });
     }
   }, [settings, form]);
 
   const ignoreList = form.watch('whisperIgnoreList') || [];
+  const notificationTiming = form.watch('whisperNotificationTiming') || 'both';
+  const isDisabled = notificationTiming === 'never';
 
   const addToIgnoreList = () => {
     const playerName = newIgnorePlayer.trim().toLowerCase();
@@ -77,24 +97,80 @@ export function ChatForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-y-4">
+      <ScrollArea className="pr-2">
+        <form onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-y-4 max-h-[330px]">
+        <FormField
+          control={form.control}
+          name="whisperNotificationTiming"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center gap-2">
+              <FormLabel>Notify when:</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value || 'both'}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select when to notify" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="in-game">Only when in game</SelectItem>
+                  <SelectItem value="out-of-game">Only when out of game</SelectItem>
+                  <SelectItem value="both">Always</SelectItem>
+                  <SelectItem value="never">Never</SelectItem>
+                </SelectContent>
+              </Select>
+              </div>
+    
+              <FormDescription>
+                Control when whisper notifications are played based on Diablo focus state.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="whisperNotificationsEnabled"
           render={({ field }) => (
             <FormItem>
               <div className="flex flex-row items-center gap-2">
-                <FormLabel>Whisper Notifications</FormLabel>
+                <FormLabel>General Notifications</FormLabel>
                 <FormControl>
                   <Switch
                     checked={field.value ?? true}
                     onCheckedChange={field.onChange}
+                    disabled={isDisabled}
                   />
                 </FormControl>
               </div>
               <FormDescription>
-                Play a notification sound when you receive whispers in-game.
+                Play a notification sound when you receive non-trade whispers from players.
+              </FormDescription>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="tradeNotificationsEnabled"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex flex-row items-center gap-2">
+                <FormLabel>Trade Notifications</FormLabel>
+                <FormControl>
+                  <Switch
+                  
+                    checked={field.value ?? true}
+                    onCheckedChange={field.onChange}
+                    disabled={isDisabled}
+                  />
+                </FormControl>
+              </div>
+              <FormDescription>
+                Play a notification sound when you receive trade whispers.
               </FormDescription>
             </FormItem>
           )}
@@ -110,6 +186,7 @@ export function ChatForm() {
                   <Switch
                     checked={field.value ?? false}
                     onCheckedChange={field.onChange}
+                    disabled={isDisabled}
                   />
                 </FormControl>
               </div>
@@ -130,6 +207,7 @@ export function ChatForm() {
                   <Switch
                     checked={field.value ?? false}
                     onCheckedChange={field.onChange}
+                    disabled={isDisabled}
                   />
                 </FormControl>
               </div>
@@ -158,12 +236,13 @@ export function ChatForm() {
                           addToIgnoreList();
                         }
                       }}
+                      disabled={isDisabled}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       onClick={addToIgnoreList}
-                      disabled={!newIgnorePlayer.trim()}
+                      disabled={!newIgnorePlayer.trim() || isDisabled}
                     >
                       Add
                     </Button>
@@ -181,6 +260,7 @@ export function ChatForm() {
                             type="button"
                             onClick={() => removeFromIgnoreList(playerName)}
                             className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                            disabled={isDisabled}
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -197,14 +277,40 @@ export function ChatForm() {
             </FormItem>
           )}
         />
-        <Button type="submit"
-          className={'self-start cursor-pointer mt-2'}
-          disabled={saving}
-        >
-          {saving ? <Loader2 className="animate-spin mr-2" /> : null}
-          {saving ? 'Saving...' : 'Update chat preferences'}
-        </Button>
-      </form>
+        <FormField
+          control={form.control}
+          name="whisperNotificationVolume"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notification Volume: {field.value ?? 70}%</FormLabel>
+              <FormControl>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={[field.value ?? 70]}
+                  onValueChange={(value) => field.onChange(value[0])}
+                  disabled={isDisabled}
+                  className="w-1/2"
+                />
+              </FormControl>
+              <FormDescription>
+                Adjust the volume for whisper notification sounds (0-100%).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        </form>
+      </ScrollArea>
+      <Button type="submit"
+        className={'self-start cursor-pointer mt-2'}
+        disabled={saving}
+        onClick={form.handleSubmit(onSubmit)}
+      >
+        {saving ? <Loader2 className="animate-spin mr-2" /> : null}
+        {saving ? 'Saving...' : 'Update chat preferences'}
+      </Button>
     </Form>
   );
 }
