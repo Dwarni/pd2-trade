@@ -5,7 +5,11 @@ use std::fs;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use tauri::Emitter;
 use notify::{Watcher, RecommendedWatcher, RecursiveMode, Event, EventKind};
+
+#[cfg(target_os = "windows")]
 use winreg::enums::*;
+
+#[cfg(target_os = "windows")]
 use winreg::RegKey;
 
 #[derive(Serialize, Clone)]
@@ -35,6 +39,7 @@ pub fn find_diablo2_directory(custom_path: Option<&str>) -> Option<PathBuf> {
     }
 
     // Try registry first
+    #[cfg(target_os = "windows")]
     if let Some(path) = find_diablo2_in_registry() {
         if path.exists() {
             return Some(path);
@@ -42,6 +47,8 @@ pub fn find_diablo2_directory(custom_path: Option<&str>) -> Option<PathBuf> {
     }
 
     // Try common installation paths
+    // Try common installation paths
+    #[cfg(target_os = "windows")]
     let common_paths = vec![
         PathBuf::from(r"C:\Diablo II"),
         PathBuf::from(r"D:\Diablo II"),
@@ -51,6 +58,17 @@ pub fn find_diablo2_directory(custom_path: Option<&str>) -> Option<PathBuf> {
         PathBuf::from(r"D:\Program Files\Diablo II"),
         PathBuf::from(r"D:\Program Files (x86)\Diablo II"),
     ];
+
+    #[cfg(not(target_os = "windows"))]
+    let common_paths = {
+        let home = std::env::var("HOME").unwrap_or_default();
+        let home_path = PathBuf::from(home);
+        vec![
+            home_path.join("Games/Diablo II"),
+            home_path.join("Games/project-diablo-2"),
+            home_path.join(".wine/drive_c/Program Files (x86)/Diablo II"),
+        ]
+    };
 
     for path in common_paths {
         if path.exists() {
@@ -66,6 +84,7 @@ pub fn auto_detect_diablo2_directory() -> Option<PathBuf> {
     find_diablo2_directory(None)
 }
 
+#[cfg(target_os = "windows")]
 fn find_diablo2_in_registry() -> Option<PathBuf> {
     // Try HKEY_LOCAL_MACHINE\SOFTWARE\Blizzard Entertainment\Diablo II
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
@@ -88,9 +107,10 @@ fn find_diablo2_in_registry() -> Option<PathBuf> {
 
 /// Get the chat log file path, creating directories if needed
 pub fn get_chat_log_path(custom_d2_dir: Option<&str>) -> Option<PathBuf> {
+    //println!("custom_d2_dir: {:?}", custom_d2_dir);
     let d2_dir = find_diablo2_directory(custom_d2_dir)?;
     let logs_dir = d2_dir.join("ProjectD2").join("pd2logs");
-    
+    //println!("logs_dir: {}", logs_dir.display());
     // Create directories if they don't exist
     if let Err(_e) = fs::create_dir_all(&logs_dir) {
         return None;
@@ -337,7 +357,15 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
 
 /// Start watching the chat log file
 pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
-    let log_path = get_chat_log_path(custom_d2_dir.as_deref()).ok_or("Could not find or create chat log file")?;
+
+    let log_path = match get_chat_log_path(custom_d2_dir.as_deref()) {
+        Some(path) => path,
+        None => {
+            let msg = "Could not find or create chat log file. Please check your Diablo II Directory settings.";
+            let _ = app_handle.emit("error", msg);
+            return Err(msg.to_string());
+        }
+    };
     
     // Also create the game log file
     let _ = get_game_log_path(custom_d2_dir.as_deref());

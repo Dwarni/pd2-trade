@@ -41,7 +41,7 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             let (x, y, width, height) = {
                 // Get appropriate bounds based on Diablo focus state
-                if let Some(rect) = window::get_appropriate_window_bounds() {
+                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
                     (
                         rect.x as f64,
                         rect.y as f64,
@@ -74,15 +74,29 @@ pub fn run() {
 
             #[cfg(not(target_os = "windows"))]
             let (x, y, width, height) = {
-                let monitor = app.primary_monitor().unwrap().unwrap();
-                let size = monitor.size();
-                let position = monitor.position();
-                (
-                    position.x as f64,
-                    position.y as f64,
-                    size.width as f64,
-                    size.height as f64,
-                )
+                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
+                    (
+                        rect.x as f64,
+                        rect.y as f64,
+                        rect.width as f64,
+                        rect.height as f64,
+                    )
+                } else {
+                    let monitor = app.primary_monitor().unwrap();
+                    if let Some(monitor) = monitor {
+                        let size = monitor.size();
+                        let position = monitor.position();
+                        (
+                            position.x as f64,
+                            position.y as f64,
+                            size.width as f64,
+                            size.height as f64,
+                        )
+                    } else {
+                        println!("Warning: No primary monitor detected. using default bounds.");
+                        (0.0, 0.0, 1920.0, 1080.0)
+                    }
+                }
             };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -92,7 +106,7 @@ pub fn run() {
                 .decorations(false)
                 .transparent(true)
                 .visible(true)
-                .focus()
+                .focused(true)
                 .shadow(false)
                 .always_on_top(true)
                 .skip_taskbar(true);
@@ -101,7 +115,7 @@ pub fn run() {
             let _ = main_window.set_ignore_cursor_events(true);
             
             // Create toast window
-            let toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
+            let _toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
                 .title("PD2 Trader - Toast")
                 .inner_size(400.0, 200.0)
                 .decorations(false)

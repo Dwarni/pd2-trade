@@ -3,13 +3,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, TriangleAlert } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useOptions } from '@/hooks/useOptions';
-import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
-import {Input} from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Input } from "@/components/ui/input";
 import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Tabs,
   TabsContent,
@@ -99,137 +100,148 @@ export function GeneralForm() {
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-y-4 max-h-[330px]">
-        <FormField
-          control={form.control}
-          name="ladder"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ladder</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Ladder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ladder">Ladder</SelectItem>
-                    <SelectItem value="non-ladder">Non-Ladder</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+
+          {navigator.userAgent.includes("Linux") && (
+            <Alert variant="destructive">
+              <TriangleAlert className="h-4 w-4" />
+              <AlertTitle>Linux Compatibility Warning</AlertTitle>
+              <AlertDescription>
+                Global hotkeys (like Ctrl+C) are always active on Linux. Please be careful when using other applications while PD2 Trader is running.
+              </AlertDescription>
+            </Alert>
           )}
-        />
-        <FormField
-          control={form.control}
-          name="mode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mode</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="softcore">Softcore</SelectItem>
-                    <SelectItem value="hardcore">Hardcore</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="fillStatValue"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Fill Stat Value (%)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="5"
-                  className="w-[200px]"
-                  value={field.value ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    field.onChange(value === '' ? undefined : parseInt(value, 10));
-                  }}
-                  onBlur={field.onBlur}
-                  name={field.name}
-                  ref={field.ref}
-                />
-              </FormControl>
-              <FormDescription>
-                Percentage used to automatically populate stat value ranges when selecting stats with ranges.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="diablo2Directory"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Diablo II Directory</FormLabel>
-              <FormControl>
-                <div className="flex gap-2">
+
+          <FormField
+            control={form.control}
+            name="ladder"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ladder</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Ladder" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ladder">Ladder</SelectItem>
+                      <SelectItem value="non-ladder">Non-Ladder</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="mode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mode</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="softcore">Softcore</SelectItem>
+                      <SelectItem value="hardcore">Hardcore</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="fillStatValue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fill Stat Value (%)</FormLabel>
+                <FormControl>
                   <Input
-                    placeholder="C:\Diablo II"
-                    className="flex-1"
-                    value={field.value || ''}
-                    onChange={(e) => field.onChange(e.target.value)}
+                    type="number"
+                    placeholder="5"
+                    className="w-[200px]"
+                    value={field.value ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      field.onChange(value === '' ? undefined : parseInt(value, 10));
+                    }}
                     onBlur={field.onBlur}
                     name={field.name}
                     ref={field.ref}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={async () => {
-                      if (isTauri()) {
-                        try {
-                          const detected = await invoke<string | null>('auto_detect_diablo2_directory');
-                          if (detected) {
-                            field.onChange(detected);
-                            setDetectedDirectory(detected);
-                          } else {
-                            emit('toast-event', {
-                              title: 'Detection Failed',
-                              description: 'Could not auto-detect Diablo II directory. Please enter it manually.',
-                              variant: 'warning',
-                            });
+                </FormControl>
+                <FormDescription>
+                  Percentage used to automatically populate stat value ranges when selecting stats with ranges.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="diablo2Directory"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Diablo II Directory</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="C:\Diablo II"
+                      className="flex-1"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        if (isTauri()) {
+                          try {
+                            const detected = await invoke<string | null>('auto_detect_diablo2_directory');
+                            if (detected) {
+                              field.onChange(detected);
+                              setDetectedDirectory(detected);
+                            } else {
+                              emit('toast-event', {
+                                title: 'Detection Failed',
+                                description: 'Could not auto-detect Diablo II directory. Please enter it manually.',
+                                variant: 'warning',
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Failed to detect directory:', error);
                           }
-                        } catch (error) {
-                          console.error('Failed to detect directory:', error);
                         }
-                      }
-                    }}
-                  >
-                    Auto-Detect
-                  </Button>
-                </div>
-              </FormControl>
-              <FormDescription>
-                {detectedDirectory && !field.value
-                  ? `Detected: ${detectedDirectory}`
-                  : 'Path to your Diablo II installation directory. Leave empty to auto-detect.'}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                      }}
+                    >
+                      Auto-Detect
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  {detectedDirectory && !field.value
+                    ? `Detected: ${detectedDirectory}`
+                    : 'Path to your Diablo II installation directory. Leave empty to auto-detect.'}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </form>
       </ScrollArea>
       <Button type="submit"
