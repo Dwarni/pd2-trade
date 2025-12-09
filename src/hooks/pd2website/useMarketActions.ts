@@ -26,6 +26,7 @@ interface UseMarketActionsProps {
   findItemsByName: (stashItems: GameStashItem[], item: PriceCheckItem) => GameStashItem[];
   stashCache: React.MutableRefObject<{ data: GameData; timestamp: number } | null>;
   CACHE_TTL: number;
+  onAuthError?: () => void | Promise<void>;
 }
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
@@ -52,7 +53,8 @@ export function useMarketActions({
   fetchAndCacheStash, 
   findItemsByName, 
   stashCache, 
-  CACHE_TTL
+  CACHE_TTL,
+  onAuthError
 }: UseMarketActionsProps): UseMarketActionsReturn {
   // Find matching items
   const findMatchingItems = useCallback(async (item: PriceCheckItem): Promise<GameStashItem[]> => {
@@ -111,8 +113,8 @@ export function useMarketActions({
       },
       body: JSON.stringify(body)
     });
-    return await handleApiResponse(response);
-  }, [settings, authData]);
+    return await handleApiResponse(response, onAuthError);
+  }, [settings, authData, onAuthError]);
 
   // Get market listings (GET /market/listing)
   const getMarketListings = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
@@ -123,8 +125,8 @@ export function useMarketActions({
         'Authorization': `Bearer ${settings.pd2Token}`,
       }
     });
-    return await handleApiResponse(response);
-  }, [settings]);
+    return await handleApiResponse(response, onAuthError);
+  }, [settings, onAuthError]);
 
   // Get archived market listings (GET /market/listingArchive)
   const getMarketListingsArchive = useCallback(async (query: MarketListingQuery): Promise<MarketListingResult> => {
@@ -135,8 +137,8 @@ export function useMarketActions({
         'Authorization': `Bearer ${settings.pd2Token}`,
       }
     });
-    return await handleApiResponse(response);
-  }, [settings]);
+    return await handleApiResponse(response, onAuthError);
+  }, [settings, onAuthError]);
 
   // Generic update market listing (PATCH /market/listing/:listingId)
   const updateMarketListing = useCallback(async (listingId: string, update: Record<string, any>): Promise<MarketListingEntry> => {
@@ -148,8 +150,8 @@ export function useMarketActions({
       },
       body: JSON.stringify(update)
     });
-    return await handleApiResponse(response);
-  }, [settings]);
+    return await handleApiResponse(response, onAuthError);
+  }, [settings, onAuthError]);
 
   // Delete market listing (DELETE /market/listing/:listingId)
   const deleteMarketListing = useCallback(async (listingId: string): Promise<void> => {
@@ -159,8 +161,8 @@ export function useMarketActions({
         'Authorization': `Bearer ${settings.pd2Token}`,
       }
     });
-    await handleApiResponse(response);
-  }, [settings]);
+    await handleApiResponse(response, onAuthError);
+  }, [settings, onAuthError]);
 
   return { findMatchingItems, listSpecificItem, getMarketListings, getMarketListingsArchive, updateMarketListing, deleteMarketListing, getCurrencyTab };
 } 
