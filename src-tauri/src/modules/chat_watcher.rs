@@ -475,8 +475,15 @@ fn read_new_lines(file_path: &Path, app_handle: tauri::AppHandle) -> Result<(), 
 /// Start watching the chat log file
 pub fn start_watching(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
 
-    let log_path = get_chat_log_path(custom_d2_dir.as_deref()).ok_or("Could not find or create chat log file")?;
-
+    let log_path = match get_chat_log_path(custom_d2_dir.as_deref()) {
+        Some(path) => path,
+        None => {
+            let msg = "Could not find or create chat log file. Please check your Diablo II Directory settings.";
+            let _ = app_handle.emit("error", msg);
+            return Err(msg.to_string());
+        }
+    };
+    
     // Also create the game log file
     let _ = get_game_log_path(custom_d2_dir.as_deref());
     
