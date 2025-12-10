@@ -328,7 +328,7 @@ export const useTradeOffers = ({ settings, authData, onAuthError, isConnected = 
       try {
         unlisten = await listen('refresh-offers', async () => {
           // Refresh both incoming and outgoing offers when notified
-          fetchIncomingOffers();
+            fetchIncomingOffers();
           fetchOutgoingOffers();
         });
       } catch (error) {

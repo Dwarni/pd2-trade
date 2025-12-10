@@ -28,6 +28,9 @@ const chatFormSchema = z.object({
   whisperJoinNotificationsEnabled: z.boolean().optional(),
   whisperNotificationTiming: z.enum(['in-game', 'out-of-game', 'both', 'never']).optional(),
   whisperNotificationVolume: z.number().int().min(0).max(100).optional(),
+  acceptOfferMessageTemplate: z.string().optional(),
+  rejectOfferMessageTemplate: z.string().optional(),
+  soldOfferMessageTemplate: z.string().optional(),
 });
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
@@ -47,6 +50,9 @@ export function ChatForm() {
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
       whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
       whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
+      acceptOfferMessageTemplate: settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
+      rejectOfferMessageTemplate: settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.',
+      soldOfferMessageTemplate: settings?.soldOfferMessageTemplate || 'The item has been sold.',
     },
   });
 
@@ -61,6 +67,9 @@ export function ChatForm() {
         whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
         whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
         whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
+        acceptOfferMessageTemplate: settings.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
+        rejectOfferMessageTemplate: settings.rejectOfferMessageTemplate || 'Your offer has been rejected.',
+        soldOfferMessageTemplate: settings.soldOfferMessageTemplate || 'The item has been sold.',
       });
     }
   }, [settings, form]);
@@ -296,6 +305,66 @@ export function ChatForm() {
               </FormControl>
               <FormDescription>
                 Adjust the volume for whisper notification sounds (0-100%).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="acceptOfferMessageTemplate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Accept Offer Message Template</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="Your offer has been accepted. Game: {gameInfo}"
+                  className="font-mono text-sm"
+                />
+              </FormControl>
+              <FormDescription>
+                Customize the message copied when accepting an offer. Available placeholders: {'{gameInfo}'}, {'{accountName}'}, {'{characterName}'}, {'{itemName}'}, {'{price}'}.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="rejectOfferMessageTemplate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reject Offer Message Template</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="Your offer has been rejected."
+                  className="font-mono text-sm"
+                />
+              </FormControl>
+              <FormDescription>
+                Customize the message copied when rejecting an offer. Available placeholders: {'{accountName}'}, {'{characterName}'}, {'{itemName}'}, {'{price}'}.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="soldOfferMessageTemplate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sold Item Message Template</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  placeholder="The item has been sold."
+                  className="font-mono text-sm"
+                />
+              </FormControl>
+              <FormDescription>
+                Customize the message copied when marking an item as sold. Available placeholders: {'{accountName}'}, {'{characterName}'}, {'{itemName}'}, {'{price}'}.
               </FormDescription>
               <FormMessage />
             </FormItem>

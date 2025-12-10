@@ -29,6 +29,7 @@ interface WhisperEvent {
   message: string;
   itemName?: string;
   isJoin: boolean;
+  isIncoming: boolean;
 }
 
 interface UseSocketNotificationsProps {
@@ -136,6 +137,11 @@ export const useSocketNotifications = ({
       try {
         const unlistenFn = await listenTauri<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
+          
+          // Skip outgoing messages (messages sent by the user)
+          if (!whisper.isIncoming) {
+            return;
+          }
           
           // Handle join messages separately
           if (whisper.isJoin) {

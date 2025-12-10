@@ -117,40 +117,40 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           </div>
         )}
 
-         {/* Settings Button Circle */}
-         {onSettingsClick && buttonPositions.find(p => p.component === 'settings') && (
-           <Button
-             onClick={onSettingsClick}
-             className={cn(
+        {/* Settings Button Circle */}
+        {onSettingsClick && buttonPositions.find(p => p.component === 'settings') && (
+          <Button
+            onClick={onSettingsClick}
+            className={cn(
                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
-               isHovered ? "h-12 w-12" : "h-10 w-10"
-             )}
-             size="icon"
-             aria-label="Settings"
-             style={getButtonStyle(45, 70, 'settings')}
-           >
-             <Settings className={cn(
-               "text-neutral-200 transition-all duration-300",
-               isHovered ? "h-5 w-5" : "h-4 w-4"
-             )} />
-           </Button>
-         )}
+              isHovered ? "h-12 w-12" : "h-10 w-10"
+            )}
+            size="icon"
+            aria-label="Settings"
+            style={getButtonStyle(45, 70, 'settings')}
+          >
+            <Settings className={cn(
+              "text-neutral-200 transition-all duration-300",
+              isHovered ? "h-5 w-5" : "h-4 w-4"
+            )} />
+          </Button>
+        )}
 
-         {/* Trade Messages Button Circle */}
-         {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
+        {/* Trade Messages Button Circle */}
+        {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style={getButtonStyle(135, 70, 'trade')}>
-             <Button
-               onClick={onTradeMessagesClick}
-               className={cn(
+          <Button
+            onClick={onTradeMessagesClick}
+            className={cn(
                  "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
-                 isHovered ? "h-12 w-12" : "h-10 w-10"
-               )}
-               size="icon"
-               aria-label="Trade Messages"
-             >
-               <ShoppingBag className={cn(
-                 "text-neutral-200 transition-all duration-300",
-                 isHovered ? "h-5 w-5" : "h-4 w-4"
+              isHovered ? "h-12 w-12" : "h-10 w-10"
+            )}
+            size="icon"
+            aria-label="Trade Messages"
+          >
+            <ShoppingBag className={cn(
+              "text-neutral-200 transition-all duration-300",
+              isHovered ? "h-5 w-5" : "h-4 w-4"
                )} />
              </Button>
              {tradeOffersCount > 0 && isHovered && (
@@ -178,11 +178,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
              <X className={cn(
                "text-white transition-all duration-300",
                isHovered ? "h-2.5 w-2.5" : "h-2 w-2"
-             )} />
-           </Button>
-         )}
+            )} />
+          </Button>
+        )}
 
-         {/* Chat Button Circle - Main */}
+        {/* Chat Button Circle - Main */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <Button
             onClick={handleClick}

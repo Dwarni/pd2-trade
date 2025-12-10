@@ -93,7 +93,7 @@ const ChatButtonPageContent: React.FC = () => {
         onSettingsClick={handleSettingsClick}
         onTradeMessagesClick={handleTradeMessagesClick}
         onDisableClick={handleDisableClick}
-        unreadCount={unreadCount}
+        unreadCount={unreadCount} 
         tradeOffersCount={tradeOffersCount}
       />
     </div>

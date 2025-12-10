@@ -44,8 +44,8 @@ export function CurrencyValuation() {
       return;
     }
     try {
-      const curr = await getCurrencyTab();
-      setCurrency(curr);
+    const curr = await getCurrencyTab();
+    setCurrency(curr);
     } catch (error) {
       console.error('Failed to fetch currency:', error);
     }
