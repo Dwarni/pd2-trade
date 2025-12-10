@@ -1,6 +1,7 @@
 export const changeLog = {
   "0.5.1": [
     "🔧 Fixed an issue where the rune price breakdown would not display the correct price.",
+    "🔧 Fixed an issue in the currency valuation page where HR values were rounded to 3 decimal places.",
   ],
   "0.5.0": [
     "🆕 Added chat system - communicate with other players through the PD2 overlay interface with real-time messaging",
