@@ -2,13 +2,18 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useOptions } from '../useOptions';
 import { useStashCache } from './useStashCache';
 import { useMarketActions } from './useMarketActions';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { useSocialActions } from './useSocialActions';
+import { useTradeOffers } from '../useTradeOffers';
+import { useSocket } from './useSocket';
+import { fetch as tauriFetch } from '@/lib/browser-http';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import * as Sentry from '@sentry/react';
 import { Currency, GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingResult, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { ConversationListResponse, MessageListResponse, Message } from '@/common/types/pd2-website/ChatTypes';
+import { TradeMessageData } from '@/components/trade/TradeMessage';
 import { emit } from '@tauri-apps/api/event';
 import { isTauri } from '@tauri-apps/api/core';
 import { invoke } from '@tauri-apps/api/core';
@@ -22,7 +27,6 @@ export class AuthenticationError extends Error {
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
 }
-
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
@@ -34,6 +38,20 @@ interface Pd2WebsiteContextType {
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
   getCurrencyTab: () => Promise<Currency>;
+  deleteConversation: (conversationId: string) => Promise<void>;
+  getConversations: (participantId: string) => Promise<ConversationListResponse>;
+  getMessages: (conversationId: string) => Promise<MessageListResponse>;
+  sendMessage: (conversationId: string, content: string, senderId: string) => Promise<Message>;
+  markMessagesAsRead: (messageIds: string[], readerId: string) => Promise<void>;
+  createConversation: (participantIds: string[]) => Promise<any>;
+  incomingOffers: TradeMessageData[];
+  outgoingOffers: TradeMessageData[];
+  loading: boolean;
+  refresh: () => void;
+  revokeOffer: (offerId: string) => Promise<void>;
+  acceptOffer: (listingId: string, offerId: string) => Promise<void>;
+  rejectOffer: (offerId: string) => Promise<void>;
+  unacceptOffer: (listingId: string) => Promise<void>;
 }
 
 export const Pd2WebsiteContext = React.createContext<Pd2WebsiteContextType | undefined>(undefined);
@@ -71,7 +89,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
     try {
       // Clear auth data
       setAuthData(null);
-      
+
       // Clear stash cache using ref
       if (clearStashCacheRef.current) {
         clearStashCacheRef.current();
@@ -120,6 +138,24 @@ export const Pd2WebsiteProvider = ({ children }) => {
     onAuthError: handleAuthenticationError,
   });
 
+  // Social actions (RESTful)
+  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } = useSocialActions({
+    settings,
+    authData,
+    onAuthError: handleAuthenticationError,
+  });
+
+  // Socket connection
+  const { isConnected } = useSocket({ settings });
+
+  // Trade offers
+  const { incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } = useTradeOffers({
+    settings,
+    authData,
+    onAuthError: handleAuthenticationError,
+    isConnected,
+  });
+
   const authenticate = useCallback(async (): Promise<AuthData> => {
     const response = await tauriFetch('https://api.projectdiablo2.com/security/session', {
       method: 'POST',
@@ -165,7 +201,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab }}>
+    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab, deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation, incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer }}>
       {children}
     </Pd2WebsiteContext.Provider>
   );
@@ -184,7 +220,7 @@ export async function handleApiResponse(
 ) {
   if (!response.ok) {
     const errorBody = await response.text();
-    
+
     // Check for 401 Unauthorized (authentication error)
     if (response.status === 401) {
       // Try to parse error body to confirm it's a JWT expiration
@@ -210,7 +246,7 @@ export async function handleApiResponse(
           response.status
         );
       }
-      
+
       // Fallback for other 401 errors
       if (onAuthError) {
         await onAuthError();
@@ -220,7 +256,7 @@ export async function handleApiResponse(
         response.status
       );
     }
-    
+
     // For other errors, throw a regular Error
     throw new Error(
       `API Error: ${response.status} ${response.statusText}\n${errorBody}`

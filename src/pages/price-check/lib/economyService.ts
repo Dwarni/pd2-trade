@@ -1,19 +1,212 @@
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { ECONOMY_API_MAP, FIXED_RUNE_PRICES, ALL_RUNE_HR_VALUES } from './constants';
 import { EconomyData, EconomyValue, ItemData, ItemValue, RuneCombination } from './types';
+import { fetchItemPrice, fetchMultipleItemPrices } from '../../currency/lib/price-api';
+import { STASH_TO_API_MAP, RUNE_NAME_TO_BASE_CODE } from '../../currency/lib/api-mapping';
+import { STASH_API_MAP } from '../../currency/lib/constants';
 
 export async function fetchEconomyData(): Promise<{
   Runes: Record<string, ItemData>;
   Currency: Record<string, ItemData>;
   Ubers: Record<string, ItemData>;
 }> {
-  // pd2.tools is inactive - return empty data structures
-  // Runes will be calculated using fixed prices only
-  return {
+  // Fetch from our own PD2 Price Crawler API
+  // Default to ladder, non-hardcore, last 24 hours
+  const config = {
+    isLadder: true,
+    isHardcore: false,
+    hours: 168,
+  };
+
+  const results: {
+    Runes: Record<string, ItemData>;
+    Currency: Record<string, ItemData>;
+    Ubers: Record<string, ItemData>;
+  } = {
     Runes: {},
     Currency: {},
     Ubers: {},
   };
+
+  try {
+    // Fetch ALL rune prices using batch API - get all runes that have base codes
+    const runeItems = RUNE_HIERARCHY
+      .map((runeName) => RUNE_NAME_TO_BASE_CODE[runeName])
+      .filter((baseCode): baseCode is string => !!baseCode)
+      .map(baseCode => ({ baseCode }));
+
+    const runePrices = await fetchMultipleItemPrices(runeItems, config);
+    
+    runePrices.forEach((price, baseCode) => {
+      const runeName = price.itemName;
+      if (runeName) {
+        results.Runes[runeName] = {
+          itemName: runeName,
+          proper: runeName,
+          dataByIngestionDate: [{
+            date: price.timeRange.end,
+            trueDate: price.timeRange.end,
+            numListings: price.sampleCount,
+            price: price.medianPrice,
+          }],
+        };
+      }
+    });
+
+    // Fetch currency item prices - use STASH_API_MAP to determine which items belong to Currency category
+    const currencyKeys = Object.keys(STASH_API_MAP.Currency);
+    const currencyItems = currencyKeys
+      .map(key => STASH_TO_API_MAP[key]?.baseCode)
+      .filter((baseCode): baseCode is string => !!baseCode)
+      .map(baseCode => ({ baseCode }));
+    
+    if (currencyItems.length > 0) {
+      console.log('Fetching currency prices for', currencyItems.length, 'items:', currencyItems.map(i => i.baseCode));
+      const requestedBaseCodes = new Set(currencyItems.map(i => i.baseCode));
+      
+      // Try batch first
+      const currencyPrices = await fetchMultipleItemPrices(currencyItems, config);
+      
+      // Check if we got any of the requested items
+      let hasRequestedItems = false;
+      currencyPrices.forEach((price, baseCode) => {
+        if (requestedBaseCodes.has(baseCode)) {
+          hasRequestedItems = true;
+        }
+      });
+      
+      // If batch didn't return requested items, fall back to individual requests
+      if (!hasRequestedItems && currencyPrices.size > 0) {
+        console.warn('Batch API returned wrong items, falling back to individual requests for currency items');
+        const individualResults = new Map<string, any>();
+        for (const item of currencyItems) {
+          const price = await fetchItemPrice(item.baseCode, config);
+          if (price) {
+            individualResults.set(item.baseCode, price);
+          }
+        }
+        // Use individual results instead
+        individualResults.forEach((price, baseCode) => {
+          const itemName = price.itemName;
+          if (itemName && price.medianPrice > 0) {
+            results.Currency[itemName] = {
+              itemName: itemName,
+              proper: itemName,
+              dataByIngestionDate: [{
+                date: price.timeRange.end,
+                trueDate: price.timeRange.end,
+                numListings: price.sampleCount,
+                price: price.medianPrice,
+              }],
+            };
+          }
+        });
+      } else {
+        // Use batch results
+        currencyPrices.forEach((price, baseCode) => {
+          // Only process items we actually requested
+          if (!requestedBaseCodes.has(baseCode)) {
+            return;
+          }
+          const itemName = price.itemName;
+          if (itemName && price.medianPrice > 0) {
+            results.Currency[itemName] = {
+              itemName: itemName,
+              proper: itemName,
+              dataByIngestionDate: [{
+                date: price.timeRange.end,
+                trueDate: price.timeRange.end,
+                numListings: price.sampleCount,
+                price: price.medianPrice,
+              }],
+            };
+          }
+        });
+      }
+    } else {
+      console.warn('No currency items to fetch');
+    }
+
+    // Fetch uber item prices - use STASH_API_MAP to determine which items belong to Ubers category
+    const uberKeys = Object.keys(STASH_API_MAP.Ubers);
+    const uberItems = uberKeys
+      .map(key => STASH_TO_API_MAP[key]?.baseCode)
+      .filter((baseCode): baseCode is string => !!baseCode)
+      .map(baseCode => ({ baseCode }));
+    
+    if (uberItems.length > 0) {
+      console.log('Fetching uber prices for', uberItems.length, 'items:', uberItems.map(i => i.baseCode));
+      const requestedBaseCodes = new Set(uberItems.map(i => i.baseCode));
+      
+      // Try batch first
+      const uberPrices = await fetchMultipleItemPrices(uberItems, config);
+      
+      // Check if we got any of the requested items
+      let hasRequestedItems = false;
+      uberPrices.forEach((price, baseCode) => {
+        if (requestedBaseCodes.has(baseCode)) {
+          hasRequestedItems = true;
+        }
+      });
+      
+      // If batch didn't return requested items, fall back to individual requests
+      if (!hasRequestedItems && uberPrices.size > 0) {
+        console.warn('Batch API returned wrong items, falling back to individual requests for uber items');
+        const individualResults = new Map<string, any>();
+        for (const item of uberItems) {
+          const price = await fetchItemPrice(item.baseCode, config);
+          if (price) {
+            individualResults.set(item.baseCode, price);
+          }
+        }
+        // Use individual results instead
+        individualResults.forEach((price, baseCode) => {
+          const itemName = price.itemName;
+          if (itemName && price.medianPrice > 0) {
+            results.Ubers[itemName] = {
+              itemName: itemName,
+              proper: itemName,
+              dataByIngestionDate: [{
+                date: price.timeRange.end,
+                trueDate: price.timeRange.end,
+                numListings: price.sampleCount,
+                price: price.medianPrice,
+              }],
+            };
+          }
+        });
+      } else {
+        // Use batch results
+        uberPrices.forEach((price, baseCode) => {
+          // Only process items we actually requested
+          if (!requestedBaseCodes.has(baseCode)) {
+            return;
+          }
+          const itemName = price.itemName;
+          if (itemName && price.medianPrice > 0) {
+            results.Ubers[itemName] = {
+              itemName: itemName,
+              proper: itemName,
+              dataByIngestionDate: [{
+                date: price.timeRange.end,
+                trueDate: price.timeRange.end,
+                numListings: price.sampleCount,
+                price: price.medianPrice,
+              }],
+            };
+          }
+        });
+      }
+    } else {
+      console.warn('No uber items to fetch');
+    }
+
+  } catch (error) {
+    console.error('Error fetching economy data from API:', error);
+    // Return empty data on error - will fall back to fixed prices
+  }
+
+  return results;
 }
 
 export function getLatestRuneData(runeData: Record<string, ItemData>, runeName: string) {
@@ -23,11 +216,11 @@ export function getLatestRuneData(runeData: Record<string, ItemData>, runeName: 
 }
 
 export function sortItemsByPrice(runeData: Record<string, ItemData>) {
-  // Use fixed prices only - sort by hierarchy and fixed prices
+  // Map rune names to their data from the API
   return Object.keys(ECONOMY_API_MAP.Runes)
     .map((runeName) => ({
       name: runeName,
-      data: null, // No API data available
+      data: runeData[runeName] || null, // Use API data if available
     }))
     .sort((a, b) => {
       const aIndex = RUNE_HIERARCHY.indexOf(a.name);
@@ -43,28 +236,98 @@ export function sortItemsByPrice(runeData: Record<string, ItemData>) {
     });
 }
 
+// Low runes that should always use fixed prices (they don't change much)
+const LOW_RUNES = [
+  'El Rune', 'Eld Rune', 'Tir Rune', 'Nef Rune', 'Eth Rune', 'Ith Rune',
+  'Tal Rune', 'Ral Rune', 'Ort Rune', 'Thul Rune', 'Amn Rune', 'Sol Rune',
+  'Shael Rune', 'Dol Rune', 'Hel Rune', 'Io Rune', 'Lum Rune', 'Ko Rune',
+  'Fal Rune', 'Lem Rune', 'Pul Rune', 'Um Rune', 'Mal Rune', 'Ist Rune',
+  'Gul Rune', 'Vex Rune'
+];
+
 export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any }>): ItemValue[] {
   const runeValues: ItemValue[] = [];
+  const MIN_LISTINGS_FOR_API_PRICE = 10; // Minimum listings to trust API price
 
-  // Add all fixed runes from FIXED_RUNE_PRICES
-  Object.entries(FIXED_RUNE_PRICES).forEach(([runeName, fixedPrice]) => {
-    runeValues.push({
-      name: runeName,
-      price: fixedPrice,
-      numListings: -1,
-      isCalculated: false,
-      isFixed: true,
-    });
+  // First, add runes from API data (prioritize API prices)
+  sortedRunes.forEach((rune) => {
+    const isLowRune = LOW_RUNES.includes(rune.name);
+    const latestData = rune.data?.dataByIngestionDate?.[0];
+    
+    // Low runes always use fixed prices
+    if (isLowRune) {
+      const fixedPrice = FIXED_RUNE_PRICES[rune.name] || ALL_RUNE_HR_VALUES[rune.name];
+      if (fixedPrice) {
+        runeValues.push({
+          name: rune.name,
+          price: fixedPrice,
+          numListings: latestData?.numListings || -1,
+          isCalculated: false,
+          isFixed: true,
+        });
+      }
+      return;
+    }
+    
+    // For high runes, use API data if available
+    if (latestData && latestData.price > 0) {
+      const numListings = latestData.numListings || 0;
+      
+      // Use API price if we have enough listings, otherwise fall back to fixed
+      if (numListings >= MIN_LISTINGS_FOR_API_PRICE) {
+        runeValues.push({
+          name: rune.name,
+          price: latestData.price,
+          numListings: numListings,
+          isCalculated: false,
+          isFixed: false,
+        });
+      } else {
+        // Not enough listings, use fixed price as fallback
+        const fixedPrice = FIXED_RUNE_PRICES[rune.name] || ALL_RUNE_HR_VALUES[rune.name];
+        if (fixedPrice) {
+          runeValues.push({
+            name: rune.name,
+            price: fixedPrice,
+            numListings: numListings,
+            isCalculated: false,
+            isFixed: true,
+          });
+        }
+      }
+    } else {
+      // No API data, use fixed price
+      const fixedPrice = FIXED_RUNE_PRICES[rune.name] || ALL_RUNE_HR_VALUES[rune.name];
+      if (fixedPrice) {
+        runeValues.push({
+          name: rune.name,
+          price: fixedPrice,
+          numListings: -1,
+          isCalculated: false,
+          isFixed: true,
+        });
+      }
+    }
   });
 
-  // Add all runes from ALL_RUNE_HR_VALUES that aren't in FIXED_RUNE_PRICES
-  sortedRunes.forEach((rune) => {
-    if (FIXED_RUNE_PRICES[rune.name]) return;
-
-    const hrValue = ALL_RUNE_HR_VALUES[rune.name];
-    if (hrValue) {
+  // Add any runes from FIXED_RUNE_PRICES that weren't in sortedRunes
+  Object.entries(FIXED_RUNE_PRICES).forEach(([runeName, fixedPrice]) => {
+    if (!runeValues.find(r => r.name === runeName)) {
       runeValues.push({
-        name: rune.name,
+        name: runeName,
+        price: fixedPrice,
+        numListings: -1,
+        isCalculated: false,
+        isFixed: true,
+      });
+    }
+  });
+
+  // Add any runes from ALL_RUNE_HR_VALUES that weren't already added
+  Object.entries(ALL_RUNE_HR_VALUES).forEach(([runeName, hrValue]) => {
+    if (!runeValues.find(r => r.name === runeName) && !FIXED_RUNE_PRICES[runeName]) {
+      runeValues.push({
+        name: runeName,
         price: hrValue,
         numListings: -1,
         isCalculated: false,
@@ -83,23 +346,96 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
     Ubers: [],
   };
 
-  // --- Handle Runes using fixed prices only ---
+  // --- Handle Runes ---
   const runeValues: ItemValue[] = [];
+  const MIN_LISTINGS_FOR_API_PRICE = 10; // Minimum listings to trust API price
 
-  // Add all fixed runes from FIXED_RUNE_PRICES
-  Object.entries(FIXED_RUNE_PRICES).forEach(([name, fixedPrice]) => {
-    runeValues.push({
-      name,
-      price: fixedPrice,
-      numListings: -1,
-      isCalculated: false,
-      isFixed: true,
-    });
+  // Low runes that should always use fixed prices (they don't change much)
+  const LOW_RUNES = [
+    'El Rune', 'Eld Rune', 'Tir Rune', 'Nef Rune', 'Eth Rune', 'Ith Rune',
+    'Tal Rune', 'Ral Rune', 'Ort Rune', 'Thul Rune', 'Amn Rune', 'Sol Rune',
+    'Shael Rune', 'Dol Rune', 'Hel Rune', 'Io Rune', 'Lum Rune', 'Ko Rune',
+    'Fal Rune', 'Lem Rune', 'Pul Rune', 'Um Rune', 'Mal Rune', 'Ist Rune',
+    'Gul Rune', 'Vex Rune'
+  ];
+
+  // First, add runes from API data (prioritize API prices)
+  Object.entries(input.Runes).forEach(([name, data]) => {
+    const isLowRune = LOW_RUNES.includes(name);
+    const latestData = getLatestRuneData(input.Runes, name);
+    
+    // Low runes always use fixed prices
+    if (isLowRune) {
+      const fixedPrice = FIXED_RUNE_PRICES[name] || ALL_RUNE_HR_VALUES[name];
+      if (fixedPrice) {
+        runeValues.push({
+          name,
+          price: fixedPrice,
+          numListings: latestData?.numListings || -1,
+          isCalculated: false,
+          isFixed: true,
+        });
+      }
+      return;
+    }
+    
+    // For high runes, use API data if available
+    if (latestData && latestData.price > 0) {
+      const numListings = latestData.numListings || 0;
+      
+      // Use API price if we have enough listings, otherwise fall back to fixed
+      if (numListings >= MIN_LISTINGS_FOR_API_PRICE) {
+        runeValues.push({
+          name,
+          price: latestData.price,
+          numListings: numListings,
+          isCalculated: false,
+          isFixed: false,
+        });
+      } else {
+        // Not enough listings, use fixed price as fallback
+        const fixedPrice = FIXED_RUNE_PRICES[name] || ALL_RUNE_HR_VALUES[name];
+        if (fixedPrice) {
+          runeValues.push({
+            name,
+            price: fixedPrice,
+            numListings: numListings,
+            isCalculated: false,
+            isFixed: true,
+          });
+        }
+      }
+    } else {
+      // No API data, use fixed price
+      const fixedPrice = FIXED_RUNE_PRICES[name] || ALL_RUNE_HR_VALUES[name];
+      if (fixedPrice) {
+        runeValues.push({
+          name,
+          price: fixedPrice,
+          numListings: -1,
+          isCalculated: false,
+          isFixed: true,
+        });
+      }
+    }
   });
 
-  // Add all runes from ALL_RUNE_HR_VALUES that aren't in FIXED_RUNE_PRICES
+  // Add fixed prices for runes not in API data
+  Object.entries(FIXED_RUNE_PRICES).forEach(([name, fixedPrice]) => {
+    if (!runeValues.find(r => r.name === name)) {
+      runeValues.push({
+        name,
+        price: fixedPrice,
+        numListings: -1,
+        isCalculated: false,
+        isFixed: true,
+      });
+    }
+  });
+
+  // Add all runes from ALL_RUNE_HR_VALUES that aren't already added
   Object.entries(ALL_RUNE_HR_VALUES).forEach(([name, hrValue]) => {
-    if (!FIXED_RUNE_PRICES[name]) {
+    if (!runeValues.find(r => r.name === name) && !FIXED_RUNE_PRICES[name]) {
       runeValues.push({
         name,
         price: hrValue,
@@ -112,9 +448,39 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
 
   economyValues.Runes = runeValues.sort((a, b) => b.price - a.price);
 
-  // Currency and Ubers are disabled - return empty arrays
-  economyValues.Currency = [];
-  economyValues.Ubers = [];
+  // --- Handle Currency ---
+  const currencyValues: ItemValue[] = [];
+  Object.entries(input.Currency).forEach(([name, data]) => {
+    const latestData = data.dataByIngestionDate[data.dataByIngestionDate.length - 1];
+    if (latestData && latestData.price > 0) {
+      console.log(`Currency value: ${name}, price: ${latestData.price}, numListings: ${latestData.numListings}`);
+      currencyValues.push({
+        name,
+        price: latestData.price,
+        numListings: latestData.numListings,
+        isCalculated: true,
+        isFixed: false,
+      });
+    }
+  });
+  economyValues.Currency = currencyValues.sort((a, b) => b.price - a.price);
+
+  // --- Handle Ubers ---
+  const uberValues: ItemValue[] = [];
+  Object.entries(input.Ubers).forEach(([name, data]) => {
+    const latestData = data.dataByIngestionDate[data.dataByIngestionDate.length - 1];
+    if (latestData && latestData.price > 0) {
+      console.log(`Uber value: ${name}, price: ${latestData.price}, numListings: ${latestData.numListings}`);
+      uberValues.push({
+        name,
+        price: latestData.price,
+        numListings: latestData.numListings,
+        isCalculated: true,
+        isFixed: false,
+      });
+    }
+  });
+  economyValues.Ubers = uberValues.sort((a, b) => b.price - a.price);
 
   return economyValues;
 }

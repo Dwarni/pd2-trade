@@ -5,7 +5,7 @@ import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@/lib/browser-http';
 import qs from 'qs';
 import { handleApiResponse } from './usePD2Website';
 
@@ -74,11 +74,16 @@ export function useMarketActions({
   }, [settings, authData, fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL]);
 
     const getCurrencyTab = useCallback(async (): Promise<Currency> => {
+    if (!authData) {
+      throw new Error('Not authenticated');
+    }
     let curr: Currency;
     const now = Date.now();
     if (stashCache.current && (now - stashCache.current.timestamp < CACHE_TTL)) {
       curr = stashCache.current.data?.currency;
-      return curr
+      if (curr) {
+        return curr;
+      }
     }
     const stashData = await fetchAndCacheStash();
     curr = stashData.currency;
