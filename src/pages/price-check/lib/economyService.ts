@@ -60,72 +60,23 @@ export async function fetchEconomyData(): Promise<{
       .filter((baseCode): baseCode is string => !!baseCode)
       .map(baseCode => ({ baseCode }));
     
-    if (currencyItems.length > 0) {
-      console.log('Fetching currency prices for', currencyItems.length, 'items:', currencyItems.map(i => i.baseCode));
-      const requestedBaseCodes = new Set(currencyItems.map(i => i.baseCode));
-      
-      // Try batch first
-      const currencyPrices = await fetchMultipleItemPrices(currencyItems, config);
-      
-      // Check if we got any of the requested items
-      let hasRequestedItems = false;
-      currencyPrices.forEach((price, baseCode) => {
-        if (requestedBaseCodes.has(baseCode)) {
-          hasRequestedItems = true;
-        }
-      });
-      
-      // If batch didn't return requested items, fall back to individual requests
-      if (!hasRequestedItems && currencyPrices.size > 0) {
-        console.warn('Batch API returned wrong items, falling back to individual requests for currency items');
-        const individualResults = new Map<string, any>();
-        for (const item of currencyItems) {
-          const price = await fetchItemPrice(item.baseCode, config);
-          if (price) {
-            individualResults.set(item.baseCode, price);
-          }
-        }
-        // Use individual results instead
-        individualResults.forEach((price, baseCode) => {
-          const itemName = price.itemName;
-          if (itemName && price.medianPrice > 0) {
-            results.Currency[itemName] = {
-              itemName: itemName,
-              proper: itemName,
-              dataByIngestionDate: [{
-                date: price.timeRange.end,
-                trueDate: price.timeRange.end,
-                numListings: price.sampleCount,
-                price: price.medianPrice,
-              }],
-            };
-          }
-        });
-      } else {
-        // Use batch results
-        currencyPrices.forEach((price, baseCode) => {
-          // Only process items we actually requested
-          if (!requestedBaseCodes.has(baseCode)) {
-            return;
-          }
-          const itemName = price.itemName;
-          if (itemName && price.medianPrice > 0) {
-            results.Currency[itemName] = {
-              itemName: itemName,
-              proper: itemName,
-              dataByIngestionDate: [{
-                date: price.timeRange.end,
-                trueDate: price.timeRange.end,
-                numListings: price.sampleCount,
-                price: price.medianPrice,
-              }],
-            };
-          }
-        });
+    const currencyPrices = await fetchMultipleItemPrices(currencyItems, config);
+
+    currencyPrices.forEach((price) => {
+      const itemName = price.itemName;
+      if (itemName) {
+        results.Currency[itemName] = {
+          itemName: itemName,
+          proper: itemName,
+          dataByIngestionDate: [{
+            date: price.timeRange.end,
+            trueDate: price.timeRange.end,
+            numListings: price.sampleCount,
+            price: price.medianPrice,
+          }],
+        };
       }
-    } else {
-      console.warn('No currency items to fetch');
-    }
+    });
 
     // Fetch uber item prices - use STASH_API_MAP to determine which items belong to Ubers category
     const uberKeys = Object.keys(STASH_API_MAP.Ubers);
@@ -134,72 +85,23 @@ export async function fetchEconomyData(): Promise<{
       .filter((baseCode): baseCode is string => !!baseCode)
       .map(baseCode => ({ baseCode }));
     
-    if (uberItems.length > 0) {
-      console.log('Fetching uber prices for', uberItems.length, 'items:', uberItems.map(i => i.baseCode));
-      const requestedBaseCodes = new Set(uberItems.map(i => i.baseCode));
-      
-      // Try batch first
-      const uberPrices = await fetchMultipleItemPrices(uberItems, config);
-      
-      // Check if we got any of the requested items
-      let hasRequestedItems = false;
-      uberPrices.forEach((price, baseCode) => {
-        if (requestedBaseCodes.has(baseCode)) {
-          hasRequestedItems = true;
-        }
-      });
-      
-      // If batch didn't return requested items, fall back to individual requests
-      if (!hasRequestedItems && uberPrices.size > 0) {
-        console.warn('Batch API returned wrong items, falling back to individual requests for uber items');
-        const individualResults = new Map<string, any>();
-        for (const item of uberItems) {
-          const price = await fetchItemPrice(item.baseCode, config);
-          if (price) {
-            individualResults.set(item.baseCode, price);
-          }
-        }
-        // Use individual results instead
-        individualResults.forEach((price, baseCode) => {
-          const itemName = price.itemName;
-          if (itemName && price.medianPrice > 0) {
-            results.Ubers[itemName] = {
-              itemName: itemName,
-              proper: itemName,
-              dataByIngestionDate: [{
-                date: price.timeRange.end,
-                trueDate: price.timeRange.end,
-                numListings: price.sampleCount,
-                price: price.medianPrice,
-              }],
-            };
-          }
-        });
-      } else {
-        // Use batch results
-        uberPrices.forEach((price, baseCode) => {
-          // Only process items we actually requested
-          if (!requestedBaseCodes.has(baseCode)) {
-            return;
-          }
-          const itemName = price.itemName;
-          if (itemName && price.medianPrice > 0) {
-            results.Ubers[itemName] = {
-              itemName: itemName,
-              proper: itemName,
-              dataByIngestionDate: [{
-                date: price.timeRange.end,
-                trueDate: price.timeRange.end,
-                numListings: price.sampleCount,
-                price: price.medianPrice,
-              }],
-            };
-          }
-        });
+    const uberPrices = await fetchMultipleItemPrices(uberItems, config);
+
+    uberPrices.forEach((price) => {
+      const itemName = price.itemName;
+      if (itemName) {
+        results.Ubers[itemName] = {
+          itemName: itemName,
+          proper: itemName,
+          dataByIngestionDate: [{
+            date: price.timeRange.end,
+            trueDate: price.timeRange.end,
+            numListings: price.sampleCount,
+            price: price.medianPrice,
+          }],
+        };
       }
-    } else {
-      console.warn('No uber items to fetch');
-    }
+    });
 
   } catch (error) {
     console.error('Error fetching economy data from API:', error);
@@ -453,7 +355,6 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
   Object.entries(input.Currency).forEach(([name, data]) => {
     const latestData = data.dataByIngestionDate[data.dataByIngestionDate.length - 1];
     if (latestData && latestData.price > 0) {
-      console.log(`Currency value: ${name}, price: ${latestData.price}, numListings: ${latestData.numListings}`);
       currencyValues.push({
         name,
         price: latestData.price,
@@ -470,7 +371,6 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
   Object.entries(input.Ubers).forEach(([name, data]) => {
     const latestData = data.dataByIngestionDate[data.dataByIngestionDate.length - 1];
     if (latestData && latestData.price > 0) {
-      console.log(`Uber value: ${name}, price: ${latestData.price}, numListings: ${latestData.numListings}`);
       uberValues.push({
         name,
         price: latestData.price,

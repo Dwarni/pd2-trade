@@ -1,4 +1,7 @@
 export const changeLog = {
+  "0.5.1": [
+    "🔧 Fixed an issue where the rune price breakdown would not display the correct price.",
+  ],
   "0.5.0": [
     "🆕 Added chat system - communicate with other players through the PD2 overlay interface with real-time messaging",
     "🆕 Added chat overlay widget with spiral menu button - quick access to conversations, settings, and trade messages while in-game",
