@@ -48,7 +48,7 @@ export function ChatForm() {
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
       whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
       whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
-      chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
+      chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? false,
     },
   });
 
@@ -63,7 +63,7 @@ export function ChatForm() {
         whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
         whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
         whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
-        chatButtonOverlayEnabled: settings.chatButtonOverlayEnabled ?? true,
+        chatButtonOverlayEnabled: settings.chatButtonOverlayEnabled ?? false,
       });
     }
   }, [settings, form]);
