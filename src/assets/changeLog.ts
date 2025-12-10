@@ -2,6 +2,8 @@ export const changeLog = {
   "0.5.1": [
     "🔧 Fixed an issue where the rune price breakdown would not display the correct price.",
     "🔧 Fixed an issue in the currency valuation page where HR values were rounded to 3 decimal places.",
+    "🆕 Show trade notifications in the chat button overlay - now displays the number of trade messages and offers in the chat button overlay.",
+    "🆕 Add a quick remove button to the chat overlay to remove the chat overlay window.",
   ],
   "0.5.0": [
     "🆕 Added chat system - communicate with other players through the PD2 overlay interface with real-time messaging",

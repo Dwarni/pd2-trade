@@ -337,7 +337,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                  <p>Stop notifications</p>
+                  <p>Delete trade offer</p>
                   </TooltipContent>
                 </Tooltip>
                 )}
@@ -607,8 +607,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({ trade, onClose, onRe
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="space-y-2 pr-4">
+            <ScrollArea>
+              <div className="space-y-2 pr-4 max-h-[200px]">
                 {trade.history && trade.history.length > 0 ? (
                   trade.history
                     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())

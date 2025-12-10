@@ -68,7 +68,7 @@ const DEFAULT_SETTINGS: ISettings = {
   tradeNotificationsEnabled: true,
   whisperNotificationTiming: 'both',
   whisperNotificationVolume: 70,
-  chatButtonOverlayEnabled: false,
+  chatButtonOverlayEnabled: true,
 };
 
 const SETTINGS_FILENAME = 'settings.json';
