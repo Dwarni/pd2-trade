@@ -209,21 +209,24 @@ jobs:
 
           // Extract changelog entries for this version
           const content = fs.readFileSync('./src/assets/changeLog.ts', 'utf8');
-          const versionRegex = new RegExp(`"${version.replace(/\./g, '\\.')}":\\s*\\[([\\s\\S]*?)\\]`, 'm');
+          // Match both single and double quotes for version key
+          const versionRegex = new RegExp(`['"]${version.replace(/\./g, '\\.')}['"]:\\s*\\[([\\s\\S]*?)\\]`, 'm');
           const match = content.match(versionRegex);
 
           let changelogText = 'No changelog entries found for this version.';
           if (match) {
             const entriesBlock = match[1];
-            // Extract string entries, handling escaped strings
+            // Extract string entries, handling both single and double quotes with escaped strings
             const entries = [];
-            const stringRegex = /"([^"\\]|\\.)*"/g;
+            // Match strings with single or double quotes, handling escaped quotes
+            const stringRegex = /(['"])((?:(?!\1)[^\\]|\\.)*)\1/g;
             let m;
             while ((m = stringRegex.exec(entriesBlock)) !== null) {
               // Unescape the string
-              const entry = m[0]
-                .slice(1, -1) // Remove quotes
+              const quote = m[1]; // The quote character used
+              const entry = m[2]
                 .replace(/\\n/g, '\n')
+                .replace(/\\'/g, "'")
                 .replace(/\\"/g, '"')
                 .replace(/\\\\/g, '\\');
               entries.push(entry);

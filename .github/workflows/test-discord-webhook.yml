@@ -1,4 +1,4 @@
-name: "Test Discord Webhook"
+name: 'Test Discord Webhook'
 
 on:
   workflow_dispatch:
@@ -26,12 +26,12 @@ jobs:
           const fs = require('fs');
           const https = require('https');
           const { execSync } = require('child_process');
-          
+
           // Get version from package.json
           const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
           const version = packageJson.version;
           const currentTag = `app-v${version}`;
-          
+
           // Get previous tag
           execSync('git fetch --tags', { stdio: 'inherit' });
           const tags = execSync('git tag --sort=-v:refname')
@@ -39,27 +39,30 @@ jobs:
             .trim()
             .split('\n')
             .filter(tag => /^app-v\d+\.\d+\.\d+$/.test(tag));
-          
+
           const previousTag = tags.length > 1 ? tags[1] : 'app-v0.0.0';
           const compareUrl = `https://github.com/errolgr/pd2-trade/compare/${previousTag}...${currentTag}`;
-          
+
           // Extract changelog entries for this version
           const content = fs.readFileSync('./src/assets/changeLog.ts', 'utf8');
-          const versionRegex = new RegExp(`"${version.replace(/\./g, '\\.')}":\\s*\\[([\\s\\S]*?)\\]`, 'm');
+          // Match both single and double quotes for version key
+          const versionRegex = new RegExp(`['"]${version.replace(/\./g, '\\.')}['"]:\\s*\\[([\\s\\S]*?)\\]`, 'm');
           const match = content.match(versionRegex);
-          
+
           let changelogText = 'No changelog entries found for this version.';
           if (match) {
             const entriesBlock = match[1];
-            // Extract string entries, handling escaped strings
+            // Extract string entries, handling both single and double quotes with escaped strings
             const entries = [];
-            const stringRegex = /"([^"\\]|\\.)*"/g;
+            // Match strings with single or double quotes, handling escaped quotes
+            const stringRegex = /(['"])((?:(?!\1)[^\\]|\\.)*)\1/g;
             let m;
             while ((m = stringRegex.exec(entriesBlock)) !== null) {
               // Unescape the string
-              const entry = m[0]
-                .slice(1, -1) // Remove quotes
+              const quote = m[1]; // The quote character used
+              const entry = m[2]
                 .replace(/\\n/g, '\n')
+                .replace(/\\'/g, "'")
                 .replace(/\\"/g, '"')
                 .replace(/\\\\/g, '\\');
               entries.push(entry);
@@ -68,7 +71,7 @@ jobs:
             // Format with bullet points
             changelogText = entries.map(entry => `• ${entry}`).join('\n');
           }
-          
+
           // Create Discord embed payload
           const payload = {
             embeds: [{
@@ -93,17 +96,17 @@ jobs:
               timestamp: new Date().toISOString()
             }]
           };
-          
+
           // Send to Discord
           const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
           if (!webhookUrl) {
             console.log('DISCORD_WEBHOOK_URL not set, skipping Discord notification');
             process.exit(0);
           }
-          
+
           const url = new URL(webhookUrl);
           const postData = JSON.stringify(payload);
-          
+
           const options = {
             hostname: url.hostname,
             port: url.port || 443,
@@ -114,7 +117,7 @@ jobs:
               'Content-Length': Buffer.byteLength(postData)
             }
           };
-          
+
           const req = https.request(options, (res) => {
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
@@ -127,13 +130,12 @@ jobs:
               }
             });
           });
-          
+
           req.on('error', (error) => {
             console.error(`Error sending Discord notification: ${error.message}`);
             process.exit(1);
           });
-          
+
           req.write(postData);
           req.end();
           EOF
-
