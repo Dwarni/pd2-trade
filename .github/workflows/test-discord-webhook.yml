@@ -75,9 +75,9 @@ jobs:
           // Create Discord embed payload
           const payload = {
             embeds: [{
-              title: `🧪 TEST: PD2 Trader v${version} Released`,
+              title: `🚀 PD2 Trader v${version} Released`,
               description: changelogText,
-              color: 15158332, // Red color for test
+              color: 3447003,
               fields: [
                 {
                   name: '📦 Download',
@@ -91,7 +91,7 @@ jobs:
                 }
               ],
               footer: {
-                text: 'PD2 Trader - TEST MESSAGE'
+                text: 'PD2 Trader'
               },
               timestamp: new Date().toISOString()
             }]
