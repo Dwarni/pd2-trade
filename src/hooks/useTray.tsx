@@ -108,9 +108,25 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       }
     };
 
+    const isLinux = navigator.userAgent.includes('Linux');
+
+    // On Linux, always enable hotkeys since window focus detection isn't available
+    if (isLinux) {
+      registerShortcut().catch((error) => {
+        console.error('Failed to register settings shortcut on Linux:', error);
+      });
+
+      return () => {
+        // Unregister shortcut on cleanup
+        if (isTauri() && lastShortcutRef.current) {
+          unregisterShortcut().catch(console.error);
+        }
+      };
+    }
+
+    // On other platforms, listen for Diablo focus changes
     let unlisten: (() => void) | null = null;
 
-    // Listen for Diablo focus changes
     listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
       if (isFocused) {
         // Diablo gained focus - register hotkey
