@@ -18,7 +18,7 @@ export default defineConfig({
     }
   },
   themeConfig: {
-    appVersion: '0.5.2',
+    appVersion: '0.6.0',
     github: {
       releasesUrl: 'https://github.com/errolgr/pd2-trade/releases'
     },
