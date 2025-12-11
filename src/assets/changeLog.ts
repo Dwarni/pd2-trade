@@ -1,4 +1,13 @@
 export const changeLog = {
+  '0.6.0': [
+    '✨ Linux support - PD2 Trader is now available on Linux! Thank you @pandamancer for the contributions!',
+    '✨ Bump all button has been added to the manage listing window',
+    '🆕 Corruption filter will now be displayed for non-corrupted items',
+    '🆕 Included offer notifications into the trade notification toggle.',
+    '🆕 Included website notification into the general notification toggle.',
+    '🆕 Hot keys will no longer be active when diablo is not focused.',
+    '🔧 Fixed an issue where the chat button overlay would not appear on startup',
+  ],
   '0.5.2': [
     '🆕 Message templates have been added to the chat overlay - you can now save custom messages for quick replies.',
     '🆕 Game name will now persist through offers',
