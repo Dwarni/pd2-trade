@@ -6,12 +6,12 @@ import { ItemsProvider } from '@/hooks/useItems';
 
 export function CurrencyPage() {
   return (
-      <OptionsProvider>
-        <ItemsProvider>
-          <Pd2WebsiteProvider>
-            <CurrencyValuation />
-          </Pd2WebsiteProvider>
-        </ItemsProvider>
-      </OptionsProvider>
+    <OptionsProvider>
+      <ItemsProvider>
+        <Pd2WebsiteProvider>
+          <CurrencyValuation />
+        </Pd2WebsiteProvider>
+      </ItemsProvider>
+    </OptionsProvider>
   );
 }

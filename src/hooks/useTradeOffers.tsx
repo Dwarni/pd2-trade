@@ -82,7 +82,6 @@ interface UseTradeOffersProps {
   isConnected?: boolean;
 }
 
-
 interface UseTradeOffersReturn {
   incomingOffers: TradeMessageData[];
   outgoingOffers: TradeMessageData[];
@@ -101,17 +100,18 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
 }
 
 function axiosStyleSerializer(obj) {
-  return qs
-    .stringify(obj, 
-      { 
-        arrayFormat:      'indices',  // foo[]=1&foo[]=2
-        encodeValuesOnly: true         // keys like [$in] stay literal}
-      }
-    )
+  return qs.stringify(obj, {
+    arrayFormat: 'indices', // foo[]=1&foo[]=2
+    encodeValuesOnly: true, // keys like [$in] stay literal}
+  });
 }
 
 // Get incoming offers (listings with offers)
-const getIncomingOffers = async (settings: ISettings, authData: AuthData, onAuthError?: () => void | Promise<void>): Promise<TradeMessageData[]> => {
+const getIncomingOffers = async (
+  settings: ISettings,
+  authData: AuthData,
+  onAuthError?: () => void | Promise<void>,
+): Promise<TradeMessageData[]> => {
   const query = {
     $resolve: {
       user: {
@@ -132,7 +132,7 @@ const getIncomingOffers = async (settings: ISettings, authData: AuthData, onAuth
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
     },
   });
 
@@ -169,7 +169,11 @@ const getIncomingOffers = async (settings: ISettings, authData: AuthData, onAuth
 };
 
 // Get outgoing offers (offers made by user)
-const getOutgoingOffers = async (settings: ISettings, authData: AuthData, onAuthError?: () => void | Promise<void>): Promise<TradeMessageData[]> => {
+const getOutgoingOffers = async (
+  settings: ISettings,
+  authData: AuthData,
+  onAuthError?: () => void | Promise<void>,
+): Promise<TradeMessageData[]> => {
   const query = {
     $resolve: {
       listing: true,
@@ -189,7 +193,7 @@ const getOutgoingOffers = async (settings: ISettings, authData: AuthData, onAuth
   const response = await tauriFetch(url, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
     },
   });
 
@@ -219,11 +223,15 @@ const getOutgoingOffers = async (settings: ISettings, authData: AuthData, onAuth
 };
 
 // Revoke an offer (PATCH market/offer/:offerId)
-const revokeOffer = async (settings: ISettings, offerId: string, onAuthError?: () => void | Promise<void>): Promise<void> => {
+const revokeOffer = async (
+  settings: ISettings,
+  offerId: string,
+  onAuthError?: () => void | Promise<void>,
+): Promise<void> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/offer/${offerId}`, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ rejected: true }),
@@ -232,11 +240,16 @@ const revokeOffer = async (settings: ISettings, offerId: string, onAuthError?: (
 };
 
 // Accept an offer (PUT market/listing/:listingId)
-const acceptOffer = async (settings: ISettings, listingId: string, offerId: string, onAuthError?: () => void | Promise<void>): Promise<void> => {
+const acceptOffer = async (
+  settings: ISettings,
+  listingId: string,
+  offerId: string,
+  onAuthError?: () => void | Promise<void>,
+): Promise<void> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ accepted_offer_id: offerId }),
@@ -245,11 +258,15 @@ const acceptOffer = async (settings: ISettings, listingId: string, offerId: stri
 };
 
 // Reject an offer (PUT market/offer/:offerId)
-const rejectOffer = async (settings: ISettings, offerId: string, onAuthError?: () => void | Promise<void>): Promise<void> => {
+const rejectOffer = async (
+  settings: ISettings,
+  offerId: string,
+  onAuthError?: () => void | Promise<void>,
+): Promise<void> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/offer/${offerId}`, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ rejected: true }),
@@ -258,11 +275,15 @@ const rejectOffer = async (settings: ISettings, offerId: string, onAuthError?: (
 };
 
 // Unaccept an offer (PATCH market/listing/:listingId)
-const unacceptOffer = async (settings: ISettings, listingId: string, onAuthError?: () => void | Promise<void>): Promise<void> => {
+const unacceptOffer = async (
+  settings: ISettings,
+  listingId: string,
+  onAuthError?: () => void | Promise<void>,
+): Promise<void> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${settings.pd2Token}`,
+      Authorization: `Bearer ${settings.pd2Token}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ accepted_offer_id: null }),
@@ -270,7 +291,12 @@ const unacceptOffer = async (settings: ISettings, listingId: string, onAuthError
   await handleApiResponse(response, onAuthError);
 };
 
-export const useTradeOffers = ({ settings, authData, onAuthError, isConnected = false }: UseTradeOffersProps): UseTradeOffersReturn => {
+export const useTradeOffers = ({
+  settings,
+  authData,
+  onAuthError,
+  isConnected = false,
+}: UseTradeOffersProps): UseTradeOffersReturn => {
   const [incomingOffers, setIncomingOffers] = useState<TradeMessageData[]>([]);
   const [outgoingOffers, setOutgoingOffers] = useState<TradeMessageData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -328,7 +354,7 @@ export const useTradeOffers = ({ settings, authData, onAuthError, isConnected = 
       try {
         unlisten = await listen('refresh-offers', async () => {
           // Refresh both incoming and outgoing offers when notified
-            fetchIncomingOffers();
+          fetchIncomingOffers();
           fetchOutgoingOffers();
         });
       } catch (error) {
@@ -346,150 +372,168 @@ export const useTradeOffers = ({ settings, authData, onAuthError, isConnected = 
     };
   }, [authData?.user?._id, settings?.pd2Token, fetchIncomingOffers, fetchOutgoingOffers]);
 
-  const handleRevokeOffer = useCallback(async (offerId: string) => {
-    if (!settings?.pd2Token) {
-      return;
-    }
+  const handleRevokeOffer = useCallback(
+    async (offerId: string) => {
+      if (!settings?.pd2Token) {
+        return;
+      }
 
-    try {
-      // Find the offer to get details for toast
-      const offer = outgoingOffers.find(o => o.id === offerId);
-      
-      // Optimistically remove the offer from the state immediately
-      setOutgoingOffers(prev => prev.filter(o => o.id !== offerId));
-      
-      await revokeOffer(settings, offerId, onAuthError);
-      
-      // Show success toast
-      await emit('toast-event', {
-        title: 'Offer Revoked',
-        description: offer ? `Your offer on ${offer.itemName || 'item'} has been revoked` : 'Offer has been revoked',
-        variant: 'success',
-      });
-      
-      // Emit event to refresh offers (handled by the listener)
-      await emit('refresh-offers');
-    } catch (error) {
-      console.error('Failed to revoke offer:', error);
-      // Revert optimistic update on error by emitting refresh event
-      await emit('refresh-offers');
-      // Show error toast
-      await emit('toast-event', {
-        title: 'Failed to Revoke Offer',
-        description: 'An error occurred while revoking the offer',
-        variant: 'error',
-      });
-      throw error;
-    }
-  }, [settings, outgoingOffers, onAuthError]);
+      try {
+        // Find the offer to get details for toast
+        const offer = outgoingOffers.find((o) => o.id === offerId);
 
-  const handleAcceptOffer = useCallback(async (listingId: string, offerId: string) => {
-    if (!settings?.pd2Token) {
-      return;
-    }
+        // Optimistically remove the offer from the state immediately
+        setOutgoingOffers((prev) => prev.filter((o) => o.id !== offerId));
 
-    try {
-      // Find the offer to get details for toast
-      const offer = incomingOffers.find(o => o.id === offerId && o.listingId === listingId);
-      await acceptOffer(settings, listingId, offerId, onAuthError);
-      
-      // Show success toast
-      await emit('toast-event', {
-        title: 'Offer Accepted',
-        description: offer ? `You accepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}` : 'Offer has been accepted',
-        variant: 'success',
-      });
-      
-      // Emit event to refresh offers (handled by the listener)
-      await emit('refresh-offers');
-    } catch (error) {
-      console.error('Failed to accept offer:', error);
-      // Show error toast
-      await emit('toast-event', {
-        title: 'Failed to Accept Offer',
-        description: 'An error occurred while accepting the offer',
-        variant: 'error',
-      });
-      throw error;
-    }
-  }, [settings, incomingOffers, onAuthError]);
+        await revokeOffer(settings, offerId, onAuthError);
 
-  const handleRejectOffer = useCallback(async (offerId: string) => {
-    if (!settings?.pd2Token) {
-      return;
-    }
+        // Show success toast
+        await emit('toast-event', {
+          title: 'Offer Revoked',
+          description: offer ? `Your offer on ${offer.itemName || 'item'} has been revoked` : 'Offer has been revoked',
+          variant: 'success',
+        });
 
-    try {
-      // Find the offer to get details for toast
-      const offer = incomingOffers.find(o => o.id === offerId);
-      
-      // Optimistically remove the offer from the state immediately
-      setIncomingOffers(prev => prev.filter(o => o.id !== offerId));
-      
-      await rejectOffer(settings, offerId, onAuthError);
-      
-      // Show success toast
-      await emit('toast-event', {
-        title: 'Offer Rejected',
-        description: offer ? `You rejected ${offer.playerName}'s offer on ${offer.itemName || 'item'}` : 'Offer has been rejected',
-        variant: 'success',
-      });
-      
-      // Emit event to refresh offers (handled by the listener)
-      await emit('refresh-offers');
-    } catch (error) {
-      console.error('Failed to reject offer:', error);
-      // Revert optimistic update on error by emitting refresh event
-      await emit('refresh-offers');
-      // Show error toast
-      await emit('toast-event', {
-        title: 'Failed to Reject Offer',
-        description: 'An error occurred while rejecting the offer',
-        variant: 'error',
-      });
-      throw error;
-    }
-  }, [settings, incomingOffers, onAuthError]);
+        // Emit event to refresh offers (handled by the listener)
+        await emit('refresh-offers');
+      } catch (error) {
+        console.error('Failed to revoke offer:', error);
+        // Revert optimistic update on error by emitting refresh event
+        await emit('refresh-offers');
+        // Show error toast
+        await emit('toast-event', {
+          title: 'Failed to Revoke Offer',
+          description: 'An error occurred while revoking the offer',
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [settings, outgoingOffers, onAuthError],
+  );
 
-  const handleUnacceptOffer = useCallback(async (listingId: string) => {
-    if (!settings?.pd2Token) {
-      return;
-    }
+  const handleAcceptOffer = useCallback(
+    async (listingId: string, offerId: string) => {
+      if (!settings?.pd2Token) {
+        return;
+      }
 
-    try {
-      // Find the accepted offer to get details for toast
-      const offer = incomingOffers.find(o => o.listingId === listingId && o.acceptedOfferId === o.id);
-      await unacceptOffer(settings, listingId, onAuthError);
-      
-      // Show success toast
-      await emit('toast-event', {
-        title: 'Offer Unaccepted',
-        description: offer ? `You unaccepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}` : 'Offer has been unaccepted',
-        variant: 'success',
-      });
-      
-      // Emit event to refresh offers (handled by the listener)
-      await emit('refresh-offers');
-    } catch (error) {
-      console.error('Failed to unaccept offer:', error);
-      // Show error toast
-      await emit('toast-event', {
-        title: 'Failed to Unaccept Offer',
-        description: 'An error occurred while unaccepting the offer',
-        variant: 'error',
-      });
-      throw error;
-    }
-  }, [settings, incomingOffers, onAuthError]);
+      try {
+        // Find the offer to get details for toast
+        const offer = incomingOffers.find((o) => o.id === offerId && o.listingId === listingId);
+        await acceptOffer(settings, listingId, offerId, onAuthError);
+
+        // Show success toast
+        await emit('toast-event', {
+          title: 'Offer Accepted',
+          description: offer
+            ? `You accepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
+            : 'Offer has been accepted',
+          variant: 'success',
+        });
+
+        // Emit event to refresh offers (handled by the listener)
+        await emit('refresh-offers');
+      } catch (error) {
+        console.error('Failed to accept offer:', error);
+        // Show error toast
+        await emit('toast-event', {
+          title: 'Failed to Accept Offer',
+          description: 'An error occurred while accepting the offer',
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [settings, incomingOffers, onAuthError],
+  );
+
+  const handleRejectOffer = useCallback(
+    async (offerId: string) => {
+      if (!settings?.pd2Token) {
+        return;
+      }
+
+      try {
+        // Find the offer to get details for toast
+        const offer = incomingOffers.find((o) => o.id === offerId);
+
+        // Optimistically remove the offer from the state immediately
+        setIncomingOffers((prev) => prev.filter((o) => o.id !== offerId));
+
+        await rejectOffer(settings, offerId, onAuthError);
+
+        // Show success toast
+        await emit('toast-event', {
+          title: 'Offer Rejected',
+          description: offer
+            ? `You rejected ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
+            : 'Offer has been rejected',
+          variant: 'success',
+        });
+
+        // Emit event to refresh offers (handled by the listener)
+        await emit('refresh-offers');
+      } catch (error) {
+        console.error('Failed to reject offer:', error);
+        // Revert optimistic update on error by emitting refresh event
+        await emit('refresh-offers');
+        // Show error toast
+        await emit('toast-event', {
+          title: 'Failed to Reject Offer',
+          description: 'An error occurred while rejecting the offer',
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [settings, incomingOffers, onAuthError],
+  );
+
+  const handleUnacceptOffer = useCallback(
+    async (listingId: string) => {
+      if (!settings?.pd2Token) {
+        return;
+      }
+
+      try {
+        // Find the accepted offer to get details for toast
+        const offer = incomingOffers.find((o) => o.listingId === listingId && o.acceptedOfferId === o.id);
+        await unacceptOffer(settings, listingId, onAuthError);
+
+        // Show success toast
+        await emit('toast-event', {
+          title: 'Offer Unaccepted',
+          description: offer
+            ? `You unaccepted ${offer.playerName}'s offer on ${offer.itemName || 'item'}`
+            : 'Offer has been unaccepted',
+          variant: 'success',
+        });
+
+        // Emit event to refresh offers (handled by the listener)
+        await emit('refresh-offers');
+      } catch (error) {
+        console.error('Failed to unaccept offer:', error);
+        // Show error toast
+        await emit('toast-event', {
+          title: 'Failed to Unaccept Offer',
+          description: 'An error occurred while unaccepting the offer',
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [settings, incomingOffers, onAuthError],
+  );
 
   // Emit offer count updates whenever offers change
   useEffect(() => {
     const totalCount = incomingOffers.length + outgoingOffers.length;
-    emit('trade-offers-count-updated', { 
+    emit('trade-offers-count-updated', {
       incomingCount: incomingOffers.length,
       outgoingCount: outgoingOffers.length,
-      totalCount 
-    }).catch(err => {
+      totalCount,
+    }).catch((err) => {
       console.error('[useTradeOffers] Failed to emit trade-offers-count-updated:', err);
     });
   }, [incomingOffers.length, outgoingOffers.length]);
@@ -508,4 +552,3 @@ export const useTradeOffers = ({ settings, authData, onAuthError, isConnected = 
     unacceptOffer: handleUnacceptOffer,
   };
 };
-

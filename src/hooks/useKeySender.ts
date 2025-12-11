@@ -1,5 +1,5 @@
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
 /**
  * React hook that returns a function you can call to simulate a key press.
@@ -18,9 +18,9 @@ export function useKeySender() {
       return;
     }
     try {
-      await invoke("press_key", { sequence });
+      await invoke('press_key', { sequence });
     } catch (err) {
-      console.error("[KeySender] failed:", err);
+      console.error('[KeySender] failed:', err);
     }
   }, []);
 }

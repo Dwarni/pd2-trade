@@ -20,7 +20,7 @@ interface UseSocketProps {
 export const useSocket = (props?: UseSocketProps) => {
   // Use props if provided, otherwise fall back to hooks
   const contextSettings = useOptions().settings;
-  
+
   const settings = props?.settings ?? contextSettings;
   const socketRef = useRef<Socket | null>(null);
   const rawSocketRef = useRef<WebSocket | null>(null);
@@ -73,25 +73,25 @@ export const useSocket = (props?: UseSocketProps) => {
             if (Array.isArray(parsedPayload) && parsedPayload.length === 2) {
               const eventType = parsedPayload[0];
               const eventData = parsedPayload[1];
-              
+
               // Check if this is a push event
               if (typeof eventType === 'string' && eventType.includes('pushed')) {
                 // Emit a custom event for push notifications
                 // Replace spaces and special chars with underscores for Tauri compatibility
                 const sanitizedEventType = eventType.replace(/[^a-zA-Z0-9\-/:_]/g, '_');
-                emit(`socket:${sanitizedEventType}`, eventData).catch(err => {
+                emit(`socket:${sanitizedEventType}`, eventData).catch((err) => {
                   console.error('[Socket] Failed to emit push event:', err);
                 });
                 return; // Don't process push events as request responses
               }
-              
+
               // Handle other responses - match to pending requests
               // Match responses to requests in order (FIFO queue)
               // This works because responses typically come back in the same order as requests
               if (pendingRequestsRef.current.length > 0) {
                 const pendingRequest = pendingRequestsRef.current.shift()!;
                 clearTimeout(pendingRequest.timeout);
-                
+
                 // Check if response has error
                 if (parsedPayload[0] !== null) {
                   pendingRequest.reject(new Error(parsedPayload[0].toString()));
@@ -119,14 +119,17 @@ export const useSocket = (props?: UseSocketProps) => {
       rawSocketRef.current = rawSocket;
 
       // Authenticate using raw socket
-      rawSocket.send('420' + JSON.stringify([
-        'create',
-        'security/session',
-        {
-          strategy: 'jwt',
-          accessToken: settings.pd2Token,
-        },
-      ]));
+      rawSocket.send(
+        '420' +
+          JSON.stringify([
+            'create',
+            'security/session',
+            {
+              strategy: 'jwt',
+              accessToken: settings.pd2Token,
+            },
+          ]),
+      );
 
       rawSocket.addEventListener('message', messageHandler);
     });
@@ -135,7 +138,7 @@ export const useSocket = (props?: UseSocketProps) => {
       console.log('[Socket] Disconnected');
       setIsConnected(false);
       rawSocketRef.current = null;
-      
+
       // Reject all pending requests
       while (pendingRequestsRef.current.length > 0) {
         const pendingRequest = pendingRequestsRef.current.shift()!;
@@ -155,11 +158,11 @@ export const useSocket = (props?: UseSocketProps) => {
       if (rawSocketRef.current) {
         rawSocketRef.current.removeEventListener('message', messageHandler);
       }
-      
+
       socket.disconnect();
       socketRef.current = null;
       rawSocketRef.current = null;
-      
+
       // Reject all pending requests
       while (pendingRequestsRef.current.length > 0) {
         const pendingRequest = pendingRequestsRef.current.shift()!;
@@ -169,69 +172,66 @@ export const useSocket = (props?: UseSocketProps) => {
     };
   }, [settings?.pd2Token]);
 
-  const sendSocketMessage = useCallback(<T,>(
-    method: string,
-    service: string,
-    query: any
-  ): Promise<T> => {
-    return new Promise((resolve, reject) => {
-      if (!rawSocketRef.current || !isConnected) {
-        reject(new Error('Socket not connected'));
-        return;
-      }
-
-      const message = [method, service, query];
-      
-      const timeout = setTimeout(() => {
-        // Remove this request from the queue
-        const index = pendingRequestsRef.current.findIndex(req => req.timeout === timeout);
-        if (index !== -1) {
-          pendingRequestsRef.current.splice(index, 1);
+  const sendSocketMessage = useCallback(
+    <T>(method: string, service: string, query: any): Promise<T> => {
+      return new Promise((resolve, reject) => {
+        if (!rawSocketRef.current || !isConnected) {
+          reject(new Error('Socket not connected'));
+          return;
         }
-        reject(new Error('Socket request timeout'));
-      }, 10000);
 
-      // Store the pending request in queue (FIFO)
-      pendingRequestsRef.current.push({
-        resolve: (data: any) => {
-          // Response format is [null, data] or [error, null]
-          if (data === null) {
-            reject(new Error('Empty response'));
-          } else {
-            resolve(data as T);
+        const message = [method, service, query];
+
+        const timeout = setTimeout(() => {
+          // Remove this request from the queue
+          const index = pendingRequestsRef.current.findIndex((req) => req.timeout === timeout);
+          if (index !== -1) {
+            pendingRequestsRef.current.splice(index, 1);
           }
-        },
-        reject,
-        timeout,
-        service,
-        method,
-      });
+          reject(new Error('Socket request timeout'));
+        }, 10000);
 
-      // Send message using raw socket with code '420'
-      try {
-        rawSocketRef.current.send('420' + JSON.stringify(message));
-      } catch (err) {
-        // Remove this request from the queue
-        const index = pendingRequestsRef.current.findIndex(req => req.timeout === timeout);
-        if (index !== -1) {
-          pendingRequestsRef.current.splice(index, 1);
+        // Store the pending request in queue (FIFO)
+        pendingRequestsRef.current.push({
+          resolve: (data: any) => {
+            // Response format is [null, data] or [error, null]
+            if (data === null) {
+              reject(new Error('Empty response'));
+            } else {
+              resolve(data as T);
+            }
+          },
+          reject,
+          timeout,
+          service,
+          method,
+        });
+
+        // Send message using raw socket with code '420'
+        try {
+          rawSocketRef.current.send('420' + JSON.stringify(message));
+        } catch (err) {
+          // Remove this request from the queue
+          const index = pendingRequestsRef.current.findIndex((req) => req.timeout === timeout);
+          if (index !== -1) {
+            pendingRequestsRef.current.splice(index, 1);
+          }
+          clearTimeout(timeout);
+          reject(new Error(`Failed to send message: ${err}`));
         }
-        clearTimeout(timeout);
-        reject(new Error(`Failed to send message: ${err}`));
+      });
+    },
+    [isConnected],
+  );
+
+  const getConversations = useCallback(
+    async (participantId: string): Promise<ConversationListResponse> => {
+      if (!isConnected) {
+        throw new Error('Socket not connected');
       }
-    });
-  }, [isConnected]);
 
-  const getConversations = useCallback(async (participantId: string): Promise<ConversationListResponse> => {
-    if (!isConnected) {
-      throw new Error('Socket not connected');
-    }
-
-    // sendSocketMessage already unwraps the [null, data] format and returns just the data
-    const response = await sendSocketMessage<ConversationListResponse>(
-      'find',
-      'social/conversation',
-      {
+      // sendSocketMessage already unwraps the [null, data] format and returns just the data
+      const response = await sendSocketMessage<ConversationListResponse>('find', 'social/conversation', {
         participant_ids: participantId,
         $limit: 100,
         $skip: 0,
@@ -242,40 +242,39 @@ export const useSocket = (props?: UseSocketProps) => {
             sender: true,
           },
         },
+      });
+
+      return response;
+    },
+    [sendSocketMessage, isConnected],
+  );
+
+  const getMessages = useCallback(
+    async (conversationId: string): Promise<MessageListResponse> => {
+      if (!isConnected) {
+        throw new Error('Socket not connected');
       }
-    );
 
-    return response;
-  }, [sendSocketMessage, isConnected]);
-
-  const getMessages = useCallback(async (conversationId: string): Promise<MessageListResponse> => {
-    if (!isConnected) {
-      throw new Error('Socket not connected');
-    }
-
-    // sendSocketMessage already unwraps the [null, data] format and returns just the data
-    const response = await sendSocketMessage<MessageListResponse>(
-      'find',
-      'social/message',
-      {
+      // sendSocketMessage already unwraps the [null, data] format and returns just the data
+      const response = await sendSocketMessage<MessageListResponse>('find', 'social/message', {
         conversation_id: conversationId,
         $sort: { created_at: 1 },
         $limit: 500,
         $resolve: {
           sender: true,
         },
-      }
-    );
+      });
 
-    return response;
-  }, [sendSocketMessage, isConnected]);
+      return response;
+    },
+    [sendSocketMessage, isConnected],
+  );
 
   return {
     isConnected,
     error,
     getConversations,
     getMessages,
-    socket: socketRef.current,
+    getSocket: () => socketRef.current,
   };
 };
-

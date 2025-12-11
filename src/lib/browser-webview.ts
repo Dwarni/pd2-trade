@@ -33,7 +33,7 @@ export function getCurrentWebviewWindow(): BrowserWebviewWindow {
     if (windowPromise) {
       return windowPromise;
     }
-    
+
     windowPromise = (async () => {
       if (isTauri()) {
         const win = await tauriGetCurrentWebviewWindow();
@@ -42,7 +42,7 @@ export function getCurrentWebviewWindow(): BrowserWebviewWindow {
         }
         return win;
       }
-      
+
       // Browser fallback: return a mock window
       const mockWindow: BrowserWebviewWindow = {
         label: 'main',
@@ -73,41 +73,40 @@ export function getCurrentWebviewWindow(): BrowserWebviewWindow {
       cachedWindow = mockWindow;
       return mockWindow;
     })();
-    
+
     return windowPromise;
   };
 
   return {
     label: 'main',
     show: () => {
-      return getWindow().then(win => win?.show() ?? Promise.resolve());
+      return getWindow().then((win) => win?.show() ?? Promise.resolve());
     },
     hide: () => {
-      return getWindow().then(win => win?.hide() ?? Promise.resolve());
+      return getWindow().then((win) => win?.hide() ?? Promise.resolve());
     },
     close: () => {
-      return getWindow().then(win => win?.close() ?? Promise.resolve());
+      return getWindow().then((win) => win?.close() ?? Promise.resolve());
     },
     emit: (event: string, payload?: any) => {
-      return getWindow().then(win => win?.emit(event, payload) ?? Promise.resolve());
+      return getWindow().then((win) => win?.emit(event, payload) ?? Promise.resolve());
     },
     onCloseRequested: (callback: () => void) => {
-      getWindow().then(win => {
+      getWindow().then((win) => {
         if (win) {
           win.onCloseRequested(callback);
         }
       });
     },
     onFocusChanged: (callback: (event: { payload: boolean }) => void) => {
-      getWindow().then(win => {
+      getWindow().then((win) => {
         if (win) {
           win.onFocusChanged(callback);
         }
       });
     },
     setFocus: () => {
-      return getWindow().then(win => win?.setFocus() ?? Promise.resolve());
+      return getWindow().then((win) => win?.setFocus() ?? Promise.resolve());
     },
   };
 }
-

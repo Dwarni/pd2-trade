@@ -129,14 +129,21 @@ pub fn run() {
                 .unwrap();
             
             // Position the toast window initially
-            
-            // Initialize event-driven foreground monitoring
             let app_handle = app.app_handle().clone();
             let _ = commands::reposition_toast_window(app_handle.clone());
-            window::initialize_foreground_monitoring(move || {
-                let _ = commands::update_window_bounds(app_handle.clone());
-                let _ = commands::reposition_toast_window(app_handle.clone());
-            });
+            
+            // Initialize Diablo focus monitoring for hotkey management and window repositioning
+            // This combines both concerns into a single event hook to avoid duplicate hooks
+            let app_handle_bounds = app.app_handle().clone();
+            let app_handle_focus = app.app_handle().clone();
+            window::initialize_diablo_focus_monitoring(
+                app_handle_focus,
+                Some(Box::new(move |_is_focused| {
+                    // Reposition windows when Diablo focus changes
+                    let _ = commands::update_window_bounds(app_handle_bounds.clone());
+                    let _ = commands::reposition_toast_window(app_handle_bounds.clone());
+                })),
+            );
             
             #[cfg(debug_assertions)]
             main_window.open_devtools();

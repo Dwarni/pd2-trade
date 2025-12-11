@@ -38,7 +38,7 @@ export interface PriceApiConfig {
  */
 export async function fetchItemPrice(
   baseCode: string,
-  config: PriceApiConfig = {}
+  config: PriceApiConfig = {},
 ): Promise<AveragePriceResponse | null> {
   try {
     const params = new URLSearchParams({
@@ -49,7 +49,7 @@ export async function fetchItemPrice(
     });
 
     const response = await fetch(`${API_BASE_URL}/item-prices/average?${params}`);
-    
+
     if (!response.ok) {
       if (response.status === 404) {
         return null; // No data found
@@ -69,17 +69,17 @@ export async function fetchItemPrice(
  */
 export async function fetchMultipleItemPrices(
   items: Array<{ baseCode: string }>,
-  config: PriceApiConfig = {}
+  config: PriceApiConfig = {},
 ): Promise<Map<string, AveragePriceResponse>> {
   const results = new Map<string, AveragePriceResponse>();
-  
+
   if (items.length === 0) {
     return results;
   }
 
   try {
     // Extract baseCodes
-    const baseCodes = items.map(item => item.baseCode);
+    const baseCodes = items.map((item) => item.baseCode);
 
     // Make a single batch request
     const requestBody = {
@@ -102,7 +102,7 @@ export async function fetchMultipleItemPrices(
     }
 
     const batchResponse = await response.json();
-    
+
     // Map results by baseCode
     if (batchResponse.data && Array.isArray(batchResponse.data)) {
       batchResponse.data.forEach((price: AveragePriceResponse) => {
@@ -117,4 +117,3 @@ export async function fetchMultipleItemPrices(
 
   return results;
 }
-

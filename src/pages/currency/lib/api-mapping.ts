@@ -20,7 +20,7 @@ export const STASH_TO_API_MAP: Record<string, ItemApiMapping> = {
   hatred: { baseCode: 'ceh', typeCode: 'ubr', itemName: 'Charged Essence of Hatred' },
   suffering: { baseCode: 'tes', typeCode: 'ubr', itemName: 'Twisted Essence of Suffering' },
   terror: { baseCode: 'bet', typeCode: 'ubr', itemName: 'Burning Essence of Terror' },
-  
+
   // Uber items
   twss: { baseCode: 'cwss', typeCode: 'cwss', itemName: 'Tainted Worldstone Shard' },
   black_soulstone: { baseCode: 'dcho', typeCode: 'ubr', itemName: 'Black Soulstone' },
@@ -76,4 +76,3 @@ export const RUNE_NAME_TO_BASE_CODE: Record<string, string> = {
   'Cham Rune': 'r32',
   'Zod Rune': 'r33',
 };
-

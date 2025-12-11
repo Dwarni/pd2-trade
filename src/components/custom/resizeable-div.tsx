@@ -1,22 +1,22 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {ChevronDown} from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 interface ResizeableDivProps {
   children: React.ReactNode;
   width: number;
   height: number;
-  onResize?: (width: number,  height: number) => void
+  onResize?: (width: number, height: number) => void;
   onMouseDown: (e: any) => void;
   onMouseUp: (e: any) => void;
 }
 export default function ResizableDiv({
- children,
- width,
- height,
- onResize,
+  children,
+  width,
+  height,
+  onResize,
   onMouseDown,
-  onMouseUp
-                                     }: ResizeableDivProps) {
+  onMouseUp,
+}: ResizeableDivProps) {
   const [dimensions, setDimensions] = useState({ width, height });
   const dimensionsRef = useRef(dimensions);
 

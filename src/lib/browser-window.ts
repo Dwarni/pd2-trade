@@ -36,15 +36,15 @@ export interface BrowserWindow {
 export async function openCenteredWindow(
   label: string,
   url: string,
-  options: BrowserWindowOptions = {}
+  options: BrowserWindowOptions = {},
 ): Promise<BrowserWindow | null> {
   const width = options.width ?? 600;
   const height = options.height ?? 600;
-  
+
   // Calculate center position
   const left = window.screen.width / 2 - width / 2;
   const top = window.screen.height / 2 - height / 2;
-  
+
   const features = [
     `width=${width}`,
     `height=${height}`,
@@ -53,14 +53,14 @@ export async function openCenteredWindow(
     'resizable=yes',
     'scrollbars=yes',
   ].join(',');
-  
+
   const win = window.open(url, label, features);
-  
+
   if (!win) {
     console.warn('Failed to open window - popup blocked?');
     return null;
   }
-  
+
   return createBrowserWindowWrapper(win, label);
 }
 
@@ -70,7 +70,7 @@ export async function openCenteredWindow(
 export async function openWindowAtCursor(
   label: string,
   url: string,
-  options: BrowserWindowOptions = {}
+  options: BrowserWindowOptions = {},
 ): Promise<BrowserWindow | null> {
   // In browser, we can't get cursor position, so fall back to center
   return openCenteredWindow(label, url, options);
@@ -82,7 +82,7 @@ export async function openWindowAtCursor(
 export async function openOverDiabloWindow(
   label: string,
   url: string,
-  options: BrowserWindowOptions = {}
+  options: BrowserWindowOptions = {},
 ): Promise<BrowserWindow | null> {
   // In browser, we can't detect Diablo window, so fall back to center
   return openCenteredWindow(label, url, options);
@@ -94,15 +94,15 @@ export async function openOverDiabloWindow(
 function createBrowserWindowWrapper(win: Window, label: string): BrowserWindow {
   const closeCallbacks: (() => void)[] = [];
   const focusCallbacks: ((event: { payload: boolean }) => void)[] = [];
-  
+
   // Poll for window close
   const checkClosed = setInterval(() => {
     if (win.closed) {
       clearInterval(checkClosed);
-      closeCallbacks.forEach(cb => cb());
+      closeCallbacks.forEach((cb) => cb());
     }
   }, 100);
-  
+
   // Poll for focus changes
   const checkFocus = setInterval(() => {
     if (win.closed) {
@@ -110,9 +110,9 @@ function createBrowserWindowWrapper(win: Window, label: string): BrowserWindow {
       return;
     }
     const hasFocus = document.hasFocus() && win.document.hasFocus();
-    focusCallbacks.forEach(cb => cb({ payload: hasFocus }));
+    focusCallbacks.forEach((cb) => cb({ payload: hasFocus }));
   }, 200);
-  
+
   return {
     show: async () => {
       if (win.closed) {
@@ -158,10 +158,7 @@ function createBrowserWindowWrapper(win: Window, label: string): BrowserWindow {
 /**
  * Attach window lifecycle handlers
  */
-export function attachWindowLifecycle(
-  w: BrowserWindow,
-  onClose: () => void
-) {
+export function attachWindowLifecycle(w: BrowserWindow, onClose: () => void) {
   w.onCloseRequested(() => {
     onClose();
   });
@@ -177,11 +174,7 @@ export function attachWindowLifecycle(
 /**
  * Attach window close handler with focus loss handling
  */
-export function attachWindowCloseHandler(
-  w: BrowserWindow,
-  onClose: () => void,
-  onFocusLost?: () => void,
-) {
+export function attachWindowCloseHandler(w: BrowserWindow, onClose: () => void, onFocusLost?: () => void) {
   w.onCloseRequested(() => {
     onClose();
   });
@@ -213,4 +206,3 @@ export function attachWindowCloseHandler(
 export async function updateMainWindowBounds(): Promise<void> {
   // No-op in browser
 }
-

@@ -32,27 +32,23 @@ export const clipboardContainsValidItem = (jsonString: string): boolean => {
   try {
     const item = JSON.parse(jsonString);
     if (typeof item !== 'object' || item === null) return false;
-    
+
     // Basic validation
-    if (
-      typeof item.quality !== 'string' ||
-      typeof item.type !== 'string' ||
-      typeof item.iLevel !== 'number'
-    ) {
+    if (typeof item.quality !== 'string' || typeof item.type !== 'string' || typeof item.iLevel !== 'number') {
       return false;
     }
 
     // Check if item has no stats (or empty stats array)
-    const hasNoStats = !item.stats || 
-                       (Array.isArray(item.stats) && item.stats.length === 0) ||
-                       item.stats === null ||
-                       item.stats === undefined;
+    const hasNoStats =
+      !item.stats ||
+      (Array.isArray(item.stats) && item.stats.length === 0) ||
+      item.stats === null ||
+      item.stats === undefined;
 
     // If item has no stats, validate it's a base item (Normal or Superior quality)
     if (hasNoStats) {
-      const isBaseQuality = item.quality === ItemQuality.Normal || 
-                           item.quality === ItemQuality.Superior;
-      
+      const isBaseQuality = item.quality === ItemQuality.Normal || item.quality === ItemQuality.Superior;
+
       if (!isBaseQuality) {
         return false;
       }

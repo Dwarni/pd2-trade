@@ -1,6 +1,6 @@
 export enum PD2Website {
-    Api = 'https://api.projectdiablo2.com',
-    Website = 'https://projectdiablo2.com'
+  Api = 'https://api.projectdiablo2.com',
+  Website = 'https://projectdiablo2.com',
 }
 
 // Rune hierarchy order (highest to lowest)

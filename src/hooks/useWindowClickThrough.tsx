@@ -23,7 +23,7 @@ interface WindowClickThroughOptions {
 
 export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
   const { windowLabel, pollingInterval = 100, enableThrottling = true } = options;
-  
+
   const popupRefs = useRef<PopupRef[]>([]);
   const isClickThroughEnabled = useRef(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,12 +31,12 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
   const currentPollingInterval = useRef<number>(pollingInterval);
 
   const registerPopup = useCallback((ref: React.RefObject<HTMLElement>, id: string) => {
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
     popupRefs.current.push({ ref, id });
   }, []);
 
   const unregisterPopup = useCallback((id: string) => {
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
   }, []);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
@@ -67,7 +67,7 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
 
       // Get cursor position (screen coordinates)
       const { x: cursorScreenX, y: cursorScreenY } = await cursorPosition();
-      
+
       // Get window position (screen coordinates)
       const windowPosition = await window.outerPosition();
       const windowX = windowPosition.x;
@@ -80,11 +80,12 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
       const cursorViewportX = cursorScreenX - windowX;
       const cursorViewportY = cursorScreenY - windowY;
 
-      const isOverPopup = popupBounds.some(bounds => 
-        cursorViewportX >= bounds.left &&
-        cursorViewportX <= bounds.right &&
-        cursorViewportY >= bounds.top &&
-        cursorViewportY <= bounds.bottom
+      const isOverPopup = popupBounds.some(
+        (bounds) =>
+          cursorViewportX >= bounds.left &&
+          cursorViewportX <= bounds.right &&
+          cursorViewportY >= bounds.top &&
+          cursorViewportY <= bounds.bottom,
       );
 
       const now = Date.now();
@@ -139,17 +140,19 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
       }
       // Re-enable click-through on cleanup
       if (isTauri()) {
-        WebviewWindow.getByLabel(windowLabel).then(async (window) => {
-          try {
-            if (window) {
-              await window.setIgnoreCursorEvents(true);
+        WebviewWindow.getByLabel(windowLabel)
+          .then(async (window) => {
+            try {
+              if (window) {
+                await window.setIgnoreCursorEvents(true);
+              }
+            } catch (error) {
+              // Ignore errors on cleanup
             }
-          } catch (error) {
+          })
+          .catch(() => {
             // Ignore errors on cleanup
-          }
-        }).catch(() => {
-          // Ignore errors on cleanup
-        });
+          });
       }
     };
   }, [windowLabel, checkCursorPosition]);
@@ -159,4 +162,3 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
     unregisterPopup,
   };
 };
-

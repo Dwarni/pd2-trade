@@ -22,7 +22,7 @@ const isTokenExpiringSoon = (token: string): boolean => {
   try {
     const payload: { exp?: number } = jwtDecode(token);
     if (!payload.exp) return true;
-    
+
     const now = Math.floor(Date.now() / 1000);
     const fiveHours = 5 * 60 * 60;
     return payload.exp < now + fiveHours;
@@ -37,7 +37,7 @@ export const usePD2Auth = () => {
   // Listen for token updates
   useEffect(() => {
     let unlistenPromise: Promise<() => void>;
-    
+
     listen<string>('pd2-token-found', (event) => {
       updateSettings({ pd2Token: event.payload });
       const successToastPayload: GenericToastPayload = {
@@ -73,7 +73,8 @@ export const usePD2Auth = () => {
         // In browser, show instructions to enter token manually
         const authRequiredToastPayload: GenericToastPayload = {
           title: 'PD2 Trader - Authentication Required',
-          description: 'Please enter your PD2 token in Settings > Account. Get your token from projectdiablo2.com after logging in.',
+          description:
+            'Please enter your PD2 token in Settings > Account. Get your token from projectdiablo2.com after logging in.',
           variant: 'warning',
         };
         emit('toast-event', authRequiredToastPayload);
@@ -95,4 +96,3 @@ export const usePD2Auth = () => {
     }
   }, [settings?.pd2Token, isLoading]);
 };
-

@@ -10,21 +10,11 @@ export { useEconomyData } from '../hooks/useEconomyData';
 export { useStatSelection } from '../hooks/useStatSelection';
 
 // Services
-export { 
-  fetchEconomyData, 
-  sortItemsByPrice, 
-  calculateRuneValues, 
-  getRuneBreakdown 
-} from '../lib/economyService';
+export { fetchEconomyData, sortItemsByPrice, calculateRuneValues, getRuneBreakdown } from '../lib/economyService';
 export { buildTradeUrl } from '../lib/tradeUrlBuilder';
 
 // Utilities
 export { getTypeFromBaseType, getStatKey } from '../lib/utils';
 
 // Types
-export type { 
-  Props, 
-  ItemData, 
-  ItemValue, 
-  RuneCombination 
-} from '../lib/types'; 
+export type { Props, ItemData, ItemValue, RuneCombination } from '../lib/types';

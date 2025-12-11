@@ -1,7 +1,7 @@
 import { allItems } from './items';
 import Fuse from 'fuse.js';
 
-export type ItemType = typeof allItems[0];
+export type ItemType = (typeof allItems)[0];
 
 export function createItemFuse(itemList: ItemType[] = allItems) {
   return new Fuse(itemList, {
@@ -20,9 +20,9 @@ export function fuzzyFindItemByName(name: string, limit = 1, itemList: ItemType[
   if (!name) return [];
   const fuse = createItemFuse(itemList);
   const results = fuse.search(name, { limit });
-  return results.map(r => r.item);
+  return results.map((r) => r.item);
 }
 
 // Example usage:
 // const result = fuzzyFindItemByName('Gnashr');
-// console.log(result); 
+// console.log(result);

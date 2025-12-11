@@ -21,13 +21,13 @@ export enum Pd2EventType {
   LIST_SPECIFIC_ITEM = 'pd2-list-specific-item',
   LIST_SPECIFIC_ITEM_RESULT = 'pd2-list-specific-item-result',
 
-// Update market listing events (generic patch)
-UPDATE_MARKET_LISTING = 'pd2-update-market-listing',
-UPDATE_MARKET_LISTING_RESULT = 'pd2-update-market-listing-result',
+  // Update market listing events (generic patch)
+  UPDATE_MARKET_LISTING = 'pd2-update-market-listing',
+  UPDATE_MARKET_LISTING_RESULT = 'pd2-update-market-listing-result',
 
-// Update stash item by hash events
-UPDATE_STASH_ITEM_BY_HASH = 'pd2-update-stash-item-by-hash',
-UPDATE_STASH_ITEM_BY_HASH_RESULT = 'pd2-update-stash-item-by-hash-result',
+  // Update stash item by hash events
+  UPDATE_STASH_ITEM_BY_HASH = 'pd2-update-stash-item-by-hash',
+  UPDATE_STASH_ITEM_BY_HASH_RESULT = 'pd2-update-stash-item-by-hash-result',
 }
 
 export enum Pd2RequestType {
@@ -88,17 +88,17 @@ export function getResponseEventFromRequest(requestEvent: string): string {
 
 /**
  * Usage Examples:
- * 
+ *
  * // Using the enum directly
  * listen(Pd2EventType.GET_MARKET_LISTINGS, handler);
  * emit(Pd2EventType.GET_MARKET_LISTINGS_RESULT, data);
- * 
+ *
  * // Using helper functions
  * const requestEvent = getEventType(Pd2EventCategory.MARKET, 'get-market-listings');
  * const responseEvent = getResponseEventFromRequest(requestEvent);
- * 
+ *
  * // Type checking
  * if (isResponseEvent(Pd2EventType.GET_MARKET_LISTINGS_RESULT)) {
  *   // This is a response event
  * }
- */ 
+ */

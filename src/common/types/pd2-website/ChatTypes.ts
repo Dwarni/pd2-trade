@@ -65,4 +65,3 @@ export interface MessageListResponse {
   skip: number;
   data: Message[];
 }
-

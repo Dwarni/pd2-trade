@@ -1,8 +1,8 @@
 import { writeText, readText } from '@/lib/browser-clipboard';
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react';
 
 export function useClipboard() {
-  const [text, setText] = useState<string>("");
+  const [text, setText] = useState<string>('');
 
   // Read
   const read = useCallback(async () => {
@@ -11,7 +11,7 @@ export function useClipboard() {
       if (t !== null) setText(t);
       return t;
     } catch (err) {
-      console.error("Clipboard read failed:", err);
+      console.error('Clipboard read failed:', err);
     }
   }, []);
 
@@ -21,7 +21,7 @@ export function useClipboard() {
       await writeText(value);
       setText(value);
     } catch (err) {
-      console.error("Clipboard write failed:", err);
+      console.error('Clipboard write failed:', err);
     }
   }, []);
 

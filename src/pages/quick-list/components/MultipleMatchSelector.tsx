@@ -28,18 +28,14 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
       <div className="flex items-center gap-2 mb-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
         <AlertCircle className="h-5 w-5 text-yellow-500" />
         <div className="flex-1">
-          <div className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-            Multiple items found
-          </div>
+          <div className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Multiple items found</div>
           <div className="text-xs text-yellow-600/80 dark:text-yellow-400/80">
             Please select which item you want to list:
           </div>
         </div>
       </div>
       <div className="flex justify-between items-center mb-2">
-        <div className="text-xs font-medium flex items-center gap-2">
-          Select Item ({matchingItems.length} found)
-        </div>
+        <div className="text-xs font-medium flex items-center gap-2">Select Item ({matchingItems.length} found)</div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -89,4 +85,3 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
 };
 
 export default MultipleMatchSelector;
-

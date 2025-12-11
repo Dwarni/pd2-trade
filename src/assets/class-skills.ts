@@ -1,4 +1,4 @@
-import _ from "lodash";
+import _ from 'lodash';
 import Fuse from 'fuse.js';
 
 export interface ClassSkill {
@@ -29,76 +29,75 @@ export function getSkillTabIndex(rawSkillId) {
 }
 
 export const classSkillsMap: Record<number, ClassSkill> = {
-  0: { id: 0, kind: "character.class", key: "ama", name: "Amazon Skills" },
-  1: { id: 1, kind: "character.class", key: "sor", name: "Sorceress Skills" },
-  2: { id: 2, kind: "character.class", key: "nec", name: "Necromancer Skills" },
-  3: { id: 3, kind: "character.class", key: "pal", name: "Paladin Skills" },
-  4: { id: 4, kind: "character.class", key: "bar", name: "Barbarian Skills" },
-  5: { id: 5, kind: "character.class", key: "dru", name: "Druid Skills" },
-  6: { id: 6, kind: "character.class", key: "ass", name: "Assassin Skills" },
+  0: { id: 0, kind: 'character.class', key: 'ama', name: 'Amazon Skills' },
+  1: { id: 1, kind: 'character.class', key: 'sor', name: 'Sorceress Skills' },
+  2: { id: 2, kind: 'character.class', key: 'nec', name: 'Necromancer Skills' },
+  3: { id: 3, kind: 'character.class', key: 'pal', name: 'Paladin Skills' },
+  4: { id: 4, kind: 'character.class', key: 'bar', name: 'Barbarian Skills' },
+  5: { id: 5, kind: 'character.class', key: 'dru', name: 'Druid Skills' },
+  6: { id: 6, kind: 'character.class', key: 'ass', name: 'Assassin Skills' },
 };
 
-export const classSkillNameToIdMap: Record<string, ClassSkill> = _.keyBy(
-  Object.values(classSkillsMap),
-  (skill) => skill.name.toLowerCase()
+export const classSkillNameToIdMap: Record<string, ClassSkill> = _.keyBy(Object.values(classSkillsMap), (skill) =>
+  skill.name.toLowerCase(),
 );
 
 export const classSubSkillMap: Record<number, ClassSubSkill> = {
-  0:  { id:  0, name: "Bow and Crossbow Skills (Amazon)",     class: "Amazon"      },
-  1:  { id:  1, name: "Passive and Magic Skills (Amazon)",     class: "Amazon"      },
-  2:  { id:  2, name: "Javelin and Spear Skills (Amazon)",     class: "Amazon"      },
-  3:  { id:  3, name: "Fire Skills (Sorceress)",                  class: "Sorceress"   },
-  4:  { id:  4, name: "Lightning Skills (Sorceress)",             class: "Sorceress"   },
-  5:  { id:  5, name: "Cold Skills (Sorceress)",                  class: "Sorceress"   },
-  6:  { id:  6, name: "Curses Skills (Necromancer)",                class: "Necromancer" },
-  7:  { id:  7, name: "Poison and Bone Skills (Necromancer)",       class: "Necromancer" },
-  8:  { id:  8, name: "Summoning Skills (Necromancer)",             class: "Necromancer" },
-  9:  { id:  9, name: "Combat Skills (Paladin)",                class: "Paladin"     },
-  10:  { id: 10, name: "Offensive Auras Skills (Paladin)",        class: "Paladin"     },
-  11:  { id: 11, name: "Defensive Auras Skills (Paladin)",       class: "Paladin"     },
-  12:  { id: 12, name: "Combat Skills (Barbarian)",                class: "Barbarian"   },
-  13:  { id: 13, name: "Masteries Skills (Barbarian)",             class: "Barbarian"   },
-  14:  { id: 14, name: "Warcries Skills (Barbarian)",              class: "Barbarian"   },
-  15:  { id: 15, name: "Summoning Skills (Druid)",             class: "Druid"       },
-  16:  { id: 16, name: "Shape Shifting Skills (Druid)",        class: "Druid"       },
-  17:  { id: 17, name: "Elemental Skills (Druid)",             class: "Druid"       },
-  18:  { id: 18, name: "Traps Skills (Assassin)",                 class: "Assassin"    },
-  19:  { id: 19, name: "Shadow Disciplines Skills (Assassin)",    class: "Assassin"    },
-  20:  { id: 20, name: "Martial Arts Skills (Assassin)",          class: "Assassin"    },
+  0: { id: 0, name: 'Bow and Crossbow Skills (Amazon)', class: 'Amazon' },
+  1: { id: 1, name: 'Passive and Magic Skills (Amazon)', class: 'Amazon' },
+  2: { id: 2, name: 'Javelin and Spear Skills (Amazon)', class: 'Amazon' },
+  3: { id: 3, name: 'Fire Skills (Sorceress)', class: 'Sorceress' },
+  4: { id: 4, name: 'Lightning Skills (Sorceress)', class: 'Sorceress' },
+  5: { id: 5, name: 'Cold Skills (Sorceress)', class: 'Sorceress' },
+  6: { id: 6, name: 'Curses Skills (Necromancer)', class: 'Necromancer' },
+  7: { id: 7, name: 'Poison and Bone Skills (Necromancer)', class: 'Necromancer' },
+  8: { id: 8, name: 'Summoning Skills (Necromancer)', class: 'Necromancer' },
+  9: { id: 9, name: 'Combat Skills (Paladin)', class: 'Paladin' },
+  10: { id: 10, name: 'Offensive Auras Skills (Paladin)', class: 'Paladin' },
+  11: { id: 11, name: 'Defensive Auras Skills (Paladin)', class: 'Paladin' },
+  12: { id: 12, name: 'Combat Skills (Barbarian)', class: 'Barbarian' },
+  13: { id: 13, name: 'Masteries Skills (Barbarian)', class: 'Barbarian' },
+  14: { id: 14, name: 'Warcries Skills (Barbarian)', class: 'Barbarian' },
+  15: { id: 15, name: 'Summoning Skills (Druid)', class: 'Druid' },
+  16: { id: 16, name: 'Shape Shifting Skills (Druid)', class: 'Druid' },
+  17: { id: 17, name: 'Elemental Skills (Druid)', class: 'Druid' },
+  18: { id: 18, name: 'Traps Skills (Assassin)', class: 'Assassin' },
+  19: { id: 19, name: 'Shadow Disciplines Skills (Assassin)', class: 'Assassin' },
+  20: { id: 20, name: 'Martial Arts Skills (Assassin)', class: 'Assassin' },
 };
 
 export const classSubSkillMap2: Record<number, ClassSubSkill> = {
-  0:  { id:  0, name: "Bow and Crossbow (Amazon)",     class: "Amazon"      },
-  1:  { id:  1, name: "Passive and Magic (Amazon)",     class: "Amazon"      },
-  2:  { id:  2, name: "Javelin and Spear (Amazon)",     class: "Amazon"      },
-  3:  { id:  3, name: "Fire (Sorceress)",                  class: "Sorceress"   },
-  4:  { id:  4, name: "Lightning (Sorceress)",             class: "Sorceress"   },
-  5:  { id:  5, name: "Cold (Sorceress)",                  class: "Sorceress"   },
-  6:  { id:  6, name: "Curses (Necromancer)",                class: "Necromancer" },
-  7:  { id:  7, name: "Poison and Bone (Necromancer)",       class: "Necromancer" },
-  8:  { id:  8, name: "Summoning (Necromancer)",             class: "Necromancer" },
-  9:  { id:  9, name: "Combat (Paladin)",                class: "Paladin"     },
-  10:  { id: 10, name: "Offensive Auras (Paladin)",        class: "Paladin"     },
-  11:  { id: 11, name: "Defensive Auras (Paladin)",       class: "Paladin"     },
-  12:  { id: 12, name: "Combat (Barbarian)",                class: "Barbarian"   },
-  13:  { id: 13, name: "Masteries (Barbarian)",             class: "Barbarian"   },
-  14:  { id: 14, name: "Warcries (Barbarian)",              class: "Barbarian"   },
-  15:  { id: 15, name: "Summoning (Druid)",             class: "Druid"       },
-  16:  { id: 16, name: "Shape Shifting (Druid)",        class: "Druid"       },
-  17:  { id: 17, name: "Elemental (Druid)",             class: "Druid"       },
-  18:  { id: 18, name: "Traps (Assassin)",                 class: "Assassin"    },
-  19:  { id: 19, name: "Shadow Disciplines (Assassin)",    class: "Assassin"    },
-  20:  { id: 20, name: "Martial Arts (Assassin)",          class: "Assassin"    },
+  0: { id: 0, name: 'Bow and Crossbow (Amazon)', class: 'Amazon' },
+  1: { id: 1, name: 'Passive and Magic (Amazon)', class: 'Amazon' },
+  2: { id: 2, name: 'Javelin and Spear (Amazon)', class: 'Amazon' },
+  3: { id: 3, name: 'Fire (Sorceress)', class: 'Sorceress' },
+  4: { id: 4, name: 'Lightning (Sorceress)', class: 'Sorceress' },
+  5: { id: 5, name: 'Cold (Sorceress)', class: 'Sorceress' },
+  6: { id: 6, name: 'Curses (Necromancer)', class: 'Necromancer' },
+  7: { id: 7, name: 'Poison and Bone (Necromancer)', class: 'Necromancer' },
+  8: { id: 8, name: 'Summoning (Necromancer)', class: 'Necromancer' },
+  9: { id: 9, name: 'Combat (Paladin)', class: 'Paladin' },
+  10: { id: 10, name: 'Offensive Auras (Paladin)', class: 'Paladin' },
+  11: { id: 11, name: 'Defensive Auras (Paladin)', class: 'Paladin' },
+  12: { id: 12, name: 'Combat (Barbarian)', class: 'Barbarian' },
+  13: { id: 13, name: 'Masteries (Barbarian)', class: 'Barbarian' },
+  14: { id: 14, name: 'Warcries (Barbarian)', class: 'Barbarian' },
+  15: { id: 15, name: 'Summoning (Druid)', class: 'Druid' },
+  16: { id: 16, name: 'Shape Shifting (Druid)', class: 'Druid' },
+  17: { id: 17, name: 'Elemental (Druid)', class: 'Druid' },
+  18: { id: 18, name: 'Traps (Assassin)', class: 'Assassin' },
+  19: { id: 19, name: 'Shadow Disciplines (Assassin)', class: 'Assassin' },
+  20: { id: 20, name: 'Martial Arts (Assassin)', class: 'Assassin' },
 };
 
 export const classSubSkillNameToIdMap: Record<string, ClassSubSkill> = _.keyBy(
   Object.values(classSubSkillMap),
-  (skill) => skill.name.toLowerCase()
+  (skill) => skill.name.toLowerCase(),
 );
 
 export const classSubSkillNameToIdMap2: Record<string, ClassSubSkill> = _.keyBy(
   Object.values(classSubSkillMap2),
-  (skill) => skill.name.toLowerCase()
+  (skill) => skill.name.toLowerCase(),
 );
 
 // Fuzzy search functionality for class sub-skills
@@ -110,7 +109,7 @@ export function createClassSubSkillFuse(subSkillList: ClassSubSkill[] = Object.v
 }
 
 export function fuzzyMatchClassSubSkills(
-  searchTerm: string, 
+  searchTerm: string,
   subSkillList: ClassSubSkill[] = Object.values(classSubSkillMap),
 ): ClassSubSkill | null {
   const fuse = createClassSubSkillFuse(subSkillList);
@@ -123,22 +122,21 @@ export function fuzzyClassSubSkillByName(name: string): ClassSubSkill | null {
   // Extract class name from brackets (e.g., "Shapeshifting (Druid)" -> "Druid")
   const classMatch = name.match(/\(([^)]+)\)/);
   let filteredSubSkills: ClassSubSkill[] = [];
-  
+
   if (classMatch) {
     const extractedClass = classMatch[1].trim();
     // Combine both maps and filter by class
     const allSubSkills = [...Object.values(classSubSkillMap), ...Object.values(classSubSkillMap2)];
-    filteredSubSkills = allSubSkills.filter(skill => 
-      skill.class.toLowerCase() === extractedClass.toLowerCase()
-    );
+    filteredSubSkills = allSubSkills.filter((skill) => skill.class.toLowerCase() === extractedClass.toLowerCase());
   }
-  
+
   // If we found a class match, search within that filtered list
   // Otherwise, search all skills
-  const searchList = filteredSubSkills.length > 0 
-    ? filteredSubSkills 
-    : [...Object.values(classSubSkillMap), ...Object.values(classSubSkillMap2)];
-  
+  const searchList =
+    filteredSubSkills.length > 0
+      ? filteredSubSkills
+      : [...Object.values(classSubSkillMap), ...Object.values(classSubSkillMap2)];
+
   return fuzzyMatchClassSubSkills(name, searchList);
 }
 
@@ -151,7 +149,7 @@ export function createClassSkillFuse(skillList: ClassSkill[] = Object.values(cla
 }
 
 export function fuzzyMatchClassSkills(
-  searchTerm: string, 
+  searchTerm: string,
   skillList: ClassSkill[] = Object.values(classSkillsMap),
 ): ClassSkill | null {
   const fuse = createClassSkillFuse(skillList);

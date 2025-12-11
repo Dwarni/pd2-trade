@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Check, SquareArrowOutUpRight, Trash2 } from "lucide-react";
+import { Check, SquareArrowOutUpRight, Trash2 } from 'lucide-react';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import moment from 'moment';
@@ -23,7 +23,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   currentListings,
   onBump,
   deleteMarketListing,
-  onRefresh
+  onRefresh,
 }) => {
   const [hoveredHash, setHoveredHash] = useState<string | null>(null);
   const [justBumped, setJustBumped] = useState<string | null>(null);
@@ -75,92 +75,86 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
   }
 
   return (
-    <div className='flex flex-row items-center gap-2'>
-        <span
-          onMouseEnter={() => setHoveredHash(stashItem.hash)}
-          onMouseLeave={() => {
-        setHoveredHash(null);
-        setJustBumped(null);
-      }}
-          style={{ display: 'inline-block', position: 'relative' }}
-    >
-      {justBumped === stashItem.hash ? (
-        <Badge variant="secondary"
-          className="text-xs rounded-lg flex items-center gap-1 justify-center w-13 h-5"
-          style={{ background: 'white', color: 'black' }}>
-          <Check className="w-3 h-3" />
-        </Badge>
-      ) : hoveredHash === stashItem.hash ? (
-        canBump(stashItem) ? (
+    <div className="flex flex-row items-center gap-2">
+      <span
+        onMouseEnter={() => setHoveredHash(stashItem.hash)}
+        onMouseLeave={() => {
+          setHoveredHash(null);
+          setJustBumped(null);
+        }}
+        style={{ display: 'inline-block', position: 'relative' }}
+      >
+        {justBumped === stashItem.hash ? (
           <Badge
-            asChild
-            className="text-xs rounded-lg cursor-pointer flex items-center gap-1 justify-center w-13 h-5"
+            variant="secondary"
+            className="text-xs rounded-lg flex items-center gap-1 justify-center w-13 h-5"
             style={{ background: 'white', color: 'black' }}
-            onClick={handleBump}
           >
-            <span>Bump</span>
+            <Check className="w-3 h-3" />
           </Badge>
+        ) : hoveredHash === stashItem.hash ? (
+          canBump(stashItem) ? (
+            <Badge
+              asChild
+              className="text-xs rounded-lg cursor-pointer flex items-center gap-1 justify-center w-13 h-5"
+              style={{ background: 'white', color: 'black' }}
+              onClick={handleBump}
+            >
+              <span>Bump</span>
+            </Badge>
+          ) : (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <span>
+                  <Badge
+                    variant="secondary"
+                    className="text-xs rounded-lg bg-green-600 text-white cursor-not-allowed flex items-center gap-1 justify-center w-13 h-5"
+                  >
+                    Listed
+                  </Badge>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{`You can bump this item ${timeUntilBump(stashItem)}`}</TooltipContent>
+            </Tooltip>
+          )
         ) : (
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span>
-                <Badge 
-                  variant="secondary" 
-                  className="text-xs rounded-lg bg-green-600 text-white cursor-not-allowed flex items-center gap-1 justify-center w-13 h-5">
-                Listed
-                </Badge>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {`You can bump this item ${timeUntilBump(stashItem)}`}
-            </TooltipContent>
-          </Tooltip>
-        )
-      ) : (
-        <Badge 
-          variant="secondary"
-          className="text-xs rounded-lg bg-green-600 text-white flex items-center gap-1 justify-center w-13 h-5">
+          <Badge
+            variant="secondary"
+            className="text-xs rounded-lg bg-green-600 text-white flex items-center gap-1 justify-center w-13 h-5"
+          >
             Listed
-        </Badge>
-      )}
-    </span>
-        <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-            <Trash2 
-              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500" 
-              onClick={async () => {
-             await deleteMarketListing(listing._id);
-             await onRefresh();
-             await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
-             const win = await getCurrentWebviewWindow();
-             if (win) await win.hide();
-           }}
-         />
-            </TooltipTrigger>
-            <TooltipContent>
-              {`Remove listing`}
-            </TooltipContent>
-          </Tooltip>
-    
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-            <SquareArrowOutUpRight 
-              className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer" 
-              onClick={() => {
-             openUrl(`${PD2Website.Website}/market/listing/${listing._id}`)
-           }}
-         />
-            </TooltipTrigger>
-            <TooltipContent>
-              {`Go to trade website`}
-            </TooltipContent>
-          </Tooltip>
+          </Badge>
+        )}
+      </span>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Trash2
+            className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
+            onClick={async () => {
+              await deleteMarketListing(listing._id);
+              await onRefresh();
+              await emit('toast-event', `Removed ${stashItem?.name || ''} market listing.`);
+              const win = await getCurrentWebviewWindow();
+              if (win) await win.hide();
+            }}
+          />
+        </TooltipTrigger>
+        <TooltipContent>{`Remove listing`}</TooltipContent>
+      </Tooltip>
 
-    
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <SquareArrowOutUpRight
+            className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer"
+            onClick={() => {
+              openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
+            }}
+          />
+        </TooltipTrigger>
+        <TooltipContent>{`Go to trade website`}</TooltipContent>
+      </Tooltip>
     </div>
-    
-    
   );
 };
 
-export default MarketListingBadge; 
+export default MarketListingBadge;

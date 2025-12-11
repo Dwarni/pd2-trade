@@ -1,9 +1,6 @@
 // components/DialogProvider.tsx
 import React, { createContext, useContext, useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogContent,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
 
 interface DialogContextProps {
   openDialog: (content: React.ReactNode) => void;
@@ -41,15 +38,14 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       <AlertDialog
         open={isOpen}
         onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) {
-          // Reset state when dialog is closed via external actions
-          setDialogContent(null);
-        }
-      }}>
-        <AlertDialogContent>
-          {dialogContent}
-        </AlertDialogContent>
+          setIsOpen(open);
+          if (!open) {
+            // Reset state when dialog is closed via external actions
+            setDialogContent(null);
+          }
+        }}
+      >
+        <AlertDialogContent>{dialogContent}</AlertDialogContent>
       </AlertDialog>
     </DialogContext.Provider>
   );

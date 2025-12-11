@@ -3,7 +3,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from "lucide-react";
+import { Loader2 } from 'lucide-react';
 import { ShortcutFormData } from './types';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -23,10 +23,10 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   currentListings,
   submitLoading,
   onSubmit,
-  allowQueue = false
+  allowQueue = false,
 }) => {
   const isAlreadyListed = selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash);
-  
+
   // Watch note and price fields to determine if button should be disabled
   const note = form.watch('note');
   const price = form.watch('price');
@@ -54,7 +54,7 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           </FormItem>
         )}
       />
-      
+
       {/* HR Price Input */}
       <FormField
         control={form.control}
@@ -64,30 +64,36 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           <FormItem className="m-0 p-0 min-w-0 w-20">
             <FormLabel className="sr-only">HR</FormLabel>
             <FormControl>
-              <Input type="number"
+              <Input
+                type="number"
                 min={0}
                 step={0.01}
                 placeholder="HR"
                 {...field}
-                value={form.getValues('price') || ''} />
+                value={form.getValues('price') || ''}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      
+
       {/* Submit Button */}
       {isAlreadyListed ? (
-        <Button type="submit"
-          style={{fontFamily: 'DiabloFont', fontWeight: 600}}
-          disabled={submitLoading || !isFormValid}>
+        <Button
+          type="submit"
+          style={{ fontFamily: 'DiabloFont', fontWeight: 600 }}
+          disabled={submitLoading || !isFormValid}
+        >
           {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
           Update
         </Button>
       ) : (
-        <Button type="submit"
+        <Button
+          type="submit"
           disabled={(!selectedItem && !allowQueue) || submitLoading || !isFormValid}
-          style={{fontFamily: 'DiabloFont', fontWeight: 600}}>
+          style={{ fontFamily: 'DiabloFont', fontWeight: 600 }}
+        >
           {submitLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null}
           {allowQueue && !selectedItem ? 'Queue Item' : 'Post'}
         </Button>
@@ -96,4 +102,4 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   );
 };
 
-export default ListingFormFields; 
+export default ListingFormFields;

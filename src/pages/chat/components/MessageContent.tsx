@@ -10,7 +10,8 @@ interface MessageContentProps {
 
 // Regex to match market listing URLs
 // Matches: https://www.projectdiablo2.com/market/listing/ID?display="Name" or ?display=Name
-const MARKET_LISTING_URL_REGEX = /https?:\/\/www\.projectdiablo2\.com\/market\/listing\/([a-f0-9]+)(?:\?display=((?:"[^"]+")|(?:[^\s"<>]+)))?/gi;
+const MARKET_LISTING_URL_REGEX =
+  /https?:\/\/www\.projectdiablo2\.com\/market\/listing\/([a-f0-9]+)(?:\?display=((?:"[^"]+")|(?:[^\s"<>]+)))?/gi;
 
 interface ParsedSegment {
   type: 'text' | 'link';
@@ -26,10 +27,10 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
     let lastIndex = 0;
     let match;
 
-    // Reset regex
-    MARKET_LISTING_URL_REGEX.lastIndex = 0;
+    // Create a new regex instance to avoid modifying the global one
+    const regex = new RegExp(MARKET_LISTING_URL_REGEX.source, MARKET_LISTING_URL_REGEX.flags);
 
-    while ((match = MARKET_LISTING_URL_REGEX.exec(text)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
         segments.push({
@@ -88,11 +89,11 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
               href={segment.url}
               onClick={(e) => handleLinkClick(e, segment.url!)}
               className={cn(
-                "inline-flex items-center gap-1 px-2 py-1 rounded-md font-medium transition-colors",
-                "hover:underline",
+                'inline-flex items-center gap-1 px-2 py-1 rounded-md font-medium transition-colors',
+                'hover:underline',
                 isOwnMessage
-                  ? "bg-blue-600 text-blue-100 hover:bg-blue-700"
-                  : "bg-blue-700 text-blue-200 hover:bg-blue-600"
+                  ? 'bg-blue-600 text-blue-100 hover:bg-blue-700'
+                  : 'bg-blue-700 text-blue-200 hover:bg-blue-600',
               )}
               target="_blank"
               rel="noopener noreferrer"
@@ -107,4 +108,3 @@ export function MessageContent({ content, isOwnMessage }: MessageContentProps) {
     </div>
   );
 }
-

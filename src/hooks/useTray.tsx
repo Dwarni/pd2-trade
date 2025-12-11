@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
-import { useOptions } from "@/hooks/useOptions";
-import { openCenteredWindow, attachWindowCloseHandler } from "@/lib/window";
+import { useOptions } from '@/hooks/useOptions';
+import { openCenteredWindow, attachWindowCloseHandler } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { isRegistered, register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { Menu } from '@tauri-apps/api/menu';
@@ -35,7 +35,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
   const showSettingsWindow = async () => {
     if (!settingsWinRef.current) {
-      settingsWinRef.current = await openCenteredWindow("Settings", "/settings", {
+      settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
         decorations: false,
         skipTaskbar: true,
         transparent: true,
@@ -62,47 +62,78 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
 
     listen('open-settings', () => {
       showSettingsWindow();
-    }).then((off) => {
-      unlisten = off;
-    }).catch((err) => {
-      console.error('Failed to listen for open-settings event:', err);
-    });
+    })
+      .then((off) => {
+        unlisten = off;
+      })
+      .catch((err) => {
+        console.error('Failed to listen for open-settings event:', err);
+      });
 
     return () => {
       if (unlisten) unlisten();
     };
   }, []);
 
-  // Register global shortcut for opening settings
+  // Register global shortcut for opening settings (only when Diablo is focused)
   useEffect(() => {
     if (!isTauri() || !settings?.hotkeyModifierSettings || !settings?.hotkeyKeySettings) return;
 
     const shortcut = `${settings.hotkeyModifierSettings}+${settings.hotkeyKeySettings}`.toLowerCase();
 
-    async function registerShortcut() {
-      try {
-        if (lastShortcutRef.current) {
+    const unregisterShortcut = async () => {
+      if (lastShortcutRef.current) {
+        try {
           await unregister(lastShortcutRef.current);
+          lastShortcutRef.current = null;
+        } catch (err) {
+          // Ignore errors
         }
-        if (!await isRegistered(shortcut)) {
+      }
+    };
+
+    const registerShortcut = async () => {
+      try {
+        // Unregister previous shortcut first
+        await unregisterShortcut();
+
+        if (!(await isRegistered(shortcut))) {
           await register(shortcut, () => {
             showSettingsWindow();
           });
+          lastShortcutRef.current = shortcut;
         }
-
-        lastShortcutRef.current = shortcut;
       } catch (err) {
         console.error('Failed to register settings shortcut:', err);
       }
-    }
+    };
 
-    registerShortcut();
+    let unlisten: (() => void) | null = null;
+
+    // Listen for Diablo focus changes
+    listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+      if (isFocused) {
+        // Diablo gained focus - register hotkey
+        await registerShortcut();
+      } else {
+        // Diablo lost focus - unregister hotkey
+        await unregisterShortcut();
+      }
+    })
+      .then((off) => {
+        unlisten = off;
+      })
+      .catch((error) => {
+        console.error('Failed to listen for diablo-focus-changed event:', error);
+      });
 
     return () => {
+      if (unlisten) {
+        unlisten();
+      }
+      // Unregister shortcut on cleanup
       if (isTauri() && lastShortcutRef.current) {
-        unregister(lastShortcutRef.current).then(() => {
-          lastShortcutRef.current = null;
-        }).catch(console.error);
+        unregisterShortcut().catch(console.error);
       }
     };
   }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings]);
@@ -124,7 +155,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
               text: 'Settings',
               action: () => {
                 showSettingsWindow();
-              }
+              },
             },
             {
               id: 'open-config',
@@ -136,14 +167,14 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
                 } catch (err) {
                   console.error('Failed to open config location:', err);
                 }
-              }
+              },
             },
             {
               id: 'quit',
               text: 'Quit',
               action: () => {
                 exit();
-              }
+              },
             },
           ],
         });
@@ -184,9 +215,5 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  return (
-    <TrayContext.Provider value={{ tray }}>
-      {children}
-    </TrayContext.Provider>
-  );
+  return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
 };

@@ -30,25 +30,26 @@ export async function fetchEconomyData(): Promise<{
 
   try {
     // Fetch ALL rune prices using batch API - get all runes that have base codes
-    const runeItems = RUNE_HIERARCHY
-      .map((runeName) => RUNE_NAME_TO_BASE_CODE[runeName])
+    const runeItems = RUNE_HIERARCHY.map((runeName) => RUNE_NAME_TO_BASE_CODE[runeName])
       .filter((baseCode): baseCode is string => !!baseCode)
-      .map(baseCode => ({ baseCode }));
+      .map((baseCode) => ({ baseCode }));
 
     const runePrices = await fetchMultipleItemPrices(runeItems, config);
-    
+
     runePrices.forEach((price, baseCode) => {
       const runeName = price.itemName;
       if (runeName) {
         results.Runes[runeName] = {
           itemName: runeName,
           proper: runeName,
-          dataByIngestionDate: [{
-            date: price.timeRange.end,
-            trueDate: price.timeRange.end,
-            numListings: price.sampleCount,
-            price: price.medianPrice,
-          }],
+          dataByIngestionDate: [
+            {
+              date: price.timeRange.end,
+              trueDate: price.timeRange.end,
+              numListings: price.sampleCount,
+              price: price.medianPrice,
+            },
+          ],
         };
       }
     });
@@ -56,10 +57,10 @@ export async function fetchEconomyData(): Promise<{
     // Fetch currency item prices - use STASH_API_MAP to determine which items belong to Currency category
     const currencyKeys = Object.keys(STASH_API_MAP.Currency);
     const currencyItems = currencyKeys
-      .map(key => STASH_TO_API_MAP[key]?.baseCode)
+      .map((key) => STASH_TO_API_MAP[key]?.baseCode)
       .filter((baseCode): baseCode is string => !!baseCode)
-      .map(baseCode => ({ baseCode }));
-    
+      .map((baseCode) => ({ baseCode }));
+
     const currencyPrices = await fetchMultipleItemPrices(currencyItems, config);
 
     currencyPrices.forEach((price) => {
@@ -68,12 +69,14 @@ export async function fetchEconomyData(): Promise<{
         results.Currency[itemName] = {
           itemName: itemName,
           proper: itemName,
-          dataByIngestionDate: [{
-            date: price.timeRange.end,
-            trueDate: price.timeRange.end,
-            numListings: price.sampleCount,
-            price: price.medianPrice,
-          }],
+          dataByIngestionDate: [
+            {
+              date: price.timeRange.end,
+              trueDate: price.timeRange.end,
+              numListings: price.sampleCount,
+              price: price.medianPrice,
+            },
+          ],
         };
       }
     });
@@ -81,10 +84,10 @@ export async function fetchEconomyData(): Promise<{
     // Fetch uber item prices - use STASH_API_MAP to determine which items belong to Ubers category
     const uberKeys = Object.keys(STASH_API_MAP.Ubers);
     const uberItems = uberKeys
-      .map(key => STASH_TO_API_MAP[key]?.baseCode)
+      .map((key) => STASH_TO_API_MAP[key]?.baseCode)
       .filter((baseCode): baseCode is string => !!baseCode)
-      .map(baseCode => ({ baseCode }));
-    
+      .map((baseCode) => ({ baseCode }));
+
     const uberPrices = await fetchMultipleItemPrices(uberItems, config);
 
     uberPrices.forEach((price) => {
@@ -93,16 +96,17 @@ export async function fetchEconomyData(): Promise<{
         results.Ubers[itemName] = {
           itemName: itemName,
           proper: itemName,
-          dataByIngestionDate: [{
-            date: price.timeRange.end,
-            trueDate: price.timeRange.end,
-            numListings: price.sampleCount,
-            price: price.medianPrice,
-          }],
+          dataByIngestionDate: [
+            {
+              date: price.timeRange.end,
+              trueDate: price.timeRange.end,
+              numListings: price.sampleCount,
+              price: price.medianPrice,
+            },
+          ],
         };
       }
     });
-
   } catch (error) {
     console.error('Error fetching economy data from API:', error);
     // Return empty data on error - will fall back to fixed prices
@@ -140,11 +144,32 @@ export function sortItemsByPrice(runeData: Record<string, ItemData>) {
 
 // Low runes that should always use fixed prices (they don't change much)
 const LOW_RUNES = [
-  'El Rune', 'Eld Rune', 'Tir Rune', 'Nef Rune', 'Eth Rune', 'Ith Rune',
-  'Tal Rune', 'Ral Rune', 'Ort Rune', 'Thul Rune', 'Amn Rune', 'Sol Rune',
-  'Shael Rune', 'Dol Rune', 'Hel Rune', 'Io Rune', 'Lum Rune', 'Ko Rune',
-  'Fal Rune', 'Lem Rune', 'Pul Rune', 'Um Rune', 'Mal Rune', 'Ist Rune',
-  'Gul Rune', 'Vex Rune'
+  'El Rune',
+  'Eld Rune',
+  'Tir Rune',
+  'Nef Rune',
+  'Eth Rune',
+  'Ith Rune',
+  'Tal Rune',
+  'Ral Rune',
+  'Ort Rune',
+  'Thul Rune',
+  'Amn Rune',
+  'Sol Rune',
+  'Shael Rune',
+  'Dol Rune',
+  'Hel Rune',
+  'Io Rune',
+  'Lum Rune',
+  'Ko Rune',
+  'Fal Rune',
+  'Lem Rune',
+  'Pul Rune',
+  'Um Rune',
+  'Mal Rune',
+  'Ist Rune',
+  'Gul Rune',
+  'Vex Rune',
 ];
 
 export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any }>): ItemValue[] {
@@ -155,7 +180,7 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
   sortedRunes.forEach((rune) => {
     const isLowRune = LOW_RUNES.includes(rune.name);
     const latestData = rune.data?.dataByIngestionDate?.[0];
-    
+
     // Low runes always use fixed prices
     if (isLowRune) {
       const fixedPrice = FIXED_RUNE_PRICES[rune.name] || ALL_RUNE_HR_VALUES[rune.name];
@@ -170,11 +195,11 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
       }
       return;
     }
-    
+
     // For high runes, use API data if available
     if (latestData && latestData.price > 0) {
       const numListings = latestData.numListings || 0;
-      
+
       // Use API price if we have enough listings, otherwise fall back to fixed
       if (numListings >= MIN_LISTINGS_FOR_API_PRICE) {
         runeValues.push({
@@ -214,7 +239,7 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
 
   // Add any runes from FIXED_RUNE_PRICES that weren't in sortedRunes
   Object.entries(FIXED_RUNE_PRICES).forEach(([runeName, fixedPrice]) => {
-    if (!runeValues.find(r => r.name === runeName)) {
+    if (!runeValues.find((r) => r.name === runeName)) {
       runeValues.push({
         name: runeName,
         price: fixedPrice,
@@ -227,7 +252,7 @@ export function calculateRuneValues(sortedRunes: Array<{ name: string; data: any
 
   // Add any runes from ALL_RUNE_HR_VALUES that weren't already added
   Object.entries(ALL_RUNE_HR_VALUES).forEach(([runeName, hrValue]) => {
-    if (!runeValues.find(r => r.name === runeName) && !FIXED_RUNE_PRICES[runeName]) {
+    if (!runeValues.find((r) => r.name === runeName) && !FIXED_RUNE_PRICES[runeName]) {
       runeValues.push({
         name: runeName,
         price: hrValue,
@@ -254,18 +279,39 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
 
   // Low runes that should always use fixed prices (they don't change much)
   const LOW_RUNES = [
-    'El Rune', 'Eld Rune', 'Tir Rune', 'Nef Rune', 'Eth Rune', 'Ith Rune',
-    'Tal Rune', 'Ral Rune', 'Ort Rune', 'Thul Rune', 'Amn Rune', 'Sol Rune',
-    'Shael Rune', 'Dol Rune', 'Hel Rune', 'Io Rune', 'Lum Rune', 'Ko Rune',
-    'Fal Rune', 'Lem Rune', 'Pul Rune', 'Um Rune', 'Mal Rune', 'Ist Rune',
-    'Gul Rune', 'Vex Rune'
+    'El Rune',
+    'Eld Rune',
+    'Tir Rune',
+    'Nef Rune',
+    'Eth Rune',
+    'Ith Rune',
+    'Tal Rune',
+    'Ral Rune',
+    'Ort Rune',
+    'Thul Rune',
+    'Amn Rune',
+    'Sol Rune',
+    'Shael Rune',
+    'Dol Rune',
+    'Hel Rune',
+    'Io Rune',
+    'Lum Rune',
+    'Ko Rune',
+    'Fal Rune',
+    'Lem Rune',
+    'Pul Rune',
+    'Um Rune',
+    'Mal Rune',
+    'Ist Rune',
+    'Gul Rune',
+    'Vex Rune',
   ];
 
   // First, add runes from API data (prioritize API prices)
   Object.entries(input.Runes).forEach(([name, data]) => {
     const isLowRune = LOW_RUNES.includes(name);
     const latestData = getLatestRuneData(input.Runes, name);
-    
+
     // Low runes always use fixed prices
     if (isLowRune) {
       const fixedPrice = FIXED_RUNE_PRICES[name] || ALL_RUNE_HR_VALUES[name];
@@ -280,11 +326,11 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
       }
       return;
     }
-    
+
     // For high runes, use API data if available
     if (latestData && latestData.price > 0) {
       const numListings = latestData.numListings || 0;
-      
+
       // Use API price if we have enough listings, otherwise fall back to fixed
       if (numListings >= MIN_LISTINGS_FOR_API_PRICE) {
         runeValues.push({
@@ -324,7 +370,7 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
 
   // Add fixed prices for runes not in API data
   Object.entries(FIXED_RUNE_PRICES).forEach(([name, fixedPrice]) => {
-    if (!runeValues.find(r => r.name === name)) {
+    if (!runeValues.find((r) => r.name === name)) {
       runeValues.push({
         name,
         price: fixedPrice,
@@ -337,7 +383,7 @@ export function calculateEconomyValues(input: EconomyData): EconomyValue {
 
   // Add all runes from ALL_RUNE_HR_VALUES that aren't already added
   Object.entries(ALL_RUNE_HR_VALUES).forEach(([name, hrValue]) => {
-    if (!runeValues.find(r => r.name === name) && !FIXED_RUNE_PRICES[name]) {
+    if (!runeValues.find((r) => r.name === name) && !FIXED_RUNE_PRICES[name]) {
       runeValues.push({
         name,
         price: hrValue,

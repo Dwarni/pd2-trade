@@ -37,9 +37,9 @@ export const useTradeMessages = () => {
       try {
         const unlisten = await listen<TradeMessageEvent>('trade-message', async (event) => {
           const tradeEvent = event.payload;
-          
+
           // Don't automatically show the trade messages window - let user open it manually
-          
+
           const newTrade: TradeMessageData = {
             id: `${Date.now()}-${Math.random()}`,
             isIncoming: tradeEvent.isIncoming,
@@ -50,12 +50,14 @@ export const useTradeMessages = () => {
             itemName: tradeEvent.itemName,
             price: tradeEvent.price,
             timestamp: new Date(),
-            history: [{
-              id: `${Date.now()}-${Math.random()}`,
-              isIncoming: tradeEvent.isIncoming,
-              message: tradeEvent.message,
-              timestamp: new Date(),
-            }],
+            history: [
+              {
+                id: `${Date.now()}-${Math.random()}`,
+                isIncoming: tradeEvent.isIncoming,
+                message: tradeEvent.message,
+                timestamp: new Date(),
+              },
+            ],
           };
 
           setTrades((prev) => {
@@ -66,15 +68,16 @@ export const useTradeMessages = () => {
               const tradeCharacterNormalized = t.characterName ? normalizeName(t.characterName) : '';
               const tradePlayerNormalized = normalizeName(t.playerName);
               const newTradeAccountNormalized = tradeEvent.accountName ? normalizeName(tradeEvent.accountName) : '';
-              const newTradeCharacterNormalized = tradeEvent.characterName ? normalizeName(tradeEvent.characterName) : '';
+              const newTradeCharacterNormalized = tradeEvent.characterName
+                ? normalizeName(tradeEvent.characterName)
+                : '';
               const newTradePlayerNormalized = normalizeName(tradeEvent.playerName);
 
               return (
-                (!tradeEvent.isIncoming && (
-                  newTradeAccountNormalized === tradeAccountNormalized ||
+                !tradeEvent.isIncoming &&
+                (newTradeAccountNormalized === tradeAccountNormalized ||
                   newTradeCharacterNormalized === tradeCharacterNormalized ||
-                  newTradePlayerNormalized === tradePlayerNormalized
-                ))
+                  newTradePlayerNormalized === tradePlayerNormalized)
               );
             });
 
@@ -105,7 +108,7 @@ export const useTradeMessages = () => {
         // Listen for all whispers to track history
         const whisperUnlisten = await listen<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
-          
+
           // Skip join messages only - track all whispers (trade and non-trade) for history
           if (whisper.isJoin) {
             return;
@@ -122,7 +125,7 @@ export const useTradeMessages = () => {
               const tradeCharacterNormalized = trade.characterName ? normalizeName(trade.characterName) : '';
               const tradePlayerNormalized = normalizeName(trade.playerName);
 
-              const matches = 
+              const matches =
                 whisperFromNormalized === tradeAccountNormalized ||
                 whisperFromNormalized === tradeCharacterNormalized ||
                 whisperFromNormalized === tradePlayerNormalized;
@@ -156,7 +159,7 @@ export const useTradeMessages = () => {
             console.log('[useTradeMessages] Received trade-message-removed event for:', id);
             setTrades((prev) => {
               // Only remove if the trade still exists (avoid unnecessary updates)
-              if (prev.some(trade => trade.id === id)) {
+              if (prev.some((trade) => trade.id === id)) {
                 const updated = prev.filter((trade) => trade.id !== id);
                 console.log('[useTradeMessages] Updated trades from event, count:', prev.length, '->', updated.length);
                 return updated;
@@ -197,10 +200,10 @@ export const useTradeMessages = () => {
       console.log('[useTradeMessages] Updated trades count:', prev.length, '->', updated.length);
       return updated;
     });
-    
+
     // Emit event after state update so other windows/components can sync
     if (isTauri()) {
-      emit('trade-message-removed', { id }).catch(err => {
+      emit('trade-message-removed', { id }).catch((err) => {
         console.error('[useTradeMessages] Failed to emit trade-message-removed:', err);
       });
     }
@@ -213,7 +216,7 @@ export const useTradeMessages = () => {
   // Emit trade count updates whenever trades change
   useEffect(() => {
     if (isTauri()) {
-      emit('trade-messages-count-updated', { count: trades.length }).catch(err => {
+      emit('trade-messages-count-updated', { count: trades.length }).catch((err) => {
         console.error('[useTradeMessages] Failed to emit trade-messages-count-updated:', err);
       });
     }
@@ -225,4 +228,3 @@ export const useTradeMessages = () => {
     clearAll,
   };
 };
-

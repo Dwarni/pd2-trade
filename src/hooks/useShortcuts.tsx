@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import { listen } from '@/lib/browser-events';
 import { useOptions } from './useOptions';
 
 type ShortcutHandler = () => void | Promise<void>;
@@ -17,6 +18,12 @@ const formatShortcut = (modifier: 'ctrl' | 'alt', key: string): string => {
 
 export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
   const registeredShortcuts = useRef<string[]>([]);
+  const shortcutsRef = useRef<ShortcutConfig[]>(shortcuts);
+
+  // Keep shortcuts ref up to date
+  useEffect(() => {
+    shortcutsRef.current = shortcuts;
+  }, [shortcuts]);
 
   useEffect(() => {
     if (!isTauri()) {
@@ -24,9 +31,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
       return;
     }
 
-    const registerShortcuts = async () => {
-      try {
-        // Unregister previous shortcuts
+    const unregisterAllShortcuts = async () => {
       for (const shortcut of registeredShortcuts.current) {
         try {
           await unregister(shortcut);
@@ -35,35 +40,57 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         }
       }
       registeredShortcuts.current = [];
+    };
 
-      // Register new shortcuts
-      for (const { modifier, key, handler } of shortcuts) {
-        const shortcut = formatShortcut(modifier, key);
-        try {
-          await register(shortcut, (e) => {
-            if (e.state === 'Pressed') {
-              handler();
-            }
-          });
-          registeredShortcuts.current.push(shortcut);
-        } catch (error) {
-          console.error(`Failed to register shortcut ${shortcut}:`, error);
-        }
+    const registerShortcuts = async () => {
+      try {
+        // Unregister previous shortcuts first
+        await unregisterAllShortcuts();
+
+        // Register new shortcuts
+        for (const { modifier, key, handler } of shortcutsRef.current) {
+          const shortcut = formatShortcut(modifier, key);
+          try {
+            await register(shortcut, (e) => {
+              if (e.state === 'Pressed') {
+                handler();
+              }
+            });
+            registeredShortcuts.current.push(shortcut);
+          } catch (error) {
+            console.error(`Failed to register shortcut ${shortcut}:`, error);
+          }
         }
       } catch (error) {
         console.error('Failed to load global shortcut plugin:', error);
       }
     };
 
-    registerShortcuts();
+    let unlisten: (() => void) | null = null;
+
+    // Listen for Diablo focus changes
+    listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
+      if (isFocused) {
+        // Diablo gained focus - register hotkeys
+        await registerShortcuts();
+      } else {
+        // Diablo lost focus - unregister hotkeys
+        await unregisterAllShortcuts();
+      }
+    })
+      .then((off) => {
+        unlisten = off;
+      })
+      .catch((error) => {
+        console.error('Failed to listen for diablo-focus-changed event:', error);
+      });
 
     return () => {
-      if (isTauri()) {
-        registeredShortcuts.current.forEach((shortcut) => {
-          unregister(shortcut).catch(() => void 0);
-        });
-        registeredShortcuts.current = [];
+      if (unlisten) {
+        unlisten();
       }
+      // Unregister all shortcuts on cleanup
+      unregisterAllShortcuts().catch(() => void 0);
     };
   }, [shortcuts]);
 };
@@ -73,7 +100,7 @@ export const useAppShortcuts = (
   onQuickList: ShortcutHandler,
   onCurrencyValuation: ShortcutHandler,
   onChat?: ShortcutHandler,
-  onOffers?: ShortcutHandler
+  onOffers?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -144,4 +171,3 @@ export const useAppShortcuts = (
 
   useShortcuts(shortcuts);
 };
-

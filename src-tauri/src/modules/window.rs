@@ -202,6 +202,65 @@ pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
     }
 }
 
+#[cfg(target_os = "windows")]
+static DIABLO_FOCUS_STATE: Mutex<Option<bool>> = Mutex::new(None);
+
+#[cfg(target_os = "windows")]
+pub fn initialize_diablo_focus_monitoring(
+    app_handle: AppHandle,
+    on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
+) {
+    let initial_focus_state = is_diablo_focused();
+    
+    // Store initial state
+    *DIABLO_FOCUS_STATE.lock().unwrap() = Some(initial_focus_state);
+    
+    // Emit initial state
+    let _ = app_handle.emit("diablo-focus-changed", initial_focus_state);
+    
+    // Call optional callback with initial state
+    if let Some(ref callback) = on_focus_change {
+        callback(initial_focus_state);
+    }
+    
+    initialize_foreground_monitoring(move || {
+        let current_focus_state = is_diablo_focused();
+        let mut last_state = DIABLO_FOCUS_STATE.lock().unwrap();
+        
+        if let Some(last) = *last_state {
+            if current_focus_state != last {
+                *last_state = Some(current_focus_state);
+                let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
+                
+                // Call optional callback when focus changes
+                if let Some(callback) = &on_focus_change {
+                    callback(current_focus_state);
+                }
+            }
+        } else {
+            *last_state = Some(current_focus_state);
+            let _ = app_handle.emit("diablo-focus-changed", current_focus_state);
+            
+            // Call optional callback
+            if let Some(callback) = &on_focus_change {
+                callback(current_focus_state);
+            }
+        }
+    });
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn initialize_diablo_focus_monitoring(
+    app_handle: AppHandle,
+    on_focus_change: Option<Box<dyn Fn(bool) + Send + 'static>>,
+) {
+    // On Linux, always emit true (stubbed behavior)
+    let _ = app_handle.emit("diablo-focus-changed", true);
+    if let Some(callback) = &on_focus_change {
+        callback(true);
+    }
+}
+
 #[cfg(not(target_os = "windows"))]
 pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(_callback: F) {
     // No-op on Linux

@@ -98,13 +98,12 @@ const ToastPage: React.FC = () => {
 
       // event.payload can be string or object
       if (typeof event.payload === 'string') {
-        handleToastOpen();
         toast('PD2 Trader', {
           description: event.payload,
           position: 'bottom-right',
           closeButton: true,
-          onDismiss: () => handleToastClose(),
-          onAutoClose: () => handleToastClose(),
+          onDismiss: () => closeToastWebview(),
+          onAutoClose: () => closeToastWebview(),
         });
       } else if (event.payload && typeof event.payload === 'object') {
         const payload = event.payload as CustomToastPayload | GenericToastPayload;
@@ -117,11 +116,10 @@ const ToastPage: React.FC = () => {
             description: genericPayload.description,
             duration: genericPayload.duration,
             closeButton: true,
-            onDismiss: () => handleToastClose(),
-            onAutoClose: () => handleToastClose(),
+            onDismiss: () => closeToastWebview(),
+            onAutoClose: () => closeToastWebview(),
           };
 
-          handleToastOpen();
           // Use appropriate toast variant
           if (genericPayload.variant === 'error') {
             toast.error(genericPayload.title || 'PD2 Trader', toastOptions);
@@ -147,6 +145,7 @@ const ToastPage: React.FC = () => {
                   if (listingId) {
                     const marketUrl = `https://www.projectdiablo2.com/market/listing/${listingId}`;
                     await openUrl(marketUrl);
+                    closeToastWebview();
                   }
                   break;
                 }
@@ -168,12 +167,12 @@ const ToastPage: React.FC = () => {
                 const listingId = customPayload.action.data?.listingId;
                 if (listingId) {
                   window.open(`https://www.projectdiablo2.com/market/listing/${listingId}`, '_blank');
+                  closeToastWebview();
                 }
               }
             }
           };
 
-          handleToastOpen();
           // Custom toast with action button
           toast(customPayload.title || 'PD2 Trader', {
             position: 'bottom-right',
@@ -183,18 +182,17 @@ const ToastPage: React.FC = () => {
               label: customPayload.action.label,
               onClick: handleActionClick,
             },
-            onDismiss: () => handleToastClose(),
-            onAutoClose: () => handleToastClose(),
+            onDismiss: () => closeToastWebview(),
+            onAutoClose: () => closeToastWebview(),
           });
         } else {
-          handleToastOpen();
           // Regular object toast
           toast('PD2 Trader', {
             position: 'bottom-right',
             description: customPayload.description,
             closeButton: true,
-            onDismiss: () => handleToastClose(),
-            onAutoClose: () => handleToastClose(),
+            onDismiss: () => closeToastWebview(),
+            onAutoClose: () => closeToastWebview(),
           });
         }
       }
@@ -209,13 +207,8 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
-  return (
-    <Toaster
-      richColors
-      closeButton
-      visibleToasts={1}
-    />
-  );
+  return <Toaster richColors
+    closeButton />;
 };
 
 export default ToastPage;

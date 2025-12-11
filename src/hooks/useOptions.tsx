@@ -170,24 +170,24 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Check for token in URL parameters (browser mode)
   useEffect(() => {
     if (isTauri()) return; // Skip in Tauri mode
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
-    
+
     if (tokenFromUrl && !isLoading) {
       // Only update if we don't already have a token or if it's different
       if (!settings?.pd2Token || settings.pd2Token !== tokenFromUrl) {
         console.log('[OptionsProvider] Token found in URL, updating settings...');
         updateSettings({ pd2Token: tokenFromUrl });
-        
+
         // Clean up URL by removing token parameter
         urlParams.delete('token');
         const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
         window.history.replaceState({}, '', newUrl);
-        
-        emit('toast-event', { 
-          title: 'PD2 Trader', 
-          description: 'Token loaded from URL successfully!' 
+
+        emit('toast-event', {
+          title: 'PD2 Trader',
+          description: 'Token loaded from URL successfully!',
         });
       }
     }

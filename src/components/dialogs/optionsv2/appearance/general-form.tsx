@@ -7,23 +7,12 @@ import { ChevronDown, Loader2, TriangleAlert } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useOptions } from '@/hooks/useOptions';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem
-} from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { emit } from '@/lib/browser-events';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -99,13 +88,13 @@ export function GeneralForm() {
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-y-4 max-h-[330px]">
-
-          {navigator.userAgent.includes("Linux") && (
+          {navigator.userAgent.includes('Linux') && (
             <Alert variant="destructive">
               <TriangleAlert className="h-4 w-4" />
               <AlertTitle>Linux Compatibility Warning</AlertTitle>
               <AlertDescription>
-                Global hotkeys (like Ctrl+C) are always active on Linux. Please be careful when using other applications while PD2 Trader is running.
+                Global hotkeys (like Ctrl+C) are always active on Linux. Please be careful when using other applications
+                while PD2 Trader is running.
               </AlertDescription>
             </Alert>
           )}
@@ -117,11 +106,9 @@ export function GeneralForm() {
               <FormItem>
                 <FormLabel>Ladder</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value}
+                  <Select value={field.value}
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                    defaultValue={field.value}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Ladder" />
                     </SelectTrigger>
@@ -142,11 +129,9 @@ export function GeneralForm() {
               <FormItem>
                 <FormLabel>Mode</FormLabel>
                 <FormControl>
-                  <Select
-                    value={field.value}
+                  <Select value={field.value}
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                    defaultValue={field.value}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Mode" />
                     </SelectTrigger>
@@ -243,7 +228,8 @@ export function GeneralForm() {
           />
         </form>
       </ScrollArea>
-      <Button type="submit"
+      <Button
+        type="submit"
         className={'self-start cursor-pointer mt-2'}
         disabled={saving}
         onClick={form.handleSubmit(onSubmit)}

@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import {Card} from "@/components/ui/card";
-import {GripVertical, X} from "lucide-react";
-import { getCurrentWebviewWindow } from "@/lib/browser-webview";
+import { Card } from '@/components/ui/card';
+import { GripVertical, X } from 'lucide-react';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import SettingGenereal from './appearance/layout';
 import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
@@ -44,7 +44,7 @@ const sidebarNavItems: INavItem[] = [
   {
     title: 'About',
     content: <SettingsAbout />,
-  }
+  },
 ];
 
 export default function SettingsLayout() {
@@ -53,31 +53,27 @@ export default function SettingsLayout() {
   return (
     <Card className="min-h-screen w-full overflow-hidden p-0 bg-background">
       <div className="hidden space-y-6 p-10 md:block">
-
-
         <div className="flex justify-between">
-            <div className={'flex flex-row justify-between'}>
-              <div className="space-y-0.5">
+          <div className={'flex flex-row justify-between'}>
+            <div className="space-y-0.5">
               <div className="flex items-center gap-1">
-                <GripVertical 
+                <GripVertical
                   data-tauri-drag-region
-                  className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+                  className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
                   id="titlebar-drag-handle"
-  
                 />
                 <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
               </div>
               <p className="text-muted-foreground">Manage your settings and set preferences</p>
             </div>
           </div>
-    
 
-        <Button variant="ghost"
-          size="icon"
-          onClick={() => getCurrentWebviewWindow().hide()}
-          className="self-start">
-          <X className="h-4 w-4" />
-        </Button>
+          <Button variant="ghost"
+            size="icon"
+            onClick={() => getCurrentWebviewWindow().hide()}
+            className="self-start">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <Separator className="my-6" />

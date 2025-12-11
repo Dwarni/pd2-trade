@@ -51,10 +51,10 @@ function playNotificationSound(volume: number = 70) {
   }
 }
 
-export const useSocketNotifications = ({ 
-  isConnected, 
+export const useSocketNotifications = ({
+  isConnected,
   settings,
-  whisperNotificationsEnabled = true 
+  whisperNotificationsEnabled = true,
 }: UseSocketNotificationsProps) => {
   const processedNotificationsRef = useRef<Set<string>>(new Set());
 
@@ -68,30 +68,33 @@ export const useSocketNotifications = ({
       try {
         unlisten = await listenBrowser<SystemNotification>('socket:system/notification_pushed', async (event) => {
           const notification = event.payload;
-          
+
           // Only handle offer_received notifications
           if (notification.type === 'offer_received' && notification.data?.listing_id) {
             // Prevent duplicate notifications by tracking processed notification IDs
             if (processedNotificationsRef.current.has(notification._id)) {
               return;
             }
-            
+
             // Mark this notification as processed
             processedNotificationsRef.current.add(notification._id);
-            
+
             // Clean up old notification IDs (keep only last 100)
             if (processedNotificationsRef.current.size > 100) {
               const idsArray = Array.from(processedNotificationsRef.current);
               processedNotificationsRef.current = new Set(idsArray.slice(-100));
             }
-            
+
             const listingId = notification.data.listing_id;
             const offerMessage = notification.meta?.string || 'New offer received';
-            
-            // Play notification sound
-            const volume = settings?.whisperNotificationVolume ?? 70;
-            playNotificationSound(volume);
-            
+
+            // Play notification sound if trade notifications are enabled
+            const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
+            if (tradeEnabled) {
+              const volume = settings?.whisperNotificationVolume ?? 70;
+              playNotificationSound(volume);
+            }
+
             // Show toast notification with link to listing
             await emit('toast-event', {
               title: 'New Offer',
@@ -123,7 +126,7 @@ export const useSocketNotifications = ({
         unlisten = null;
       }
     };
-  }, [isConnected, settings?.whisperNotificationVolume]);
+  }, [isConnected, settings?.whisperNotificationVolume, settings?.tradeNotificationsEnabled]);
 
   // Listen for whisper notifications (Tauri only)
   useEffect(() => {
@@ -137,12 +140,12 @@ export const useSocketNotifications = ({
       try {
         const unlistenFn = await listenTauri<WhisperEvent>('whisper-received', async (event) => {
           const whisper = event.payload;
-          
+
           // Skip outgoing messages (messages sent by the user)
           if (!whisper.isIncoming) {
             return;
           }
-          
+
           // Handle join messages separately
           if (whisper.isJoin) {
             // Only notify if join notifications are enabled and Diablo is not focused
@@ -151,7 +154,7 @@ export const useSocketNotifications = ({
               // Play notification sound
               const volume = settings?.whisperNotificationVolume ?? 70;
               playNotificationSound(volume);
-              
+
               const toastPayload: GenericToastPayload = {
                 title: 'Player Joined',
                 description: `${whisper.from} joined the game`,
@@ -162,47 +165,45 @@ export const useSocketNotifications = ({
             }
             return; // Don't process join messages as regular whispers
           }
-          
+
           // Normalize name (case-insensitive, ignore "*" prefix)
           const normalizeName = (name: string) => name.toLowerCase().replace(/^\*/, '');
           const whisperFromNormalized = normalizeName(whisper.from);
-          
+
           // Check if it's an announcement (default: ignore unless enabled)
           const isAnnouncement = whisperFromNormalized === 'announcements';
           if (isAnnouncement && !(settings?.whisperAnnouncementsEnabled ?? false)) {
             return; // Skip announcements by default
           }
-          
+
           // Check if player is in ignore list
           const ignoreList = settings?.whisperIgnoreList || [];
-          const isIgnored = ignoreList.some(
-            (ignoredPlayer) => normalizeName(ignoredPlayer) === whisperFromNormalized
-          );
-          
+          const isIgnored = ignoreList.some((ignoredPlayer) => normalizeName(ignoredPlayer) === whisperFromNormalized);
+
           if (isIgnored) {
             return; // Skip ignored players
           }
-          
+
           // Check if Diablo is focused
           const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
-          
+
           // Determine if we should notify based on timing setting
           const timing = settings?.whisperNotificationTiming || 'both';
-          
+
           // If timing is 'never', don't notify at all
           if (timing === 'never') {
             return;
           }
-          
-          const shouldNotifyByTiming = 
+
+          const shouldNotifyByTiming =
             timing === 'both' ||
             (timing === 'in-game' && isDiabloFocused) ||
             (timing === 'out-of-game' && !isDiabloFocused);
-          
+
           if (!shouldNotifyByTiming) {
             return; // Don't notify based on timing setting
           }
-          
+
           // Handle trade whispers
           if (whisper.isTrade) {
             const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
@@ -210,7 +211,7 @@ export const useSocketNotifications = ({
               // Play notification sound
               const volume = settings?.whisperNotificationVolume ?? 70;
               playNotificationSound(volume);
-              
+
               // Show toast with item name only if Diablo is not focused
               if (whisper.itemName && !isDiabloFocused) {
                 const toastPayload: GenericToastPayload = {
@@ -224,7 +225,7 @@ export const useSocketNotifications = ({
             }
             return; // Trade whispers handled
           }
-          
+
           // Handle general whispers (non-trade)
           const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
           if (generalEnabled) {
@@ -259,4 +260,3 @@ export const useSocketNotifications = ({
     settings?.whisperNotificationVolume,
   ]);
 };
-

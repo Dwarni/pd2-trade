@@ -15,11 +15,11 @@ export const TradeMessagesContainer: React.FC = () => {
   const { incomingOffers, outgoingOffers, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } = usePd2Website();
 
   const incomingWhispers = useMemo(() => {
-    return trades.filter(t => t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return trades.filter((t) => t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [trades]);
 
   const outgoingWhispers = useMemo(() => {
-    return trades.filter(t => !t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return trades.filter((t) => !t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [trades]);
 
   const incomingWebsiteOffersSorted = useMemo(() => {
@@ -43,9 +43,7 @@ export const TradeMessagesContainer: React.FC = () => {
             <GripVertical className="h-4 w-4 text-neutral-400 flex-shrink-0" />
             <h2 className="text-sm font-semibold text-white flex-shrink-0">Offers</h2>
             <TabsList className="flex-shrink-0">
-              <TabsTrigger value="whispers">
-                Whispers ({incomingWhispers.length + outgoingWhispers.length})
-              </TabsTrigger>
+              <TabsTrigger value="whispers">Whispers ({incomingWhispers.length + outgoingWhispers.length})</TabsTrigger>
               <TabsTrigger value="website">
                 Website ({incomingWebsiteOffersSorted.length + outgoingWebsiteOffersSorted.length})
               </TabsTrigger>
@@ -60,7 +58,7 @@ export const TradeMessagesContainer: React.FC = () => {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Whispers Tab */}
           <TabsContent value="whispers"
             className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col">
@@ -68,23 +66,19 @@ export const TradeMessagesContainer: React.FC = () => {
               className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-shrink-0 px-4 pt-2">
                 <TabsList>
-                  <TabsTrigger value="incoming">
-                    Incoming ({incomingWhispers.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="outgoing">
-                    Outgoing ({outgoingWhispers.length})
-                  </TabsTrigger>
+                  <TabsTrigger value="incoming">Incoming ({incomingWhispers.length})</TabsTrigger>
+                  <TabsTrigger value="outgoing">Outgoing ({outgoingWhispers.length})</TabsTrigger>
                 </TabsList>
               </div>
-              
-              <TabsContent value="incoming"
-                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
+
+              <TabsContent
+                value="incoming"
+                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900"
+              >
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {incomingWhispers.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">
-                        No incoming whispers
-                      </div>
+                      <div className="text-center text-neutral-400 py-8">No incoming whispers</div>
                     ) : (
                       incomingWhispers.map((trade) => (
                         <TradeMessage key={trade.id}
@@ -96,14 +90,14 @@ export const TradeMessagesContainer: React.FC = () => {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="outgoing"
-                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
+              <TabsContent
+                value="outgoing"
+                className="flex-1 m-0 mt-2 min-h-0 overflow-hidden flex flex-col bg-neutral-900"
+              >
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {outgoingWhispers.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">
-                        No outgoing whispers
-                      </div>
+                      <div className="text-center text-neutral-400 py-8">No outgoing whispers</div>
                     ) : (
                       outgoingWhispers.map((trade) => (
                         <TradeMessage key={trade.id}
@@ -124,28 +118,22 @@ export const TradeMessagesContainer: React.FC = () => {
               className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-shrink-0 px-4 pt-2">
                 <TabsList>
-                  <TabsTrigger value="incoming">
-                    Incoming ({incomingWebsiteOffersSorted.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="outgoing">
-                    Outgoing ({outgoingWebsiteOffersSorted.length})
-                  </TabsTrigger>
+                  <TabsTrigger value="incoming">Incoming ({incomingWebsiteOffersSorted.length})</TabsTrigger>
+                  <TabsTrigger value="outgoing">Outgoing ({outgoingWebsiteOffersSorted.length})</TabsTrigger>
                 </TabsList>
               </div>
-              
+
               <TabsContent value="incoming"
                 className="flex-1 m-0 min-h-0 overflow-hidden flex flex-col bg-neutral-900">
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {incomingWebsiteOffersSorted.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">
-                        No incoming website offers
-                      </div>
+                      <div className="text-center text-neutral-400 py-8">No incoming website offers</div>
                     ) : (
                       incomingWebsiteOffersSorted.map((trade) => (
-                        <TradeMessage 
-                          key={trade.id} 
-                          trade={trade} 
+                        <TradeMessage
+                          key={trade.id}
+                          trade={trade}
                           onClose={removeTrade}
                           onAccept={acceptOffer}
                           onReject={rejectOffer}
@@ -162,9 +150,7 @@ export const TradeMessagesContainer: React.FC = () => {
                 <ScrollArea className="h-full px-4">
                   <div className="flex flex-col gap-2 pb-4">
                     {outgoingWebsiteOffersSorted.length === 0 ? (
-                      <div className="text-center text-neutral-400 py-8">
-                        No outgoing website offers
-                      </div>
+                      <div className="text-center text-neutral-400 py-8">No outgoing website offers</div>
                     ) : (
                       outgoingWebsiteOffersSorted.map((trade) => (
                         <TradeMessage key={trade.id}
@@ -183,4 +169,3 @@ export const TradeMessagesContainer: React.FC = () => {
     </TooltipProvider>
   );
 };
-

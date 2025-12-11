@@ -59,10 +59,8 @@ export function InterfaceForm() {
               <div className="flex flex-row items-center gap-2">
                 <FormLabel>Chat Button Overlay</FormLabel>
                 <FormControl>
-                  <Switch
-                    checked={field.value ?? true}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Switch checked={field.value ?? true}
+                    onCheckedChange={field.onChange} />
                 </FormControl>
               </div>
               <FormDescription>
@@ -74,8 +72,7 @@ export function InterfaceForm() {
         />
         <Button type="submit"
           className={'self-start cursor-pointer mt-2'}
-          disabled={saving}
-        >
+          disabled={saving}>
           {saving ? <Loader2 className="animate-spin mr-2" /> : null}
           {saving ? 'Saving...' : 'Update interface preferences'}
         </Button>
@@ -83,4 +80,3 @@ export function InterfaceForm() {
     </Form>
   );
 }
-

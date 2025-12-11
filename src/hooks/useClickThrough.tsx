@@ -22,11 +22,7 @@ interface ClickThroughOptions {
 }
 
 export const useClickThrough = (options: ClickThroughOptions = {}) => {
-  const {
-    pollingInterval = 100,
-    enableThrottling = false,
-    forceFocusOnPopup = true,
-  } = options;
+  const { pollingInterval = 100, enableThrottling = false, forceFocusOnPopup = true } = options;
 
   const popupRefs = useRef<PopupRef[]>([]);
   const isClickThroughEnabled = useRef(false);
@@ -35,16 +31,17 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
   const consecutivePopupDetections = useRef<number>(0);
   const lastPopupDetectionTime = useRef<number>(0);
   const currentPollingInterval = useRef<number>(pollingInterval);
+  const checkCursorPositionRef = useRef<() => Promise<void>>();
 
   const registerPopup = useCallback((ref: React.RefObject<HTMLElement>, id: string) => {
     // Remove existing ref with same id if it exists
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
     // Add new ref
     popupRefs.current.push({ ref, id });
   }, []);
 
   const unregisterPopup = useCallback((id: string) => {
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
   }, []);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
@@ -77,7 +74,9 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     });
 
     // Get bounds for any other portal-rendered popups (dialogs, etc.)
-    const portalPopups = document.querySelectorAll('[data-radix-portal] [role="dialog"], [data-radix-portal] [role="alertdialog"]');
+    const portalPopups = document.querySelectorAll(
+      '[data-radix-portal] [role="dialog"], [data-radix-portal] [role="alertdialog"]',
+    );
     portalPopups.forEach((popup, index) => {
       const rect = popup.getBoundingClientRect();
       bounds.push({
@@ -93,7 +92,7 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
 
   const forceWindowFocus = useCallback(async () => {
     if (!isTauri() || !forceFocusOnPopup) return;
-    
+
     try {
       // Try to bring the window to front and focus it
       const mainWindow = await WebviewWindow.getByLabel('main');
@@ -104,7 +103,8 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       // Fallback to Tauri command
       try {
         await invoke('force_window_focus');
-      } catch (invokeError) {
+      } catch {
+        // Ignore errors on fallback
       }
     }
   }, [forceFocusOnPopup]);
@@ -117,18 +117,17 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       const popupBounds = getPopupBounds();
 
       // Check if cursor is over any popup area
-      const isOverPopup = popupBounds.some(bounds => 
-        cursorX >= bounds.left &&
-        cursorX <= bounds.right &&
-        cursorY >= bounds.top &&
-        cursorY <= bounds.bottom
+      const isOverPopup = popupBounds.some(
+        (bounds) =>
+          cursorX >= bounds.left && cursorX <= bounds.right && cursorY >= bounds.top && cursorY <= bounds.bottom,
       );
 
       const now = Date.now();
 
       // Track consecutive popup detections
       if (isOverPopup) {
-        if (now - lastPopupDetectionTime.current < 1000) { // Within 1 second
+        if (now - lastPopupDetectionTime.current < 1000) {
+          // Within 1 second
           consecutivePopupDetections.current++;
         } else {
           consecutivePopupDetections.current = 1;
@@ -143,15 +142,18 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
       if (newPollingInterval !== currentPollingInterval.current) {
         currentPollingInterval.current = newPollingInterval;
         // Restart polling with new interval
-        if (pollingIntervalRef.current) {
+        if (pollingIntervalRef.current && checkCursorPositionRef.current) {
           clearInterval(pollingIntervalRef.current);
-          pollingIntervalRef.current = setInterval(checkCursorPosition, newPollingInterval);
+          pollingIntervalRef.current = setInterval(() => {
+            checkCursorPositionRef.current?.();
+          }, newPollingInterval);
         }
       }
 
       // Throttling: prevent rapid state changes
       if (enableThrottling) {
-        if (now - lastStateChange.current < 50) { // 50ms throttle
+        if (now - lastStateChange.current < 50) {
+          // 50ms throttle
           return;
         }
       }
@@ -178,6 +180,11 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     }
   }, [getPopupBounds, enableThrottling, forceWindowFocus, pollingInterval]);
 
+  // Update ref when checkCursorPosition changes
+  useEffect(() => {
+    checkCursorPositionRef.current = checkCursorPosition;
+  }, [checkCursorPosition]);
+
   useEffect(() => {
     if (!isTauri()) return;
 
@@ -187,7 +194,9 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     });
 
     // Start polling for cursor position
-    pollingIntervalRef.current = setInterval(checkCursorPosition, currentPollingInterval.current);
+    pollingIntervalRef.current = setInterval(() => {
+      checkCursorPositionRef.current?.();
+    }, currentPollingInterval.current);
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -205,4 +214,4 @@ export const useClickThrough = (options: ClickThroughOptions = {}) => {
     registerPopup,
     unregisterPopup,
   };
-}; 
+};

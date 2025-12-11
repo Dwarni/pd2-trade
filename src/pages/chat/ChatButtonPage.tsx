@@ -43,9 +43,12 @@ const ChatButtonPageContent: React.FC = () => {
         });
 
         // Listen for trade offers count updates (website offers)
-        unlistenTradeOffersCount = await listen<{ incomingCount: number; outgoingCount: number; totalCount: number }>('trade-offers-count-updated', (event) => {
-          setWebsiteOffersCount(event.payload.totalCount);
-        });
+        unlistenTradeOffersCount = await listen<{ incomingCount: number; outgoingCount: number; totalCount: number }>(
+          'trade-offers-count-updated',
+          (event) => {
+            setWebsiteOffersCount(event.payload.totalCount);
+          },
+        );
       } catch (error) {
         console.error('Failed to set up listeners:', error);
       }
@@ -88,12 +91,12 @@ const ChatButtonPageContent: React.FC = () => {
 
   return (
     <div className="w-screen h-screen pointer-events-none">
-      <ChatButton 
-        handleClick={handleClick} 
+      <ChatButton
+        handleClick={handleClick}
         onSettingsClick={handleSettingsClick}
         onTradeMessagesClick={handleTradeMessagesClick}
         onDisableClick={handleDisableClick}
-        unreadCount={unreadCount} 
+        unreadCount={unreadCount}
         tradeOffersCount={tradeOffersCount}
       />
     </div>
@@ -113,4 +116,3 @@ const ChatButtonPage: React.FC = () => {
 };
 
 export default ChatButtonPage;
-

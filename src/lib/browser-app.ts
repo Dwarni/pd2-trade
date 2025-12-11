@@ -14,9 +14,8 @@ export async function getVersion(): Promise<string> {
   if (isTauri()) {
     return await tauriGetVersion();
   }
-  
+
   // Browser fallback: return a default version or try to read from package.json
   // In a real app, you might want to inject this at build time
   return '0.0.0-browser';
 }
-

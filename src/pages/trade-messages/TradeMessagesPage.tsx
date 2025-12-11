@@ -19,4 +19,3 @@ const TradeMessagesPage: React.FC = () => {
 };
 
 export default TradeMessagesPage;
-

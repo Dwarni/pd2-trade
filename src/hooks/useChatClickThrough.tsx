@@ -23,7 +23,7 @@ interface WindowClickThroughOptions {
 
 export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
   const { windowLabel, pollingInterval = 100, enableThrottling = true } = options;
-  
+
   const popupRefs = useRef<PopupRef[]>([]);
   const isClickThroughEnabled = useRef(false);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,12 +31,12 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
   const currentPollingInterval = useRef<number>(pollingInterval);
 
   const registerPopup = useCallback((ref: React.RefObject<HTMLElement>, id: string) => {
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
     popupRefs.current.push({ ref, id });
   }, []);
 
   const unregisterPopup = useCallback((id: string) => {
-    popupRefs.current = popupRefs.current.filter(p => p.id !== id);
+    popupRefs.current = popupRefs.current.filter((p) => p.id !== id);
   }, []);
 
   const getPopupBounds = useCallback((): PopupBounds[] => {
@@ -68,11 +68,9 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
       const { x: cursorX, y: cursorY } = await cursorPosition();
       const popupBounds = getPopupBounds();
 
-      const isOverPopup = popupBounds.some(bounds => 
-        cursorX >= bounds.left &&
-        cursorX <= bounds.right &&
-        cursorY >= bounds.top &&
-        cursorY <= bounds.bottom
+      const isOverPopup = popupBounds.some(
+        (bounds) =>
+          cursorX >= bounds.left && cursorX <= bounds.right && cursorY >= bounds.top && cursorY <= bounds.bottom,
       );
 
       const now = Date.now();
@@ -146,4 +144,3 @@ export const useWindowClickThrough = (options: WindowClickThroughOptions) => {
     unregisterPopup,
   };
 };
-

@@ -18,15 +18,15 @@ export async function emit<T = any>(event: string, payload?: T): Promise<void> {
     await tauriEmit(event, payload);
     return;
   }
-  
+
   // Browser fallback: use CustomEvent
   const customEvent = new CustomEvent(event, { detail: payload });
   window.dispatchEvent(customEvent);
-  
+
   // Also call registered listeners directly
   const listeners = eventListeners.get(event);
   if (listeners) {
-    listeners.forEach(callback => {
+    listeners.forEach((callback) => {
       try {
         callback({ payload });
       } catch (error) {
@@ -39,28 +39,25 @@ export async function emit<T = any>(event: string, payload?: T): Promise<void> {
 /**
  * Listen to an event
  */
-export async function listen<T = any>(
-  event: string,
-  callback: EventCallback<T>
-): Promise<() => void> {
+export async function listen<T = any>(event: string, callback: EventCallback<T>): Promise<() => void> {
   if (isTauri()) {
     return await tauriListen<T>(event, callback);
   }
-  
+
   // Browser fallback: use CustomEvent
   const handler = (e: Event) => {
     const customEvent = e as CustomEvent<T>;
     callback({ payload: customEvent.detail });
   };
-  
+
   window.addEventListener(event, handler);
-  
+
   // Also register in our listener map
   if (!eventListeners.has(event)) {
     eventListeners.set(event, new Set());
   }
   eventListeners.get(event)!.add(callback);
-  
+
   // Return unlisten function
   return () => {
     window.removeEventListener(event, handler);
@@ -73,4 +70,3 @@ export async function listen<T = any>(
     }
   };
 }
-

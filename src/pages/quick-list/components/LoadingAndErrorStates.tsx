@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Search, Loader2, AlertCircle, GripVertical } from "lucide-react";
+import { X, Search, Loader2, AlertCircle, GripVertical } from 'lucide-react';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
@@ -19,9 +19,8 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   error,
   matchingItems,
   item,
-  onRetry
+  onRetry,
 }) => {
-
   const { findOneByName } = useItems();
 
   if (isLoading) {
@@ -29,17 +28,19 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <div className="flex items-center gap-1">
-            <GripVertical 
+            <GripVertical
               data-tauri-drag-region
-              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
             />
-            <span style={{fontFamily: 'DiabloFont'}}
-              className="mt-1">List Item</span>
+            <span style={{ fontFamily: 'DiabloFont' }}
+              className="mt-1">
+              List Item
+            </span>
           </div>
           <Button className="h-6 w-6"
-            variant='ghost'
+            variant="ghost"
             onClick={() => getCurrentWebviewWindow().hide()}>
-            <X className='h-4 w-4'/>
+            <X className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex items-center justify-center py-8">
@@ -55,17 +56,19 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
       <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen">
         <div className="flex justify-between mb-2 items-center">
           <div className="flex items-center gap-1">
-            <GripVertical 
+            <GripVertical
               data-tauri-drag-region
-              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
             />
-            <span style={{fontFamily: 'DiabloFont'}}
-              className="mt-1">List Item</span>
+            <span style={{ fontFamily: 'DiabloFont' }}
+              className="mt-1">
+              List Item
+            </span>
           </div>
           <Button className="h-6 w-6"
-            variant='ghost'
+            variant="ghost"
             onClick={() => getCurrentWebviewWindow().hide()}>
-            <X className='h-4 w-4'/>
+            <X className="h-4 w-4" />
           </Button>
         </div>
         <div className="text-red-500 mb-4">{error}</div>
@@ -85,4 +88,4 @@ const LoadingAndErrorStates: React.FC<LoadingAndErrorStatesProps> = ({
   return null;
 };
 
-export default LoadingAndErrorStates; 
+export default LoadingAndErrorStates;

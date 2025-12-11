@@ -1,9 +1,9 @@
 import { isTauri } from '@tauri-apps/api/core';
-import {WindowOptions, currentMonitor, cursorPosition} from '@tauri-apps/api/window';
-import {WebviewWindow} from '@tauri-apps/api/webviewWindow';
-import {invoke} from '@tauri-apps/api/core';
+import { WindowOptions, currentMonitor, cursorPosition } from '@tauri-apps/api/window';
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { invoke } from '@tauri-apps/api/core';
 import * as browserWindow from './browser-window';
-import {WebviewOptions} from "@tauri-apps/api/webview";
+import { WebviewOptions } from '@tauri-apps/api/webview';
 
 // Re-export browser window types
 export type BrowserWindow = browserWindow.BrowserWindow;
@@ -14,7 +14,7 @@ export type BrowserWindow = browserWindow.BrowserWindow;
 export async function openCenteredWindow(
   label: string,
   url: string,
-  options: Partial<WebviewOptions & WindowOptions> = {}
+  options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
     const monitor = await currentMonitor();
@@ -39,7 +39,7 @@ export async function openCenteredWindow(
 
     return w;
   }
-  
+
   // Browser fallback
   return browserWindow.openCenteredWindow(label, url, options);
 }
@@ -50,7 +50,7 @@ export async function openCenteredWindow(
 export async function openOverDiabloWindow(
   label: string,
   url: string,
-  options: Partial<WebviewOptions & WindowOptions> = {}
+  options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
     const { x: cursorX } = await cursorPosition();
@@ -72,7 +72,7 @@ export async function openOverDiabloWindow(
 
     return w;
   }
-  
+
   // Browser fallback
   return browserWindow.openOverDiabloWindow(label, url, options);
 }
@@ -83,7 +83,7 @@ export async function openOverDiabloWindow(
 export async function openWindowAtCursor(
   label: string,
   url: string,
-  options: Partial<WebviewOptions & WindowOptions> = {}
+  options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
     const { x, y } = await cursorPosition();
@@ -102,7 +102,7 @@ export async function openWindowAtCursor(
 
     return w;
   }
-  
+
   // Browser fallback
   return browserWindow.openWindowAtCursor(label, url, options);
 }
@@ -113,7 +113,7 @@ export async function openWindowAtCursor(
 export async function openWindowCenteredOnDiablo(
   label: string,
   url: string,
-  options: Partial<WebviewOptions & WindowOptions> = {}
+  options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
     const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
@@ -134,7 +134,7 @@ export async function openWindowCenteredOnDiablo(
 
     return w;
   }
-  
+
   // Browser fallback - use centered window
   return browserWindow.openCenteredWindow(label, url, options);
 }
@@ -142,10 +142,7 @@ export async function openWindowCenteredOnDiablo(
 /**
  * Attach window lifecycle handlers - works with both Tauri and browser windows
  */
-export function attachWindowLifecycle(
-  w: WebviewWindow | browserWindow.BrowserWindow,
-  onClose: () => void
-) {
+export function attachWindowLifecycle(w: WebviewWindow | browserWindow.BrowserWindow, onClose: () => void) {
   if (isTauri() && 'onCloseRequested' in w) {
     // Tauri window
     (w as WebviewWindow).onCloseRequested(() => {

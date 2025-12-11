@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { listen } from "@/lib/browser-events";
-import { getCurrentWebviewWindow } from "@/lib/browser-webview";
-import ItemOverlayWidget from "@/pages/price-check/components/ItemOverlayWidget";
-import {OptionsProvider} from "@/hooks/useOptions";
-import { ItemsProvider } from "@/hooks/useItems";
-import { Pd2WebsiteProvider } from "@/hooks/pd2website/usePD2Website";
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { listen } from '@/lib/browser-events';
+import { getCurrentWebviewWindow } from '@/lib/browser-webview';
+import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget';
+import { OptionsProvider } from '@/hooks/useOptions';
+import { ItemsProvider } from '@/hooks/useItems';
+import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 
 // Simple unescape function to handle Unicode characters
 const unescapeUnicode = (str: string): string => {
@@ -19,14 +19,14 @@ const ItemWindow: React.FC = () => {
    * Parse the ?text param on first load
    * --------------------------------- */
   useEffect(() => {
-    const param = searchParams.get("text");
+    const param = searchParams.get('text');
     if (!param) return;
 
     try {
       const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(param))));
       setItem(json);
     } catch (err) {
-      console.error("[ItemWindow] Failed to parse initial payload:", err);
+      console.error('[ItemWindow] Failed to parse initial payload:', err);
     }
   }, [searchParams]);
 
@@ -34,11 +34,12 @@ const ItemWindow: React.FC = () => {
    * Listen for new-search events
    * --------------------------------- */
   useEffect(() => {
-    const unlistenPromise = listen<string>("new-search", ({ payload }) => {
+    const unlistenPromise = listen<string>('new-search', ({ payload }) => {
       try {
         const json = JSON.parse(unescapeUnicode(atob(decodeURIComponent(payload))));
         setItem(json);
-      } catch (err) {
+      } catch {
+        // Ignore parse errors
       }
     });
 
@@ -48,11 +49,7 @@ const ItemWindow: React.FC = () => {
   }, []);
 
   if (!item) {
-    return (
-      <div className="text-center text-gray-500">
-        No item data provided or failed to parse.
-      </div>
-    );
+    return <div className="text-center text-gray-500">No item data provided or failed to parse.</div>;
   }
 
   return (
@@ -64,7 +61,6 @@ const ItemWindow: React.FC = () => {
         </Pd2WebsiteProvider>
       </ItemsProvider>
     </OptionsProvider>
-   
   );
 };
 

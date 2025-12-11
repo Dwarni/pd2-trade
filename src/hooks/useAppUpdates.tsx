@@ -10,18 +10,18 @@ export const useAppUpdates = () => {
   // Initial update check
   useEffect(() => {
     if (!isTauri()) return;
-    
+
     checkForUpdates().then((update) => {
       if (update?.available) {
         downloadUpdate(update);
       }
     });
-  }, []);
+  }, [checkForUpdates, downloadUpdate]);
 
   // Periodic update checks
   useEffect(() => {
     if (!isTauri()) return;
-    
+
     let updateNotified = false;
 
     const checkAndNotify = async () => {
@@ -43,8 +43,7 @@ export const useAppUpdates = () => {
 
     checkAndNotify();
     const interval = setInterval(checkAndNotify, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [checkForUpdates]);
 };
-

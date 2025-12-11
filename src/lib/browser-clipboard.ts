@@ -18,7 +18,7 @@ export async function readText(): Promise<string | null> {
       return null;
     }
   }
-  
+
   // Browser fallback: use Clipboard API
   try {
     if (navigator.clipboard && navigator.clipboard.readText) {
@@ -44,7 +44,7 @@ export async function writeText(text: string): Promise<void> {
       throw error;
     }
   }
-  
+
   // Browser fallback: use Clipboard API
   if (navigator.clipboard && navigator.clipboard.writeText) {
     await navigator.clipboard.writeText(text);
@@ -52,4 +52,3 @@ export async function writeText(text: string): Promise<void> {
     throw new Error('Clipboard API not available');
   }
 }
-

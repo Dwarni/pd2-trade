@@ -21,7 +21,7 @@ export function incrementMetric(name: string, value: number = 1, tags?: MetricTa
   } catch (e) {
     // Metrics API not available, fall back to breadcrumbs
   }
-  
+
   // Fallback: Use breadcrumbs for tracking
   Sentry.addBreadcrumb({
     category: 'metric',
@@ -48,7 +48,7 @@ export function distributionMetric(name: string, value: number, tags?: MetricTag
   } catch (e) {
     // Metrics API not available, fall back to breadcrumbs
   }
-  
+
   // Fallback: Use breadcrumbs for tracking
   Sentry.addBreadcrumb({
     category: 'metric',
@@ -75,7 +75,7 @@ export function gaugeMetric(name: string, value: number, tags?: MetricTags): voi
   } catch (e) {
     // Metrics API not available, fall back to breadcrumbs
   }
-  
+
   // Fallback: Use breadcrumbs for tracking
   Sentry.addBreadcrumb({
     category: 'metric',
@@ -88,4 +88,3 @@ export function gaugeMetric(name: string, value: number, tags?: MetricTags): voi
     },
   });
 }
-

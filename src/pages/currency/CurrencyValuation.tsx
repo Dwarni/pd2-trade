@@ -15,18 +15,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { STASH_API_MAP } from './lib/constants';
 import { RUNE_HIERARCHY } from '@/common/constants';
 import { FormattedItem, FormattedStashCategory, FormattedStashData } from './lib/types';
 import { EconomyValue } from '../price-check/lib/types';
 import { formatHr } from '@/lib/utils';
-
 
 export function CurrencyValuation() {
   const [currency, setCurrency] = React.useState<Currency>();
@@ -44,25 +38,12 @@ export function CurrencyValuation() {
       return;
     }
     try {
-    const curr = await getCurrencyTab();
-    setCurrency(curr);
+      const curr = await getCurrencyTab();
+      setCurrency(curr);
     } catch (error) {
       console.error('Failed to fetch currency:', error);
     }
   }, [authData, getCurrencyTab]);
-
-  React.useEffect(() => {
-    if (!currency && authData) {
-      fetchCurrency();
-    }
-  }, [currency, authData, fetchCurrency]);
-
-  React.useEffect(() => {
-    if (currency && calculatedEconomyValues) {
-      const formatted = formattedEconomyData(currency, calculatedEconomyValues);
-      setData(formatted);
-    }
-  }, [currency, calculatedEconomyValues]);
 
   function formatEconomyCategoryAmounts(
     category: keyof EconomyValue,
@@ -83,11 +64,11 @@ export function CurrencyValuation() {
         const value = Math.round(amount * price * 100) / 100;
         const sampleCount = match?.numListings ?? undefined;
 
-        return { 
-          key: runeKey, 
-          item, 
-          amount, 
-          price: Math.round(price * 100) / 100, 
+        return {
+          key: runeKey,
+          item,
+          amount,
+          price: Math.round(price * 100) / 100,
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
@@ -131,11 +112,11 @@ export function CurrencyValuation() {
         const value = Math.round(amount * price * 100) / 100;
         const sampleCount = match?.numListings ?? undefined;
 
-        return { 
-          key, 
-          item, 
-          amount, 
-          price: Math.round(price * 100) / 100, 
+        return {
+          key,
+          item,
+          amount,
+          price: Math.round(price * 100) / 100,
           value,
           sampleCount: sampleCount !== undefined && sampleCount > 0 ? sampleCount : undefined,
         };
@@ -162,38 +143,53 @@ export function CurrencyValuation() {
     return data.runes.total + data.currency.total + data.ubers.total;
   }
 
+  React.useEffect(() => {
+    if (!currency && authData) {
+      fetchCurrency();
+    }
+  }, [currency, authData, fetchCurrency]);
+
+  React.useEffect(() => {
+    if (currency && calculatedEconomyValues) {
+      const formatted = formattedEconomyData(currency, calculatedEconomyValues);
+      setData(formatted);
+    }
+  }, [currency, calculatedEconomyValues]);
+
   return (
     <div className="min-h-screen w-full space-y-6 p-10 md:block bg-background">
       <div className="flex flex-row justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1">
-              <GripVertical 
-                data-tauri-drag-region
-                className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" 
-                id="titlebar-drag-handle"
-                />
-                <h2 className="text-2xl font-bold">Currency Valuation</h2>
+            <GripVertical
+              data-tauri-drag-region
+              className="h-5 w-5 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+              id="titlebar-drag-handle"
+            />
+            <h2 className="text-2xl font-bold">Currency Valuation</h2>
           </div>
           <div className="text-xs text-gray-500 mt-3 border-gray-600 -mb-3">
-          Displays the total value of items in your stash, based on current market prices from the PD2 Trader API.{' '}
-          <a 
-            href="https://pd2trader.com/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 underline"
-          >
-            View prices on pd2trader.com
-          </a>
+            Displays the total value of items in your stash, based on current market prices from the PD2 Trader API.{' '}
+            <a
+              href="https://pd2trader.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              View prices on pd2trader.com
+            </a>
           </div>
         </div>
 
-        <Button variant="ghost"
+        <Button
+          variant="ghost"
           size="icon"
           onClick={async () => {
             const window = getCurrentWebviewWindow();
             await window.close();
           }}
-          className="self-start">
+          className="self-start"
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -210,8 +206,7 @@ export function CurrencyValuation() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {categoryOptions.map((category) => (
-                <DropdownMenuItem
-                  key={category}
+                <DropdownMenuItem key={category}
                   className="capitalize"
                   onClick={() => setSelectedCategory(category)}>
                   <div className="w-full flex items-center justify-between">
@@ -232,7 +227,8 @@ export function CurrencyValuation() {
                 <DataTable columns={columns}
                   data={data[selectedCategory].items} />
                 <p className="text-sm text-gray-300 pt-4 capitalize">
-                  {selectedCategory} Value: <span className="text-gray-400">{formatHr(data[selectedCategory].total)}</span>
+                  {selectedCategory} Value:{' '}
+                  <span className="text-gray-400">{formatHr(data[selectedCategory].total)}</span>
                 </p>
                 <p className="text-md text-gray-300 pt-1">
                   Estimated Total Stash Value: <span className="text-gray-400">{formatHr(getGrandTotal(data))}</span>

@@ -10,7 +10,7 @@ export interface MarketListingResult {
 export interface MarketListingEntry {
   _id: string;
   user_id: string;
-  type: "item";
+  type: 'item';
   is_hardcore: boolean;
   is_ladder: boolean;
   item: ItemDetail;
@@ -73,7 +73,7 @@ export interface BaseItem {
   type: string;
   type_code: string;
   size: Size;
-  "class": ClassInfo;
+  class: ClassInfo;
   requirements: Requirements;
   damage: DamageDetail;
 }
@@ -85,9 +85,9 @@ export interface Size {
 
 export interface ClassInfo {
   base_code: string;
-  "2hd_code": string;
+  '2hd_code': string;
   base: string;
-  "2hd": string;
+  '2hd': string;
 }
 
 export interface Requirements {
@@ -159,7 +159,7 @@ export interface UserSummary {
     accounts: string[];
     preferences: Preferences;
   };
-  created_at: string;       // ISO timestamp
+  created_at: string; // ISO timestamp
   in_game_account?: string; // sometimes present
 }
 

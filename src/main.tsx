@@ -3,11 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 import * as Sentry from '@sentry/react';
-import { DialogProvider } from "@/hooks/useDialog";
+import { DialogProvider } from '@/hooks/useDialog';
 import LandingPage, { Providers } from './pages/landing/LandingPage';
-import ItemPage from "@/pages/price-check/ItemPage";
-import { SettingsPage } from "@/pages/settings/SettingsPage";
-import ChangelogPage from "@/pages/change-log/ChangeLogPage";
+import ItemPage from '@/pages/price-check/ItemPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
+import ChangelogPage from '@/pages/change-log/ChangeLogPage';
 import { QuickListPage } from './pages/quick-list/QuickListPage';
 import { OptionsProvider } from './hooks/useOptions';
 import ToastPage from './pages/toast/ToastPage';
@@ -23,7 +23,7 @@ Sentry.init({
   integrations: [
     Sentry.captureConsoleIntegration({ levels: ['error'] }),
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration()
+    Sentry.replayIntegration(),
   ],
   // Tracing
   tracesSampleRate: 1.0, //  Capture 100% of the transactions
@@ -35,8 +35,7 @@ Sentry.init({
   // Breadcrumb filtering to ignore cursor position API calls
   beforeBreadcrumb(breadcrumb) {
     // Ignore tauri API calls to reduce noise in Sentry
-    if (breadcrumb.category === 'http' &&
-      breadcrumb.data?.url?.includes('ipc.localhost')) {
+    if (breadcrumb.category === 'http' && breadcrumb.data?.url?.includes('ipc.localhost')) {
       return null;
     }
     return breadcrumb;
@@ -47,59 +46,47 @@ console.log(`Sentry initialized in ${process.env.NODE_ENV} mode`);
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <BrowserRouter>
     <Routes>
-      <Route path="/"
+      <Route
+        path="/"
         element={
           <Providers>
             <GlobalErrorHandler />
             <LandingPage />
           </Providers>
-        } />
+        }
+      />
 
       <Route path="/item"
         element={<ItemPage />} />
 
-      <Route
-        path={"/settings"}
-        element={<SettingsPage />}
-      />
+      <Route path={'/settings'}
+        element={<SettingsPage />} />
+
+      <Route path={'/quick-list'}
+        element={<QuickListPage />} />
 
       <Route
-        path={'/quick-list'}
-        element={<QuickListPage />}
-      />
-
-      <Route
-        path={"/change-log"}
-        element={<OptionsProvider>
-          <ChangelogPage />
-        </OptionsProvider>
+        path={'/change-log'}
+        element={
+          <OptionsProvider>
+            <ChangelogPage />
+          </OptionsProvider>
         }
       />
-      <Route
-        path={"/toast"}
-        element={<ToastPage />
-        }
-      />
+      <Route path={'/toast'}
+        element={<ToastPage />} />
 
-      <Route
-        path={"/currency"}
-        element={<CurrencyPage />}
-      />
+      <Route path={'/currency'}
+        element={<CurrencyPage />} />
 
-      <Route
-        path={"/chat"}
-        element={<ChatPage />}
-      />
+      <Route path={'/chat'}
+        element={<ChatPage />} />
 
-      <Route
-        path={"/chat-button"}
-        element={<ChatButtonPage />}
-      />
+      <Route path={'/chat-button'}
+        element={<ChatButtonPage />} />
 
-      <Route
-        path={"/trade-messages"}
-        element={<TradeMessagesPage />}
-      />
+      <Route path={'/trade-messages'}
+        element={<TradeMessagesPage />} />
     </Routes>
   </BrowserRouter>,
 );

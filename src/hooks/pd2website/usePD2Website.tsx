@@ -21,7 +21,10 @@ import { GenericToastPayload } from '@/common/types/Events';
 
 // Custom error class for authentication errors
 export class AuthenticationError extends Error {
-  constructor(message: string, public statusCode: number = 401) {
+  constructor(
+    message: string,
+    public statusCode: number = 401,
+  ) {
     super(message);
     this.name = 'AuthenticationError';
     Object.setPrototypeOf(this, AuthenticationError.prototype);
@@ -30,7 +33,12 @@ export class AuthenticationError extends Error {
 interface Pd2WebsiteContextType {
   open?: () => void; // This seems to be missing from the provider but referenced in context
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
-  listSpecificItem: (stashItem: GameStashItem, hrPrice: number, note: string, type: 'exact' | 'note') => Promise<MarketListingEntry>;
+  listSpecificItem: (
+    stashItem: GameStashItem,
+    hrPrice: number,
+    note: string,
+    type: 'exact' | 'note',
+  ) => Promise<MarketListingEntry>;
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   deleteMarketListing: (listingId: string) => Promise<void>;
@@ -64,14 +72,8 @@ export const Pd2WebsiteProvider = ({ children }) => {
   const handleAuthErrorRef = useRef<(() => void | Promise<void>) | null>(null);
 
   // Stash cache and fetch (RESTful)
-  const {
-    fetchAndCacheStash,
-    findItemsByName,
-    stashCache,
-    CACHE_TTL,
-    updateItemByHash,
-    clearStashCache,
-  } = useStashCache(authData, settings, handleAuthErrorRef);
+  const { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache } =
+    useStashCache(authData, settings, handleAuthErrorRef);
 
   // Store clearStashCache in ref so handleAuthenticationError can use it
   useEffect(() => {
@@ -128,7 +130,15 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [handleAuthenticationError]);
 
   // Market actions (RESTful) - now we can use handleAuthenticationError
-  const { findMatchingItems, listSpecificItem, getMarketListings, getMarketListingsArchive, updateMarketListing, deleteMarketListing, getCurrencyTab } = useMarketActions({
+  const {
+    findMatchingItems,
+    listSpecificItem,
+    getMarketListings,
+    getMarketListingsArchive,
+    updateMarketListing,
+    deleteMarketListing,
+    getCurrencyTab,
+  } = useMarketActions({
     settings,
     authData,
     fetchAndCacheStash,
@@ -139,33 +149,35 @@ export const Pd2WebsiteProvider = ({ children }) => {
   });
 
   // Social actions (RESTful)
-  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } = useSocialActions({
-    settings,
-    authData,
-    onAuthError: handleAuthenticationError,
-  });
+  const { deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation } =
+    useSocialActions({
+      settings,
+      authData,
+      onAuthError: handleAuthenticationError,
+    });
 
   // Socket connection
   const { isConnected } = useSocket({ settings });
 
   // Trade offers
-  const { incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } = useTradeOffers({
-    settings,
-    authData,
-    onAuthError: handleAuthenticationError,
-    isConnected,
-  });
+  const { incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } =
+    useTradeOffers({
+      settings,
+      authData,
+      onAuthError: handleAuthenticationError,
+      isConnected,
+    });
 
   const authenticate = useCallback(async (): Promise<AuthData> => {
     const response = await tauriFetch('https://api.projectdiablo2.com/security/session', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${settings.pd2Token}`,
+        Authorization: `Bearer ${settings.pd2Token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token })
+      body: JSON.stringify({ strategy: 'jwt', accessToken: settings.pd2Token }),
     });
-    return await handleApiResponse(response, handleAuthenticationError)
+    return await handleApiResponse(response, handleAuthenticationError);
   }, [settings, handleAuthenticationError]);
 
   // Authenticate when pd2Token changes
@@ -185,9 +197,9 @@ export const Pd2WebsiteProvider = ({ children }) => {
         id: authData.user._id,
         username: authData.user.username,
       });
-      Sentry.setContext("app", {
+      Sentry.setContext('app', {
         lastSeenVersion: settings?.lastSeenVersion,
-      })
+      });
     } else {
       Sentry.setUser(null);
     }
@@ -201,7 +213,34 @@ export const Pd2WebsiteProvider = ({ children }) => {
   }, [authData, settings.account]);
 
   return (
-    <Pd2WebsiteContext.Provider value={{ open, findMatchingItems, listSpecificItem, deleteMarketListing, getMarketListings, getMarketListingsArchive, authData, updateMarketListing, updateItemByHash, getCurrencyTab, deleteConversation, getConversations, getMessages, sendMessage, markMessagesAsRead, createConversation, incomingOffers, outgoingOffers, loading, refresh, revokeOffer, acceptOffer, rejectOffer, unacceptOffer }}>
+    <Pd2WebsiteContext.Provider
+      value={{
+        open,
+        findMatchingItems,
+        listSpecificItem,
+        deleteMarketListing,
+        getMarketListings,
+        getMarketListingsArchive,
+        authData,
+        updateMarketListing,
+        updateItemByHash,
+        getCurrencyTab,
+        deleteConversation,
+        getConversations,
+        getMessages,
+        sendMessage,
+        markMessagesAsRead,
+        createConversation,
+        incomingOffers,
+        outgoingOffers,
+        loading,
+        refresh,
+        revokeOffer,
+        acceptOffer,
+        rejectOffer,
+        unacceptOffer,
+      }}
+    >
       {children}
     </Pd2WebsiteContext.Provider>
   );
@@ -213,11 +252,7 @@ export const usePd2Website = () => {
   return ctx;
 };
 
-
-export async function handleApiResponse(
-  response: Response,
-  onAuthError?: () => void | Promise<void>
-) {
+export async function handleApiResponse(response: Response, onAuthError?: () => void | Promise<void>) {
   if (!response.ok) {
     const errorBody = await response.text();
 
@@ -231,36 +266,25 @@ export async function handleApiResponse(
           if (onAuthError) {
             await onAuthError();
           }
-          throw new AuthenticationError(
-            `Authentication failed: ${errorJson.message}`,
-            response.status
-          );
+          throw new AuthenticationError(`Authentication failed: ${errorJson.message}`, response.status);
         }
       } catch (parseError) {
         // If parsing fails, still treat 401 as auth error
         if (onAuthError) {
           await onAuthError();
         }
-        throw new AuthenticationError(
-          `Authentication failed: ${response.statusText}`,
-          response.status
-        );
+        throw new AuthenticationError(`Authentication failed: ${response.statusText}`, response.status);
       }
 
       // Fallback for other 401 errors
       if (onAuthError) {
         await onAuthError();
       }
-      throw new AuthenticationError(
-        `Authentication failed: ${response.statusText}`,
-        response.status
-      );
+      throw new AuthenticationError(`Authentication failed: ${response.statusText}`, response.status);
     }
 
     // For other errors, throw a regular Error
-    throw new Error(
-      `API Error: ${response.status} ${response.statusText}\n${errorBody}`
-    );
+    throw new Error(`API Error: ${response.status} ${response.statusText}\n${errorBody}`);
   }
   return response.json();
 }

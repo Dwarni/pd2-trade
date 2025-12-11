@@ -57,16 +57,14 @@ export function usePendingListingsQueue() {
   }, []);
 
   const updateLastPolled = useCallback((id: string) => {
-    setPendingListings((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, lastPolled: Date.now() } : p))
-    );
+    setPendingListings((prev) => prev.map((p) => (p.id === id ? { ...p, lastPolled: Date.now() } : p)));
   }, []);
 
   const getPendingListing = useCallback(
     (id: string) => {
       return pendingListings.find((p) => p.id === id);
     },
-    [pendingListings]
+    [pendingListings],
   );
 
   const cleanupExpiredListings = useCallback(() => {
@@ -77,7 +75,7 @@ export function usePendingListingsQueue() {
         const pollAge = now - p.lastPolled;
         // Remove if older than max poll attempts or hasn't been polled in a while
         return age < MAX_POLL_ATTEMPTS * POLL_INTERVAL && pollAge < POLL_INTERVAL * 2;
-      })
+      }),
     );
   }, []);
 
@@ -91,4 +89,3 @@ export function usePendingListingsQueue() {
     POLL_INTERVAL,
   };
 }
-

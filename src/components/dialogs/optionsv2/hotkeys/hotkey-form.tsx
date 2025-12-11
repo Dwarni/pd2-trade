@@ -11,50 +11,49 @@ import { emit } from '@/lib/browser-events';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const hotkeyFormSchema = z.object({
-  hotkeyModifier: z.enum(['ctrl', 'alt']),
-  hotkeyKey: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-  hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
-  hotkeyKeyListItem: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-  hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
-  hotkeyKeySettings: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-  hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
-  hotkeyKeyCurrencyValuation: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-  hotkeyModifierChat: z.enum(['ctrl', 'alt']),
-  hotkeyKeyChat: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-  hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
-  hotkeyKeyOffers: z
-    .string()
-    .min(1, 'Enter a key')
-    .max(1, 'Only one character allowed')
-    .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
-}).refine(
-  (data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'),
-  {
+const hotkeyFormSchema = z
+  .object({
+    hotkeyModifier: z.enum(['ctrl', 'alt']),
+    hotkeyKey: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierListItem: z.enum(['ctrl', 'alt']),
+    hotkeyKeyListItem: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierSettings: z.enum(['ctrl', 'alt']),
+    hotkeyKeySettings: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierCurrencyValuation: z.enum(['ctrl', 'alt']),
+    hotkeyKeyCurrencyValuation: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierChat: z.enum(['ctrl', 'alt']),
+    hotkeyKeyChat: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+    hotkeyModifierOffers: z.enum(['ctrl', 'alt']),
+    hotkeyKeyOffers: z
+      .string()
+      .min(1, 'Enter a key')
+      .max(1, 'Only one character allowed')
+      .regex(/^[a-z0-9]$/i, 'Must be a letter or number'),
+  })
+  .refine((data) => !(data.hotkeyModifier === 'ctrl' && data.hotkeyKey?.toLowerCase() === 'c'), {
     message: 'Ctrl + C is not allowed (reserved system shortcut).',
     path: ['hotkeyKey'],
-  }
-);
+  });
 
 type HotkeyFormValues = z.infer<typeof hotkeyFormSchema>;
 
@@ -103,264 +102,290 @@ export function HotkeyForm() {
       <ScrollArea className="pr-2">
         <form onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col gap-y-2 max-h-[330px]">
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="hotkeyModifier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Price check</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKey"
-            render={({ field }) => (
-              <FormItem className={'flex flex-row gap-4 items-center'}>
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="hotkeyModifierListItem"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">List item</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKeyListItem"
-            render={({ field }) => (
-              <FormItem className={'flex flex-row gap-4 items-center'}>
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex items-end gap-2 mt-4">
-          <FormField
-            control={form.control}
-            name="hotkeyModifierSettings"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Open Settings</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKeySettings"
-            render={({ field }) => (
-              <FormItem className={'flex flex-row gap-4 items-center'}>
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex items-end gap-2 mt-4">
-          <FormField
-            control={form.control}
-            name="hotkeyModifierCurrencyValuation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Currency</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKeyCurrencyValuation"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center">
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex items-end gap-2 mt-4">
-          <FormField
-            control={form.control}
-            name="hotkeyModifierChat"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Chat Window</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKeyChat"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center">
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="flex items-end gap-2 mt-4">
-          <FormField
-            control={form.control}
-            name="hotkeyModifierOffers"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="mb-1 block">Offers Window</FormLabel>
-                <FormControl>
-                  <Tabs defaultValue={'ctrl'}
-                    value={field.value}>
-                    <TabsList>
-                      <TabsTrigger value={'ctrl'}
-                        onClick={() => field.onChange('ctrl')}>Ctrl</TabsTrigger>
-                      <TabsTrigger value={'alt'}
-                        onClick={() => field.onChange('alt')}>Alt</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hotkeyKeyOffers"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center">
-                <div>+</div>
-                <FormControl>
-                  <Input
-                    type="text"
-                    maxLength={1}
-                    value={field.value?.toUpperCase()}
-                    className="w-12 text-center"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase())}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-      </form>
+          <div className="flex items-end gap-2">
+            <FormField
+              control={form.control}
+              name="hotkeyModifier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Price check</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKey"
+              render={({ field }) => (
+                <FormItem className={'flex flex-row gap-4 items-center'}>
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierListItem"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">List item</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeyListItem"
+              render={({ field }) => (
+                <FormItem className={'flex flex-row gap-4 items-center'}>
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierSettings"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Open Settings</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeySettings"
+              render={({ field }) => (
+                <FormItem className={'flex flex-row gap-4 items-center'}>
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierCurrencyValuation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Currency</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeyCurrencyValuation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center">
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierChat"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Chat Window</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeyChat"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center">
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <FormField
+              control={form.control}
+              name="hotkeyModifierOffers"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="mb-1 block">Offers Window</FormLabel>
+                  <FormControl>
+                    <Tabs defaultValue={'ctrl'}
+                      value={field.value}>
+                      <TabsList>
+                        <TabsTrigger value={'ctrl'}
+                          onClick={() => field.onChange('ctrl')}>
+                          Ctrl
+                        </TabsTrigger>
+                        <TabsTrigger value={'alt'}
+                          onClick={() => field.onChange('alt')}>
+                          Alt
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="hotkeyKeyOffers"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center">
+                  <div>+</div>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      maxLength={1}
+                      value={field.value?.toUpperCase()}
+                      className="w-12 text-center"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </form>
       </ScrollArea>
-      <Button type="submit"
+      <Button
+        type="submit"
         className={'self-start cursor-pointer mt-2'}
         disabled={saving}
-        onClick={form.handleSubmit(onSubmit)}>
+        onClick={form.handleSubmit(onSubmit)}
+      >
         {saving ? <Loader2 className="animate-spin mr-2" /> : null}
         {saving ? 'Saving...' : 'Update hotkey preferences'}
       </Button>

@@ -1,16 +1,11 @@
 // hooks/useUpdater.ts
 import { useState } from 'react';
-import {check, Update} from '@tauri-apps/plugin-updater';
+import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useDialog } from '@/hooks/useDialog';
 import { Progress } from '@/components/ui/progress';
-import {
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import React from 'react';
-
 
 export function useUpdater() {
   const { openDialog, closeDialog } = useDialog();
@@ -21,15 +16,13 @@ export function useUpdater() {
     openDialog(
       <div className="flex flex-col gap-4">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-center">
-            Downloading Update
-          </AlertDialogTitle>
+          <AlertDialogTitle className="text-center">Downloading Update</AlertDialogTitle>
           <AlertDialogDescription className="text-center">
             Please wait while the update is being downloaded.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <Progress value={currentProgress} />
-      </div>
+      </div>,
     );
   };
 
@@ -58,10 +51,7 @@ export function useUpdater() {
           break;
         case 'Progress':
           downloaded += event.data.chunkLength;
-          const newProgress = Math.min(
-            100,
-            Math.floor((downloaded / contentLength) * 100)
-          );
+          const newProgress = Math.min(100, Math.floor((downloaded / contentLength) * 100));
           setProgress(newProgress);
           openDownloadDialog(newProgress);
           break;

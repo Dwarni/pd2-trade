@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, SquareArrowOutUpRight } from "lucide-react";
+import { Loader2, SquareArrowOutUpRight } from 'lucide-react';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
@@ -37,7 +37,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   onExpandAll,
   onCollapseAll,
   onBump,
-  onRefresh
+  onRefresh,
 }) => {
   return (
     <div className="mb-4">
@@ -61,7 +61,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
         </div>
       </div>
       <ScrollArea className="pr-2">
-        <div className='flex flex-col gap-2 max-h-[20rem]'>
+        <div className="flex flex-col gap-2 max-h-[20rem]">
           {matchingItems.map((stashItem, index) => (
             <div
               key={stashItem.hash || index}
@@ -72,7 +72,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
             >
               <div className="flex justify-between items-center gap-2">
                 <div className={qualityColor(stashItem.quality.name)}
-                  style={{fontFamily: 'DiabloFont'}}>
+                  style={{ fontFamily: 'DiabloFont' }}>
                   {stashItem.name}
                 </div>
                 <MarketListingBadge
@@ -97,4 +97,4 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   );
 };
 
-export default ItemSelectionList; 
+export default ItemSelectionList;

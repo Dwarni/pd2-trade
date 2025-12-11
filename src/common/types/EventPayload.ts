@@ -1,6 +1,6 @@
-import { Event } from "@tauri-apps/api/event";
+import { Event } from '@tauri-apps/api/event';
 
 export interface EventProps {
-    requestId: string;
-    error?: string;
+  requestId: string;
+  error?: string;
 }

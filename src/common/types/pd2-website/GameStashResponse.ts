@@ -65,18 +65,44 @@ export interface Currency {
 }
 
 export interface Runes {
-  r01: number; r02: number; r03: number; r04: number; r05: number;
-  r06: number; r07: number; r08: number; r09: number; r10: number;
-  r11: number; r12: number; r13: number; r14: number; r15: number;
-  r16: number; r17: number; r18: number; r19: number; r20: number;
-  r21: number; r22: number; r23: number; r24: number; r25: number;
-  r26: number; r27: number; r28: number; r29: number; r30: number;
-  r31: number; r32: number; r33: number;
+  r01: number;
+  r02: number;
+  r03: number;
+  r04: number;
+  r05: number;
+  r06: number;
+  r07: number;
+  r08: number;
+  r09: number;
+  r10: number;
+  r11: number;
+  r12: number;
+  r13: number;
+  r14: number;
+  r15: number;
+  r16: number;
+  r17: number;
+  r18: number;
+  r19: number;
+  r20: number;
+  r21: number;
+  r22: number;
+  r23: number;
+  r24: number;
+  r25: number;
+  r26: number;
+  r27: number;
+  r28: number;
+  r29: number;
+  r30: number;
+  r31: number;
+  r32: number;
+  r33: number;
 }
 
 export interface GemsCollection {
   flawless: GemCounts;
-  perfect:  GemCounts;
+  perfect: GemCounts;
 }
 
 export interface GemCounts {
@@ -92,20 +118,20 @@ export interface GemCounts {
 export interface CraftMaterials {
   bountiful: number;
   brilliant: number;
-  caster:    number;
-  hitpower:  number;
-  safety:    number;
-  blood:     number;
-  vampiric:  number;
+  caster: number;
+  hitpower: number;
+  safety: number;
+  blood: number;
+  vampiric: number;
 }
 
 export interface BossMaterials {
-  mini_uber:     MiniUber;
-  uber_trist:    BrainHorn;
+  mini_uber: MiniUber;
+  uber_trist: BrainHorn;
   uber_ancients: Ancients;
-  dclone:        DCloneMaterials;
-  rathma:        RathmaMaterials;
-  lucion:        LucionMaterials;
+  dclone: DCloneMaterials;
+  rathma: RathmaMaterials;
+  lucion: LucionMaterials;
 }
 
 export interface MiniUber {
@@ -116,119 +142,119 @@ export interface MiniUber {
 
 export interface BrainHorn {
   brain: number;
-  eye:   number;
-  horn:  number;
+  eye: number;
+  horn: number;
 }
 
 export interface Ancients {
-  madawc:  number;
-  talic:   number;
-  korlic:  number;
+  madawc: number;
+  talic: number;
+  korlic: number;
 }
 
 export interface DCloneMaterials {
   pure_demonic_essence: number;
-  prime_evil_soul:      number;
-  black_soulstone:      number;
+  prime_evil_soul: number;
+  black_soulstone: number;
 }
 
 export interface RathmaMaterials {
-  jawbone:  number;
+  jawbone: number;
   splinter: number;
-  ashes:    number;
+  ashes: number;
 }
 
 export interface LucionMaterials {
   insignia: number;
   talisman: number;
-  flesh:    number;
+  flesh: number;
 }
 
 export interface Essence {
-  suffering:   number;
-  hatred:      number;
-  terror:      number;
+  suffering: number;
+  hatred: number;
+  terror: number;
   destruction: number;
 }
 
 export interface MapMaterials {
-  standard:         number;
-  catalyst:         number;
-  cartog:           number;
-  infused_arcane:   number;
-  infused_angelic:  number;
-  infused_zakarum:  number;
+  standard: number;
+  catalyst: number;
+  cartog: number;
+  infused_arcane: number;
+  infused_angelic: number;
+  infused_zakarum: number;
   infused_horadrim: number;
-  scarab:           number;
-  fort:             number;
-  destruction:      number;
-  arcane:           number;
-  angelic:          number;
-  zakarum:          number;
-  horadrim:         number;
+  scarab: number;
+  fort: number;
+  destruction: number;
+  arcane: number;
+  angelic: number;
+  zakarum: number;
+  horadrim: number;
 }
 
 export interface Item {
-  is_identified:   boolean;
-  is_socketed:     boolean;
-  is_new:          boolean;
-  is_ear:          boolean;
-  is_starter:      boolean;
-  is_simple:       boolean;
-  is_ethereal:     boolean;
+  is_identified: boolean;
+  is_socketed: boolean;
+  is_new: boolean;
+  is_ear: boolean;
+  is_starter: boolean;
+  is_simple: boolean;
+  is_ethereal: boolean;
   is_personalized: boolean;
-  is_runeword:     boolean;
-  base:            BaseInfo;
-  socketed_count:  number;
-  id:              number;
-  item_level:      number;
-  quality:         Quality;
-  graphic_id:      boolean;
+  is_runeword: boolean;
+  base: BaseInfo;
+  socketed_count: number;
+  id: number;
+  item_level: number;
+  quality: Quality;
+  graphic_id: boolean;
   class_specifics: boolean;
-  unique?:         UniqueInfo;
-  durability:      Durability;
-  corruptions:     string[];
-  socket_count:    number;
-  modifiers:       Modifier[];
-  name:            string;
-  location:        Location;
-  position:        Position;
-  category:        string;
-  base_code:       string;
-  requirements:    Requirements;
-  corrupted:       boolean;
-  desecrated:      boolean;
-  properties:      string[];
-  damage?:         Partial<DamageRange>;
-  hash:            string;
+  unique?: UniqueInfo;
+  durability: Durability;
+  corruptions: string[];
+  socket_count: number;
+  modifiers: Modifier[];
+  name: string;
+  location: Location;
+  position: Position;
+  category: string;
+  base_code: string;
+  requirements: Requirements;
+  corrupted: boolean;
+  desecrated: boolean;
+  properties: string[];
+  damage?: Partial<DamageRange>;
+  hash: string;
 }
 
 export interface BaseInfo {
-  id:         string;
-  category:   string;
-  codes:      { normal: string; exceptional: string; elite: string };
-  name:       string;
-  stackable:  boolean;
-  type:       string;
-  type_code:  string;
-  size:       { height: number; width: number };
-  class:      {
+  id: string;
+  category: string;
+  codes: { normal: string; exceptional: string; elite: string };
+  name: string;
+  stackable: boolean;
+  type: string;
+  type_code: string;
+  size: { height: number; width: number };
+  class: {
     base_code: string;
-    "2hd_code": string;
-    base:       string;
-    "2hd":       string;
+    '2hd_code': string;
+    base: string;
+    '2hd': string;
   };
   requirements: Requirements;
   damage: {
     one_handed: Partial<DamageRange>;
     two_handed: DamageRange;
-    missile:    Partial<DamageRange>;
+    missile: Partial<DamageRange>;
   };
 }
 
 export interface Requirements {
-  level:     number;
-  strength:  number;
+  level: number;
+  strength: number;
   dexterity: number;
 }
 
@@ -238,12 +264,12 @@ export interface DamageRange {
 }
 
 export interface Quality {
-  id:   number;
+  id: number;
   name: string;
 }
 
 export interface UniqueInfo {
-  id:            number;
+  id: number;
   requirements: { level: number };
 }
 
@@ -253,25 +279,25 @@ export interface Durability {
 }
 
 export interface Modifier {
-  name:     string;
-  values:   number[];
-  label:    string;
+  name: string;
+  values: number[];
+  label: string;
   priority: number;
-  min?:     number;
-  max?:     number;
+  min?: number;
+  max?: number;
 }
 
 export interface Location {
-  storage_id:   number;
+  storage_id: number;
   equipment_id: number;
-  zone_id:      number;
-  zone:         string;
-  storage:      string;
-  equipment:    string;
-  stash_page:   number;
+  zone_id: number;
+  zone: string;
+  storage: string;
+  equipment: string;
+  stash_page: number;
 }
 
 export interface Position {
   column: number;
-  row:    number;
+  row: number;
 }

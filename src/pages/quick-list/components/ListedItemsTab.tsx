@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, SquareArrowOutUpRight, Trash2, Search, X as XIcon } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, SquareArrowOutUpRight, Trash2, Search, X as XIcon } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -33,12 +33,12 @@ interface ListedItemsTabProps {
 
 const ITEMS_PER_PAGE = 5;
 
-const ListedItemsTab: React.FC<ListedItemsTabProps> = ({ 
-  onClose, 
-  initialListings, 
+const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
+  onClose,
+  initialListings,
   initialTotalCount,
   onTotalCountChange,
-  onListingsChange
+  onListingsChange,
 }) => {
   const { getMarketListings, updateMarketListing, updateItemByHash, deleteMarketListing, authData } = usePd2Website();
   const { settings } = useOptions();
@@ -74,7 +74,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       settings.mode === 'hardcore',
       settings.ladder === 'ladder',
       ITEMS_PER_PAGE,
-      currentPage * ITEMS_PER_PAGE
+      currentPage * ITEMS_PER_PAGE,
     );
   }, [authData, settings, currentPage]);
 
@@ -86,13 +86,13 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       settings.mode === 'hardcore',
       settings.ladder === 'ladder',
       1000, // Fetch up to 1000 listings for search
-      0
+      0,
     );
   }, [authData, settings, searchQuery]);
 
   const fetchListings = useCallback(async () => {
     if (!marketQuery) return;
-    
+
     setIsLoading(true);
     setError(null);
     const startTime = performance.now();
@@ -101,12 +101,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       const duration = performance.now() - startTime;
       setListings(result.data);
       setTotalCount(result.total);
-      
+
       incrementMetric('listed_items.fetch', 1, { status: 'success', page: currentPage.toString() });
       distributionMetric('listed_items.fetch_duration_ms', duration);
       distributionMetric('listed_items.fetch_count', result.data.length);
       distributionMetric('listed_items.total_count', result.total);
-      
+
       // Update parent component if callbacks provided
       if (onTotalCountChange) {
         onTotalCountChange(result.total);
@@ -137,12 +137,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         hasFetchedAllListings.current = false;
         return;
       }
-      
+
       // Only fetch if user is searching or if we haven't fetched yet
       if (!searchQuery.trim() && hasFetchedAllListings.current) {
         return; // Don't refetch if we already have data and not searching
       }
-      
+
       setIsLoadingAllListings(true);
       try {
         // Fetch all listings (not paginated) for search
@@ -157,7 +157,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         setIsLoadingAllListings(false);
       }
     };
-    
+
     // Fetch when query is available and (user is searching OR we don't have data yet)
     if (allListingsQuery && (searchQuery.trim() || !hasFetchedAllListings.current)) {
       fetchAllForSearch();
@@ -167,7 +167,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   // Initialize with initial data if available, or fetch if not
   useEffect(() => {
     if (hasInitialized) return; // Already initialized
-    
+
     if (currentPage === 0) {
       if (initialTotalCount !== undefined && initialListings) {
         // Use initial data if provided
@@ -191,7 +191,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     if (searchQuery.trim()) {
       return; // Don't fetch paginated results when searching
     }
-    
+
     if (marketQuery && hasInitialized && currentPage !== 0) {
       fetchListings();
     }
@@ -237,16 +237,16 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     const startTime = performance.now();
     try {
       await deleteMarketListing(listing._id);
-      
+
       // Optimistically remove the item from local state
-      const updatedListings = listings.filter(l => l._id !== listing._id);
+      const updatedListings = listings.filter((l) => l._id !== listing._id);
       setListings(updatedListings);
-      setAllListingsForSearch(prev => prev.filter(l => l._id !== listing._id));
-      
+      setAllListingsForSearch((prev) => prev.filter((l) => l._id !== listing._id));
+
       // Decrement total count
       const newTotalCount = Math.max(0, totalCount - 1);
       setTotalCount(newTotalCount);
-      
+
       // Update parent component if callbacks provided
       if (onTotalCountChange) {
         onTotalCountChange(newTotalCount);
@@ -254,10 +254,10 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       if (onListingsChange) {
         onListingsChange(updatedListings);
       }
-      
+
       // Refresh to ensure consistency
       await fetchListings();
-      
+
       const duration = performance.now() - startTime;
       incrementMetric('listed_items.delete', 1, { status: 'success' });
       distributionMetric('listed_items.delete_duration_ms', duration);
@@ -289,13 +289,16 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     try {
       // Determine type based on which fields are filled
       // Normalize price: handle empty strings, whitespace, undefined, null
-      const priceValue = values.price === null || values.price === undefined || values.price === '' 
-        ? null 
-        : (typeof values.price === 'string' ? values.price.trim() : values.price);
+      const priceValue =
+        values.price === null || values.price === undefined || values.price === ''
+          ? null
+          : typeof values.price === 'string'
+            ? values.price.trim()
+            : values.price;
       const numericPrice = priceValue !== null ? Number(priceValue) : null;
       const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
-      
+
       const updateFields: Record<string, any> = {};
       if (listingType === 'note') {
         updateFields.price = values.note || '';
@@ -356,7 +359,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         'item.name',
         'item.base.name',
         'price',
-        { name: 'hr_price', getFn: (listing) => listing.hr_price?.toString() || '' }
+        { name: 'hr_price', getFn: (listing) => listing.hr_price?.toString() || '' },
       ],
       threshold: 0.4, // 0 = exact match, 1 = match anything
       includeScore: true,
@@ -372,11 +375,11 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
       return [];
     }
     const results = fuse.search(searchQuery);
-    return results.map(result => result.item);
+    return results.map((result) => result.item);
   }, [searchQuery, listings, allListingsForSearch, fuse]);
 
   const totalPages = Math.ceil((searchQuery.trim() ? filteredListings.length : totalCount) / ITEMS_PER_PAGE);
-  
+
   // Paginate filtered results
   const paginatedListings = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -411,7 +414,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center mb-2 gap-2">
-      <div className="relative flex-1 max-w-xs">
+        <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
@@ -445,18 +448,17 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         </span>
       </div>
 
-      {(isLoadingAllListings && searchQuery.trim()) && (
+      {isLoadingAllListings && searchQuery.trim() && (
         <div className="flex items-center justify-center p-4">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
         </div>
       )}
       <ScrollArea className="flex-1 pr-2">
-      
         <div className="flex flex-col gap-2 max-h-[20rem]">
           {paginatedListings.length === 0 && searchQuery.trim() && !isLoadingAllListings && (
             <div className="text-center text-sm text-muted-foreground p-4">
-              No items found matching "{searchQuery}"
+              No items found matching &quot;{searchQuery}&quot;
             </div>
           )}
           {paginatedListings.map((listing) => {
@@ -464,14 +466,12 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             const itemHash = listing.item.hash;
 
             return (
-              <div
-                key={listing._id}
-                className="p-3 border rounded border-neutral-600"
-              >
+              <div key={listing._id}
+                className="p-3 border rounded border-neutral-600">
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="flex-1">
                     <div className={qualityColor(listing.item.quality.name)}
-                      style={{fontFamily: 'DiabloFont'}}>
+                      style={{ fontFamily: 'DiabloFont' }}>
                       {listing.item.name}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -522,21 +522,24 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                             )}
                           />
                           <ButtonGroup>
-                          <Button type="submit"
-                            size="sm"
-                            className="h-8 text-xs"
-                            disabled={isEditing && !isEditFormValid}>Save</Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 text-xs"
-                            onClick={() => setEditingListingId(null)}
-                          >
-                            Cancel
-                          </Button>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              className="h-8 text-xs"
+                              disabled={isEditing && !isEditFormValid}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 text-xs"
+                              onClick={() => setEditingListingId(null)}
+                            >
+                              Cancel
+                            </Button>
                           </ButtonGroup>
-                          
                         </form>
                       </Form>
                     ) : (
@@ -564,19 +567,15 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                           <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
                               <span>
-                                <Button
-                                  size="sm"
+                                <Button size="sm"
                                   variant="outline"
                                   className="h-7 text-xs cursor-not-allowed"
-                                  disabled
-                                >
+                                  disabled>
                                   Bump
                                 </Button>
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent>
-                              You can bump this item {timeUntilBump(listing)}
-                            </TooltipContent>
+                            <TooltipContent>You can bump this item {timeUntilBump(listing)}</TooltipContent>
                           </Tooltip>
                         )}
                         <Tooltip delayDuration={0}>
@@ -645,7 +644,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              setCurrentPage(prev => {
+              setCurrentPage((prev) => {
                 const newPage = Math.max(0, prev - 1);
                 incrementMetric('listed_items.pagination', 1, { direction: 'previous', page: newPage.toString() });
                 return newPage;
@@ -664,7 +663,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              setCurrentPage(prev => {
+              setCurrentPage((prev) => {
                 const newPage = Math.min(totalPages - 1, prev + 1);
                 incrementMetric('listed_items.pagination', 1, { direction: 'next', page: newPage.toString() });
                 return newPage;
@@ -682,4 +681,3 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 };
 
 export default ListedItemsTab;
-

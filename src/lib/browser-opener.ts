@@ -14,8 +14,7 @@ export async function openUrl(url: string): Promise<void> {
     await tauriOpenUrl(url);
     return;
   }
-  
+
   // Browser fallback: use window.open
   window.open(url, '_blank', 'noopener,noreferrer');
 }
-

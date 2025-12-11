@@ -94,10 +94,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
       const edgeThreshold = 10;
 
       const isNearEdge =
-        x < edgeThreshold ||
-        x > innerWidth - edgeThreshold ||
-        y < edgeThreshold ||
-        y > innerHeight - edgeThreshold;
+        x < edgeThreshold || x > innerWidth - edgeThreshold || y < edgeThreshold || y > innerHeight - edgeThreshold;
 
       // If we are "stuck" near the edge with no updates, force close
       if (nothingHovered || (isNearEdge && timeSinceMove > 500)) {
@@ -124,7 +121,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         ? `translate(${x}px, ${y}px) scale(1)`
         : `translate(0px, 0px) scale(${component === 'main' ? 1 : 0})`,
       opacity: isHovered || component === 'main' ? 1 : 0,
-      pointerEvents: isHovered || component === 'main' ? 'auto' as const : 'none' as const,
+      pointerEvents: isHovered || component === 'main' ? ('auto' as const) : ('none' as const),
     };
   };
 
@@ -132,9 +129,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   const expandedRadius = 70 + 28 + 20; // max distance + button radius + padding
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none"
-    >
+    <div className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none">
       {/* Invisible hover area that covers the expanded button positions */}
       <div
         className="absolute pointer-events-auto"
@@ -154,11 +149,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         onMouseLeave={handleMouseLeave}
       >
         {/* Drag Handle Circle */}
-        {buttonPositions.find(p => p.component === 'drag') && (
+        {buttonPositions.find((p) => p.component === 'drag') && (
           <div
             data-tauri-drag-region
             className={cn(
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out"
+              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-neutral-800/90 border border-neutral-600/50 backdrop-blur-sm flex items-center justify-center cursor-move transition-all duration-300 ease-out',
             )}
             style={getButtonStyle(225, 50, 'drag')}
           >
@@ -168,47 +163,44 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         )}
 
         {/* Settings Button Circle */}
-        {onSettingsClick && buttonPositions.find(p => p.component === 'settings') && (
+        {onSettingsClick && buttonPositions.find((p) => p.component === 'settings') && (
           <Button
             onClick={onSettingsClick}
             className={cn(
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
-              isHovered ? "h-12 w-12" : "h-10 w-10"
+              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
+              isHovered ? 'h-12 w-12' : 'h-10 w-10',
             )}
             size="icon"
             aria-label="Settings"
             style={getButtonStyle(45, 70, 'settings')}
           >
-            <Settings className={cn(
-              "text-neutral-200 transition-all duration-300",
-              isHovered ? "h-5 w-5" : "h-4 w-4"
-            )} />
+            <Settings
+              className={cn('text-neutral-200 transition-all duration-300', isHovered ? 'h-5 w-5' : 'h-4 w-4')}
+            />
           </Button>
         )}
 
         {/* Trade Messages Button Circle */}
-        {onTradeMessagesClick && buttonPositions.find(p => p.component === 'trade') && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={getButtonStyle(135, 70, 'trade')}>
-
+        {onTradeMessagesClick && buttonPositions.find((p) => p.component === 'trade') && (
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={getButtonStyle(135, 70, 'trade')}
+          >
             <Button
               onClick={onTradeMessagesClick}
               className={cn(
-                "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
-                isHovered ? "h-12 w-12" : "h-10 w-10"
+                'rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
+                isHovered ? 'h-12 w-12' : 'h-10 w-10',
               )}
               size="icon"
               aria-label="Trade Messages"
             >
-              <ShoppingBag className={cn(
-                "text-neutral-200 transition-all duration-300",
-                isHovered ? "h-5 w-5" : "h-4 w-4"
-              )} />
+              <ShoppingBag
+                className={cn('text-neutral-200 transition-all duration-300', isHovered ? 'h-5 w-5' : 'h-4 w-4')}
+              />
             </Button>
             {tradeOffersCount > 0 && isHovered && (
-              <Badge
-                className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
-              >
+              <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none">
                 {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
               </Badge>
             )}
@@ -216,21 +208,18 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         )}
 
         {/* Disable Button Circle */}
-        {onDisableClick && buttonPositions.find(p => p.component === 'disable') && (
+        {onDisableClick && buttonPositions.find((p) => p.component === 'disable') && (
           <Button
             onClick={handleDisableClick}
             className={cn(
-              "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-red-600/90 hover:bg-red-700/90 border border-red-500/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer",
-              isHovered ? "h-8 w-8" : "h-7 w-7"
+              'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg bg-red-600/90 hover:bg-red-700/90 border border-red-500/50 backdrop-blur-sm transition-all duration-300 ease-out cursor-pointer',
+              isHovered ? 'h-8 w-8' : 'h-7 w-7',
             )}
             size="icon"
             aria-label="Disable Overlay"
             style={getButtonStyle(315, 50, 'disable')}
           >
-            <X className={cn(
-              "text-white transition-all duration-300",
-              isHovered ? "h-2.5 w-2.5" : "h-2 w-2"
-            )} />
+            <X className={cn('text-white transition-all duration-300', isHovered ? 'h-2.5 w-2.5' : 'h-2 w-2')} />
           </Button>
         )}
 
@@ -239,28 +228,23 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           <Button
             onClick={handleClick}
             className={cn(
-              "rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out cursor-pointer",
-              isHovered ? "h-14 w-14 scale-110" : "h-12 w-12 scale-100"
+              'rounded-full shadow-lg bg-neutral-800/90 hover:bg-neutral-700/90 border border-neutral-600/50 backdrop-blur-sm pointer-events-auto transition-all duration-300 ease-out cursor-pointer',
+              isHovered ? 'h-14 w-14 scale-110' : 'h-12 w-12 scale-100',
             )}
             size="icon"
             aria-label="Open PD2 Chat"
           >
-            <MessageSquare className={cn(
-              "text-neutral-200 transition-all duration-300",
-              isHovered ? "h-6 w-6" : "h-5 w-5"
-            )} />
+            <MessageSquare
+              className={cn('text-neutral-200 transition-all duration-300', isHovered ? 'h-6 w-6' : 'h-5 w-5')}
+            />
           </Button>
           {unreadCount > 0 && (
-            <Badge
-              className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
-            >
+            <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none">
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
           {tradeOffersCount > 0 && !isHovered && (
-            <Badge
-              className="absolute -top-1 -left-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none"
-            >
+            <Badge className="absolute -top-1 -left-1 h-5 min-w-5 px-1.5 flex items-center justify-center bg-blue-500 text-white text-xs font-bold rounded-full border-2 border-neutral-800 pointer-events-none">
               {tradeOffersCount > 99 ? '99+' : tradeOffersCount}
             </Badge>
           )}
@@ -269,4 +253,3 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     </div>
   );
 };
-

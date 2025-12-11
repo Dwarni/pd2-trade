@@ -10,7 +10,13 @@ import { OptionsProvider, useOptions } from '@/hooks/useOptions';
 import { useKeySender } from '@/hooks/useKeySender';
 import { DialogProvider } from '@/hooks/useDialog';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
-import { openCenteredWindow, openOverDiabloWindow, openWindowAtCursor, openWindowCenteredOnDiablo, attachWindowCloseHandler } from '@/lib/window';
+import {
+  openCenteredWindow,
+  openOverDiabloWindow,
+  openWindowAtCursor,
+  openWindowCenteredOnDiablo,
+  attachWindowCloseHandler,
+} from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
@@ -227,7 +233,6 @@ const LandingPage: React.FC = () => {
   // Handle changelog
   useChangelog();
 
-
   // Handle chat button overlay visibility based on settings
   useEffect(() => {
     // Clear any existing interval first
@@ -412,11 +417,13 @@ const LandingPage: React.FC = () => {
       };
 
       // Listen for toggle chat window event
-      listen('toggle-chat-window', toggleChatWindow).then((off) => {
-        toggleUnlisten = off;
-      }).catch((err) => {
-        console.error('Failed to listen for toggle-chat-window event:', err);
-      });
+      listen('toggle-chat-window', toggleChatWindow)
+        .then((off) => {
+          toggleUnlisten = off;
+        })
+        .catch((err) => {
+          console.error('Failed to listen for toggle-chat-window event:', err);
+        });
     };
     openChat();
 
@@ -508,11 +515,13 @@ const LandingPage: React.FC = () => {
     openTradeMessagesWindow();
 
     // Listen for toggle trade messages window event
-    listen('toggle-trade-messages-window', toggleTradeMessagesWindow).then((off) => {
-      toggleUnlisten = off;
-    }).catch((err) => {
-      console.error('Failed to listen for toggle-trade-messages-window event:', err);
-    });
+    listen('toggle-trade-messages-window', toggleTradeMessagesWindow)
+      .then((off) => {
+        toggleUnlisten = off;
+      })
+      .catch((err) => {
+        console.error('Failed to listen for toggle-trade-messages-window event:', err);
+      });
 
     return () => {
       if (toggleUnlisten) {

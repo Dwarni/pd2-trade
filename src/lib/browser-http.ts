@@ -21,7 +21,7 @@ function getProxiedUrl(input: RequestInfo | URL): string {
       return input.url;
     }
   }
-  
+
   // In browser, use the Vite proxy
   let urlString: string;
   if (typeof input === 'string') {
@@ -32,27 +32,23 @@ function getProxiedUrl(input: RequestInfo | URL): string {
     // Request object
     urlString = input.url;
   }
-  
+
   // Check if it's a projectdiablo2.com API URL
   if (urlString.includes('api.projectdiablo2.com')) {
     // Replace with proxy path
     return urlString.replace('https://api.projectdiablo2.com', '/api');
   }
-  
+
   // For other URLs, return as-is (they might have their own CORS handling)
   return urlString;
 }
 
-export async function fetch(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<Response> {
+export async function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   if (isTauri()) {
     return await tauriFetch(input, init);
   }
-  
+
   // Browser fallback: use native fetch with proxy
   const proxiedUrl = getProxiedUrl(input);
   return window.fetch(proxiedUrl, init);
 }
-
