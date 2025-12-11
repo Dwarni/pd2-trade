@@ -1,16 +1,23 @@
-name: "publish"
+name: 'publish'
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test build without creating a release'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   ########################################################################
   # 1. Create Release in errolgr/pd2-trade
   ########################################################################
   create-release:
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -46,20 +53,21 @@ jobs:
             return data.id;
 
   ########################################################################
-  # 2. Build Tauri (unchanged)
+  # 2. Build Tauri
   ########################################################################
   build-tauri:
     needs: create-release
+    if: always() && (needs.create-release.result == 'success' || needs.create-release.result == 'skipped')
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: "windows-latest"
-            args: ""
-          - platform: "ubuntu-22.04"
-            args: ""
+          - platform: 'windows-latest'
+            args: ''
+          - platform: 'ubuntu-22.04'
+            args: ''
           # Add more platforms as needed...
     runs-on: ${{ matrix.platform }}
     steps:
@@ -84,25 +92,55 @@ jobs:
           sudo apt-get install -y build-essential pkg-config libx11-dev libxi-dev 
           libxtst-dev libglib2.0-dev libgdk-pixbuf2.0-dev libsoup-3.0-dev 
           libnotify-dev libatk1.0-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev 
-          xdg-utils librsvg2-dev patchelf file 
+          xdg-utils librsvg2-dev patchelf file
 
       - name: Install frontend dependencies
         run: npm install
 
+      - name: Get version
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set release ID
+        id: set-release-id
+        run: |
+          RELEASE_ID="${{ needs.create-release.outputs.release_id }}"
+          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "" ]; then
+            echo "release_id=" >> $GITHUB_OUTPUT
+            echo "No release ID - building in test mode"
+          else
+            echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+            echo "Using release ID: $RELEASE_ID"
+          fi
+
       - uses: tauri-apps/tauri-action@v0.5.20
+        id: tauri-build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           GITHUB_TOKEN: ${{ secrets.PD2_GITHUB_TOKEN }}
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
+          releaseId: ${{ steps.set-release-id.outputs.release_id }}
           owner: errolgr
           repo: pd2-trade
           args: ${{ matrix.args }}
+
+      - name: Upload build artifacts (test mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-v${{ steps.get-version.outputs.version }}
+          path: |
+            src-tauri/target/release/bundle/**
+          retention-days: 7
+          if-no-files-found: warn
 
   ########################################################################
   # 3. Publish Release in pd2-trade
   ########################################################################
   publish-release:
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -127,6 +165,7 @@ jobs:
   # 4. Send Discord Notification
   ########################################################################
   discord-notification:
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.test_mode) }}
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -149,12 +188,12 @@ jobs:
           const fs = require('fs');
           const https = require('https');
           const { execSync } = require('child_process');
-          
+
           // Get version from package.json
           const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
           const version = packageJson.version;
           const currentTag = `app-v${version}`;
-          
+
           // Get previous tag
           execSync('git fetch --tags', { stdio: 'inherit' });
           const tags = execSync('git tag --sort=-v:refname')
@@ -162,15 +201,15 @@ jobs:
             .trim()
             .split('\n')
             .filter(tag => /^app-v\d+\.\d+\.\d+$/.test(tag));
-          
+
           const previousTag = tags.length > 1 ? tags[1] : 'app-v0.0.0';
           const compareUrl = `https://github.com/errolgr/pd2-trade/compare/${previousTag}...${currentTag}`;
-          
+
           // Extract changelog entries for this version
           const content = fs.readFileSync('./src/assets/changeLog.ts', 'utf8');
           const versionRegex = new RegExp(`"${version.replace(/\./g, '\\.')}":\\s*\\[([\\s\\S]*?)\\]`, 'm');
           const match = content.match(versionRegex);
-          
+
           let changelogText = 'No changelog entries found for this version.';
           if (match) {
             const entriesBlock = match[1];
@@ -191,7 +230,7 @@ jobs:
             // Format with bullet points
             changelogText = entries.map(entry => `• ${entry}`).join('\n');
           }
-          
+
           // Create Discord embed payload
           const payload = {
             embeds: [{
@@ -216,17 +255,17 @@ jobs:
               timestamp: new Date().toISOString()
             }]
           };
-          
+
           // Send to Discord
           const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
           if (!webhookUrl) {
             console.log('DISCORD_WEBHOOK_URL not set, skipping Discord notification');
             process.exit(0);
           }
-          
+
           const url = new URL(webhookUrl);
           const postData = JSON.stringify(payload);
-          
+
           const options = {
             hostname: url.hostname,
             port: url.port || 443,
@@ -237,7 +276,7 @@ jobs:
               'Content-Length': Buffer.byteLength(postData)
             }
           };
-          
+
           const req = https.request(options, (res) => {
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
@@ -250,12 +289,12 @@ jobs:
               }
             });
           });
-          
+
           req.on('error', (error) => {
             console.error(`Error sending Discord notification: ${error.message}`);
             process.exit(1);
           });
-          
+
           req.write(postData);
           req.end();
           EOF
