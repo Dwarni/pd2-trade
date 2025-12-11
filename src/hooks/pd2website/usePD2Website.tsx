@@ -42,6 +42,7 @@ interface Pd2WebsiteContextType {
   getMarketListings: (query: MarketListingQuery) => Promise<MarketListingResult>;
   getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   deleteMarketListing: (listingId: string) => Promise<void>;
+  bumpAllMarketListings: (userId: string) => Promise<void>;
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
@@ -137,6 +138,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
     getMarketListingsArchive,
     updateMarketListing,
     deleteMarketListing,
+    bumpAllMarketListings,
     getCurrencyTab,
   } = useMarketActions({
     settings,
@@ -219,6 +221,7 @@ export const Pd2WebsiteProvider = ({ children }) => {
         findMatchingItems,
         listSpecificItem,
         deleteMarketListing,
+        bumpAllMarketListings,
         getMarketListings,
         getMarketListingsArchive,
         authData,

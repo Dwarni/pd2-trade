@@ -40,7 +40,14 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   onTotalCountChange,
   onListingsChange,
 }) => {
-  const { getMarketListings, updateMarketListing, updateItemByHash, deleteMarketListing, authData } = usePd2Website();
+  const {
+    getMarketListings,
+    updateMarketListing,
+    updateItemByHash,
+    deleteMarketListing,
+    bumpAllMarketListings,
+    authData,
+  } = usePd2Website();
   const { settings } = useOptions();
   const [listings, setListings] = useState<MarketListingEntry[]>(initialListings || []);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +56,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
   const [totalCount, setTotalCount] = useState(initialTotalCount || 0);
   const [editingListingId, setEditingListingId] = useState<string | null>(null);
   const [bumpingListingId, setBumpingListingId] = useState<string | null>(null);
+  const [isBumpingAll, setIsBumpingAll] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [allListingsForSearch, setAllListingsForSearch] = useState<MarketListingEntry[]>([]);
@@ -233,6 +241,33 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
     }
   };
 
+  const handleBumpAll = async () => {
+    if (!authData) {
+      emit('toast-event', 'Unable to bump listings: not authenticated');
+      return;
+    }
+
+    setIsBumpingAll(true);
+    const startTime = performance.now();
+    try {
+      await bumpAllMarketListings(authData.user._id);
+      await fetchListings();
+
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump_all', 1, { status: 'success' });
+      distributionMetric('listed_items.bump_all_duration_ms', duration);
+      emit('toast-event', 'Successfully bumped all items!');
+    } catch (err) {
+      const duration = performance.now() - startTime;
+      incrementMetric('listed_items.bump_all', 1, { status: 'error' });
+      distributionMetric('listed_items.bump_all_duration_ms', duration);
+      console.error('Failed to bump all items:', err);
+      emit('toast-event', 'Failed to bump all items');
+    } finally {
+      setIsBumpingAll(false);
+    }
+  };
+
   const handleDelete = async (listing: MarketListingEntry) => {
     const startTime = performance.now();
     try {
@@ -359,7 +394,7 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
         'item.name',
         'item.base.name',
         'price',
-        { name: 'hr_price', getFn: (listing) => listing.hr_price?.toString() || '' },
+        { name: 'hr_price', getFn: (listing: MarketListingEntry) => listing.hr_price?.toString() || '' },
       ],
       threshold: 0.4, // 0 = exact match, 1 = match anything
       includeScore: true,
@@ -413,39 +448,62 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center mb-2 gap-2">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search item by name..."
-            value={searchQuery}
-            onChange={(e) => {
-              const newQuery = e.target.value;
-              setSearchQuery(newQuery);
-              setCurrentPage(0); // Reset to first page when searching
-              if (newQuery.trim().length > 0) {
-                incrementMetric('listed_items.search', 1);
-                distributionMetric('listed_items.search_query_length', newQuery.length);
-              }
-            }}
-            className="pl-8 pr-8 h-8 text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setCurrentPage(0);
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search item by name..."
+              value={searchQuery}
+              onChange={(e) => {
+                const newQuery = e.target.value;
+                setSearchQuery(newQuery);
+                setCurrentPage(0); // Reset to first page when searching
+                if (newQuery.trim().length > 0) {
+                  incrementMetric('listed_items.search', 1);
+                  distributionMetric('listed_items.search_query_length', newQuery.length);
+                }
               }}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <XIcon className="h-4 w-4" />
-            </button>
-          )}
+              className="pl-8 pr-8 h-8 text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(0);
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <span className="text-xs font-medium">
+            Listed Items ({searchQuery.trim() ? filteredListings.length : totalCount})
+          </span>
         </div>
-        <span className="text-xs font-medium">
-          Listed Items ({searchQuery.trim() ? filteredListings.length : totalCount})
-        </span>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs mr-2"
+              onClick={handleBumpAll}
+              disabled={isBumpingAll || isLoading || isLoadingAllListings || totalCount === 0}
+            >
+              {isBumpingAll ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  Bumping...
+                </>
+              ) : (
+                'Bump All'
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Bump all items that are eligible to be bumped</TooltipContent>
+        </Tooltip>
       </div>
 
       {isLoadingAllListings && searchQuery.trim() && (

@@ -21,6 +21,7 @@ interface UseMarketActionsReturn {
   getMarketListingsArchive: (query: MarketListingQuery) => Promise<MarketListingResult>;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   deleteMarketListing: (hash: string) => Promise<void>;
+  bumpAllMarketListings: (userId: string) => Promise<void>;
   getCurrencyTab: () => Promise<Currency>;
 }
 
@@ -192,6 +193,23 @@ export function useMarketActions({
     [settings, onAuthError],
   );
 
+  // Bump all market listings (PATCH /market/listing with user_id query param)
+  const bumpAllMarketListings = useCallback(
+    async (userId: string): Promise<void> => {
+      const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', { user_id: userId });
+      const response = await tauriFetch(url, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${settings.pd2Token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bumped_at: new Date().toISOString() }),
+      });
+      await handleApiResponse(response, onAuthError);
+    },
+    [settings, onAuthError],
+  );
+
   return {
     findMatchingItems,
     listSpecificItem,
@@ -199,6 +217,7 @@ export function useMarketActions({
     getMarketListingsArchive,
     updateMarketListing,
     deleteMarketListing,
+    bumpAllMarketListings,
     getCurrencyTab,
   };
 }
