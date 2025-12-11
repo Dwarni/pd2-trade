@@ -16,6 +16,7 @@ import {
   openWindowAtCursor,
   openWindowCenteredOnDiablo,
   attachWindowCloseHandler,
+  getDiabloRectWithRetry,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -260,7 +261,13 @@ const LandingPage: React.FC = () => {
 
       // Create window if it doesn't exist
       if (!chatButtonWindowRef.current) {
-        const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+        const rect = await getDiabloRectWithRetry();
+
+        // Check if rect is null (Diablo window not found after retries)
+        if (!rect) {
+          console.warn('[LandingPage] Diablo window rect not found after retries, cannot position chat button overlay');
+          return;
+        }
 
         // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
         const buttonSize = 240; // 48px button + padding + expanded radius

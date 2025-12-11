@@ -99,12 +99,14 @@ jobs:
 
       - name: Get version
         id: get-version
+        shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set release ID
         id: set-release-id
+        shell: bash
         run: |
           RELEASE_ID="${{ needs.create-release.outputs.release_id }}"
           if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "" ]; then

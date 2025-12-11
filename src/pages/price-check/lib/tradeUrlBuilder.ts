@@ -22,6 +22,15 @@ export function buildTradeUrl(
 ): string {
   const searchParams = new URLSearchParams();
 
+  // Handle corrupted state separately - check it even if not in selected (for injected stats)
+  // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+  if (corruptedState === 1) {
+    searchParams.set('corrupted', 'true');
+  } else if (corruptedState === 2) {
+    searchParams.set('corrupted', 'false');
+  }
+  // If corruptedState === 0, don't add any corrupted filter
+
   // Get sorted stats for processing
   const sortedStats = getSortedStats(item);
 
@@ -62,13 +71,7 @@ export function buildTradeUrl(
     }
 
     if (stat.stat_id === StatId.Corrupted) {
-      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
-      if (corruptedState === 1) {
-        searchParams.set('corrupted', 'true');
-      } else if (corruptedState === 2) {
-        searchParams.set('corrupted', 'false');
-      }
-      // If corruptedState === 0, don't add any corrupted filter
+      // Already handled above, skip here
       return;
     }
 
@@ -173,6 +176,15 @@ export function buildGetMarketListingQuery(
   const sortedStats = getSortedStats(item);
   const modifiers: any[] = [];
 
+  // Handle corrupted state separately - check it even if not in selected (for injected stats)
+  // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
+  if (corruptedState === 1) {
+    query['item.corrupted'] = true;
+  } else if (corruptedState === 2) {
+    query['item.corrupted'] = false;
+  }
+  // If corruptedState === 0, don't add any corrupted filter
+
   [...selected].forEach((key) => {
     const stat = sortedStats.find((s) => getStatKey(s) === key);
     if (!stat) return;
@@ -189,13 +201,7 @@ export function buildGetMarketListingQuery(
       return;
     }
     if (stat.stat_id === StatId.Corrupted) {
-      // corruptedState: 0 = both (no filter), 1 = corrupted only, 2 = non-corrupted only
-      if (corruptedState === 1) {
-        query['item.corrupted'] = true;
-      } else if (corruptedState === 2) {
-        query['item.corrupted'] = false;
-      }
-      // If corruptedState === 0, don't add any corrupted filter
+      // Already handled above, skip here
       return;
     }
     if (stat.stat_id === StatId.Ethereal || item.isEthereal) {

@@ -8,6 +8,28 @@ import { WebviewOptions } from '@tauri-apps/api/webview';
 // Re-export browser window types
 export type BrowserWindow = browserWindow.BrowserWindow;
 
+type DiabloRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Retry getting Diablo window rect with exponential backoff
+ */
+export async function getDiabloRectWithRetry(maxRetries = 5, delayMs = 200): Promise<DiabloRect | null> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const rect = await invoke<DiabloRect | null>('get_diablo_rect');
+    if (rect) {
+      return rect;
+    }
+
+    if (attempt < maxRetries - 1) {
+      // Wait before retrying, with exponential backoff
+      const waitTime = delayMs * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+  }
+
+  return null;
+}
+
 /**
  * Opens a centered window - uses Tauri in Tauri environment, browser window.open in browser
  */
@@ -54,7 +76,12 @@ export async function openOverDiabloWindow(
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
     const { x: cursorX } = await cursorPosition();
-    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+    const rect = await getDiabloRectWithRetry();
+
+    if (!rect) {
+      console.warn('[window] Diablo window rect not found after retries, falling back to centered window');
+      return openCenteredWindow(label, url, options);
+    }
 
     const width = options.width ?? 500;
     const x = cursorX - width;
@@ -116,7 +143,13 @@ export async function openWindowCenteredOnDiablo(
   options: Partial<WebviewOptions & WindowOptions> = {},
 ): Promise<WebviewWindow | browserWindow.BrowserWindow | null> {
   if (isTauri()) {
-    const rect = await invoke<{ x: number; y: number; width: number; height: number }>('get_diablo_rect');
+    const rect = await getDiabloRectWithRetry();
+
+    if (!rect) {
+      console.warn('[window] Diablo window rect not found after retries, falling back to centered window');
+      return openCenteredWindow(label, url, options);
+    }
+
     const windowWidth = options.width ?? 600;
     const windowHeight = options.height ?? 600;
     const x = rect.x + (rect.width - windowWidth) / 2;

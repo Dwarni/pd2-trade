@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { fuzzyMatchCharacterSkill, skillNameToIdMap } from '@/assets/character-skills';
 import {
   classSkillNameToIdMap,
@@ -13,7 +14,7 @@ import {
   fuzzyClassSkillByName,
   fuzzyClassSubSkillByName,
 } from '@/assets/class-skills';
-import { X, Check } from 'lucide-react';
+import { X, Check, Info } from 'lucide-react';
 
 interface StatRowProps {
   stat: Stat;
@@ -53,6 +54,9 @@ export const StatRow: React.FC<StatRowProps> = ({
   const corruptedChecked = isCorrupted && corruptedState === 1;
   const corruptedIndeterminate = isCorrupted && corruptedState === 2;
   const corruptedUnchecked = isCorrupted && corruptedState === 0;
+
+  // Check if corrupted stat is injected (not actually on the item)
+  const isInjectedCorrupted = isCorrupted && (stat as any)._injected === true;
 
   return (
     <div className="border-b border-neutral-800 pb-2">
@@ -100,21 +104,42 @@ export const StatRow: React.FC<StatRowProps> = ({
             )}
 
             {!isUnknown && (
-              <span
-                className={cn(
-                  'flex-1 text-sm text-gray-100',
-                  { 'text-gray-500 line-through': isUnknown },
-                  { 'text-red-500': isCorrupted },
-                  { 'text-gray-100': !isCorrupted && !isUnknown },
+              <div className="flex items-center gap-2 flex-1">
+                <span
+                  className={cn(
+                    'text-sm',
+                    { 'text-gray-500 line-through': isUnknown },
+                    { 'text-red-500': isCorrupted && !isInjectedCorrupted },
+                    { 'text-gray-400': isInjectedCorrupted },
+                    { 'text-gray-100': !isCorrupted && !isUnknown },
+                    { 'cursor-pointer': isCorrupted },
+                  )}
+                  onClick={isCorrupted ? () => toggle(stat) : undefined}
+                >
+                  {stat.name}
+                  {!isCorrupted && stat.value !== undefined && `: ${stat.value}`}
+                  {!isSocket &&
+                    !isCorrupted &&
+                    stat.range &&
+                    stat.value !== undefined &&
+                    ` (${stat.range.min}-${stat.range.max})`}
+                </span>
+                {isInjectedCorrupted && (
+                  <HoverPopover
+                    content={
+                      <Card>
+                        <div className="text-xs p-2 max-w-xs">
+                          This item can be corrupted. Use this filter to search for corrupted or non-corrupted versions.
+                        </div>
+                      </Card>
+                    }
+                  >
+                    <Info className="h-3.5 w-3.5 text-gray-500 hover:text-gray-400 cursor-help" />
+                  </HoverPopover>
                 )}
-              >
-                {stat.name}
-                {stat.value !== undefined && `: ${stat.value}`}
-                {!isSocket && stat.range && stat.value !== undefined && ` (${stat.range.min}-${stat.range.max})`}
-              </span>
+                {stat.corrupted && <span className={'text-red-500'}>*</span>}
+              </div>
             )}
-
-            {stat.corrupted && <span className={'text-red-500'}>*</span>}
           </div>
         </div>
 

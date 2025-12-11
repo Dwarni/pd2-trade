@@ -1,8 +1,97 @@
 import { useState, useMemo } from 'react';
 import { Stat } from '../lib/interfaces';
 import { StatId, statRemap, statRemapByName, PRIORITY_STATS, STRIP_STATS } from '../lib/stat-mappings';
-import { getStatKey } from '../lib/utils';
+import { getStatKey, getTypeFromBaseType } from '../lib/utils';
 import { useOptions } from '@/hooks/useOptions';
+
+/**
+ * List of base type labels that cannot be corrupted (special cases)
+ */
+const NON_CORRUPTABLE_TYPE_LABELS = new Set(['Rune', 'Gem', 'Charm', 'Map Orb']);
+
+/**
+ * Whitelist of type codes that CAN be corrupted
+ */
+const CORRUPTABLE_TYPE_CODES = new Set([
+  '2hcs',
+  'abow',
+  'ajav',
+  'aspe',
+  'tors',
+  'axe',
+  'phlm',
+  'bels',
+  'belt',
+  'boot',
+  'bow',
+  'bowq',
+  'circ',
+  'club',
+  'xbow',
+  'xboq',
+  'knif',
+  'pelt',
+  'h2h',
+  'h2h2',
+  'glov',
+  'hamm',
+  'helm',
+  'jave',
+  'mace',
+  't1m',
+  't2m',
+  't3m',
+  't4m',
+  't5m',
+  'ashd',
+  'pole',
+  'scep',
+  'sc9',
+  'shie',
+  'head',
+  'orb',
+  'spea',
+  'staf',
+  'swor',
+  'taxe',
+  'tkni',
+  'wand',
+]);
+
+/**
+ * Checks if an item is corruptable based on its base type
+ * An item is corruptable if its type code IS in the corruptable list
+ */
+function isItemCorruptable(item: any): boolean {
+  if (!item.type) return false;
+
+  // Check special type labels first (exact match)
+  if (NON_CORRUPTABLE_TYPE_LABELS.has(item.type)) {
+    return false;
+  }
+
+  // Check if the item type ends with any of the non-corruptable labels (for cases like "Grand Charm")
+  const itemTypeLower = item.type.toLowerCase();
+  for (const label of NON_CORRUPTABLE_TYPE_LABELS) {
+    const labelLower = label.toLowerCase();
+    // Check if the type ends with the label (e.g., "Grand Charm" ends with "Charm")
+    if (itemTypeLower === labelLower || itemTypeLower.endsWith(' ' + labelLower)) {
+      return false;
+    }
+  }
+
+  // Get the type code from the base type
+  const typeInfo = getTypeFromBaseType(item.type, false);
+  if (!typeInfo) return false; // If we can't determine the type, assume it's NOT corruptable (safer default)
+
+  // Check if the type code IS in the corruptable list
+  const typeCode = typeof typeInfo.type === 'string' ? typeInfo.type : null;
+  if (typeCode && CORRUPTABLE_TYPE_CODES.has(typeCode)) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Combines enhanced minimum damage (stat_id 18) and enhanced maximum damage (stat_id 17)
@@ -282,6 +371,17 @@ export function useStatSelection(item: any) {
       return stat;
     });
 
+    // Inject corrupted stat for corruptable items if it doesn't already exist
+    const hasCorruptedStat = combinedStats.some((s) => s.stat_id === StatId.Corrupted);
+    if (isItemCorruptable(item) && !hasCorruptedStat) {
+      baseStats.push({
+        stat_id: StatId.Corrupted,
+        name: 'Corrupted',
+        // Mark as injected so we can style it differently
+        _injected: true,
+      });
+    }
+
     // Combine enhanced damage stats before processing
     combinedStats = combineEnhancedDamageStats(combinedStats, item.type, rangeMargin);
     // Combine attribute stats if applicable
@@ -297,7 +397,9 @@ export function useStatSelection(item: any) {
       })
       .map((stat: Stat) => {
         if (stat.stat_id in statRemap) {
-          return statRemap[stat.stat_id];
+          // Preserve all properties from original stat (including custom ones like _injected) when remapping
+          // But ensure the remapped name takes precedence to strip color codes
+          return { ...stat, ...statRemap[stat.stat_id], name: statRemap[stat.stat_id].name };
         }
         // Note: statRemapByName is already applied earlier, before combining attributes
         // But we still check here in case there are other remappings needed
@@ -316,7 +418,7 @@ export function useStatSelection(item: any) {
         if (stat.name && stat.name.toLowerCase().includes('an evil force')) return false;
         return true;
       });
-  }, [item.stats, item.sockets, rangeMargin]);
+  }, [item.stats, item.sockets, item.type, item.isEthereal, rangeMargin]);
 
   const updateFilter = (key: string, field: 'value' | 'min' | 'max', val: string) =>
     setFilters((f) => ({
