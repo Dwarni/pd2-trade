@@ -12,7 +12,16 @@ import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 
 export const TradeMessagesContainer: React.FC = () => {
   const { trades, removeTrade } = useTradeMessages();
-  const { incomingOffers, outgoingOffers, revokeOffer, acceptOffer, rejectOffer, unacceptOffer } = usePd2Website();
+  const {
+    incomingOffers,
+    outgoingOffers,
+    revokeOffer,
+    acceptOffer,
+    rejectOffer,
+    unacceptOffer,
+    deleteMarketListing,
+    refresh,
+  } = usePd2Website();
 
   const incomingWhispers = useMemo(() => {
     return trades.filter((t) => t.isIncoming).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -138,6 +147,11 @@ export const TradeMessagesContainer: React.FC = () => {
                           onAccept={acceptOffer}
                           onReject={rejectOffer}
                           onUnaccept={unacceptOffer}
+                          onDelete={async (listingId: string) => {
+                            await deleteMarketListing(listingId);
+                            // Refresh offers after deletion
+                            refresh();
+                          }}
                         />
                       ))
                     )}

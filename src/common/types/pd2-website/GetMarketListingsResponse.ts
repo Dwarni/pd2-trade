@@ -17,6 +17,8 @@ export interface MarketListingEntry {
   price: string;
   hr_price: number;
   bumped_at: string;
+  user_last_online?: string;
+  user_last_ingame?: string;
   created_at: string;
   updated_at: string;
   created_by_id: string;

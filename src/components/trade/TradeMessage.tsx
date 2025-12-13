@@ -34,7 +34,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useClipboard } from '@/hooks/useClipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { emit } from '@/lib/browser-events';
+import { emit, listen } from '@/lib/browser-events';
 import { useOptions } from '@/hooks/useOptions';
 
 export interface TradeMessageHistoryEntry {
@@ -68,6 +68,7 @@ interface TradeMessageProps {
   onAccept?: (listingId: string, offerId: string) => Promise<void>;
   onReject?: (offerId: string) => Promise<void>;
   onUnaccept?: (listingId: string) => Promise<void>;
+  onDelete?: (listingId: string) => Promise<void>;
 }
 
 export const TradeMessage: React.FC<TradeMessageProps> = ({
@@ -78,8 +79,9 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   onAccept,
   onReject,
   onUnaccept,
+  onDelete,
 }) => {
-  const { authData, createConversation } = usePd2Website();
+  const { authData, createConversation, sendMessage } = usePd2Website();
   const { settings } = useOptions();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [acceptPopoverOpen, setAcceptPopoverOpen] = useState(false);
@@ -176,14 +178,49 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
   };
 
   const handleAccept = async () => {
-    // For website offers, use the hook function
+    // For website offers, show popover with game/password inputs
     if (trade.listingId && trade.id && onAccept) {
+      if (!gameName) {
+        return; // Don't proceed if game name is empty
+      }
+
       if (isProcessing) return;
       setIsProcessing(true);
       try {
+        // Create or get conversation
+        if (!trade.userId || !authData?.user?._id) {
+          console.error('Missing user ID for sending message');
+          setIsProcessing(false);
+          return;
+        }
+
+        const participantIds = [authData.user._id, trade.userId];
+        const conversation = await createConversation(participantIds);
+
+        // Build the accept message using template
+        const accountName = trade.accountName || '';
+        const characterName = trade.characterName || '';
+        const itemName = trade.itemName || '';
+        const price = trade.price || '';
+        const gameInfo = password ? `${gameName}////${password}` : gameName;
+
+        // Use custom message template from settings, or fall back to default
+        const template = settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}';
+        const messageContent = template
+          .replace(/{gameInfo}/g, gameInfo)
+          .replace(/{accountName}/g, accountName)
+          .replace(/{characterName}/g, characterName)
+          .replace(/{itemName}/g, itemName)
+          .replace(/{price}/g, price);
+
+        // Send message via website chat
+        await sendMessage(conversation._id, messageContent, authData.user._id);
+
+        // Accept the offer
         await onAccept(trade.listingId, trade.id);
         setCopiedAction('accept');
         setTimeout(() => setCopiedAction(null), 2000);
+        setAcceptPopoverOpen(false);
       } catch (error) {
         console.error('Failed to accept offer:', error);
       } finally {
@@ -270,6 +307,45 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
       }
     }
   };
+
+  const handleDelete = () => {
+    // Show confirmation toast before deleting
+    if (trade.listingId && onDelete) {
+      emit('toast-confirm-delete-listing', {
+        listingId: trade.listingId,
+        itemName: trade.itemName,
+        tradeId: trade.id,
+      });
+    }
+  };
+
+  // Listen for delete confirmation
+  useEffect(() => {
+    if (!trade.listingId || !onDelete) return;
+
+    const handleConfirmDelete = async (event: any) => {
+      const { listingId } = event.payload || {};
+      if (listingId === trade.listingId) {
+        if (isProcessing) return;
+        setIsProcessing(true);
+        try {
+          await onDelete(trade.listingId);
+          // Close the trade message after successful deletion
+          onClose(trade.id);
+        } catch (error) {
+          console.error('Failed to delete listing:', error);
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    const unlistenPromise = listen('confirm-delete-listing', handleConfirmDelete);
+
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, [trade.listingId, trade.id, onDelete, onClose, isProcessing]);
 
   // Check if this offer is accepted
   const isAccepted = trade.listingId && trade.acceptedOfferId === trade.id;
@@ -397,6 +473,25 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                     </Tooltip>
                   )}
 
+                  {trade.listingId && trade.isIncoming && onDelete && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleDelete}
+                          disabled={isProcessing}
+                          className="h-7 w-7 cursor-pointer text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete listing</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
                   <Tooltip>
                     <TooltipTrigger>
                       <Button
@@ -501,28 +596,8 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
 
                   {trade.isIncoming && (
                     <div className="flex items-center gap-1">
-                      {trade.listingId ? (
-                        // Website offers: show accept button only if not accepted
-                        !isAccepted && (
-                          <Tooltip open={copiedAction === 'accept' ? true : undefined}>
-                            <TooltipTrigger>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={isProcessing}
-                                onClick={handleAccept}
-                                className="h-7 w-7 cursor-pointer text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
-                              >
-                                <CheckCircle className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{copiedAction === 'accept' ? 'Offer accepted!' : 'Accept'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )
-                      ) : (
-                        // Non-website offers: popover with game/password inputs
+                      {!isAccepted && (
+                        // Both website and non-website offers: popover with game/password inputs
                         <Tooltip open={copiedAction === 'accept' ? true : undefined}>
                           <TooltipTrigger>
                             <div>
@@ -532,6 +607,7 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    disabled={isProcessing}
                                     className="h-7 w-7 cursor-pointer text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:text-green-400"
                                   >
                                     <CheckCircle className="h-3.5 w-3.5" />
@@ -551,9 +627,11 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                                       placeholder="Password"
                                       className="w-32 focus-visible:ring-0"
                                     />
-                                    <Button onClick={handleAccept}
-                                      disabled={!gameName}
-                                      className="cursor-pointer">
+                                    <Button
+                                      onClick={handleAccept}
+                                      disabled={!gameName || isProcessing}
+                                      className="cursor-pointer"
+                                    >
                                       Accept
                                     </Button>
                                   </div>
@@ -562,7 +640,13 @@ export const TradeMessage: React.FC<TradeMessageProps> = ({
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{copiedAction === 'accept' ? 'Copied to clipboard!' : 'Accept'}</p>
+                            <p>
+                              {copiedAction === 'accept'
+                                ? trade.listingId
+                                  ? 'Offer accepted!'
+                                  : 'Copied to clipboard!'
+                                : 'Accept'}
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       )}

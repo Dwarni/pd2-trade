@@ -81,6 +81,56 @@ const ToastPage: React.FC = () => {
     };
   }, []);
 
+  // Listen for 'toast-confirm-delete-listing' and show confirmation toast
+  useEffect(() => {
+    let unlistenDeletePromise: Promise<() => void>;
+
+    listen('toast-confirm-delete-listing', async (event: any) => {
+      const { listingId, itemName } = event.payload || {};
+
+      // Show the window when we receive a toast event (only in Tauri)
+      if (isTauri()) {
+        try {
+          const win = await getCurrentWebviewWindow();
+          if (win) await win.show();
+        } catch (error) {
+          console.error('Failed to show toast window:', error);
+        }
+      }
+
+      handleToastOpen();
+      toast.warning('Delete Listing?', {
+        description: itemName
+          ? `Are you sure you want to delete the listing for ${itemName}?`
+          : 'Are you sure you want to delete this listing?',
+        position: 'bottom-right',
+        duration: 10000,
+        action: {
+          label: 'Delete',
+          onClick: async () => {
+            emit('confirm-delete-listing', { listingId });
+          },
+        },
+        cancel: {
+          label: 'Cancel',
+          onClick: () => {
+            // No-op, just close
+          },
+        },
+        onDismiss: () => handleToastClose(),
+        onAutoClose: () => handleToastClose(),
+      });
+    }).then((off) => {
+      unlistenDeletePromise = Promise.resolve(off);
+    });
+
+    return () => {
+      if (unlistenDeletePromise) {
+        unlistenDeletePromise.then((off) => off());
+      }
+    };
+  }, []);
+
   // Listen for 'toast-event' and show a toast
   useEffect(() => {
     let unlistenPromise: Promise<() => void>;
