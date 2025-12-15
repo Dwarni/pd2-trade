@@ -102,7 +102,7 @@ const LandingPage: React.FC = () => {
   // Copy item from clipboard and validate
   const copyAndValidateItem = useCallback(async (): Promise<string | null> => {
     await keyPress('ctrl+c');
-    await sleep(100);
+    await sleep(250);
     const raw = await read();
     return clipboardContainsValidItem(raw) ? raw : null;
   }, [read, keyPress]);
@@ -114,7 +114,7 @@ const LandingPage: React.FC = () => {
     if (!(settings.hotkeyModifier === 'ctrl' && settings.hotkeyKey === 'c')) {
       await keyPress('ctrl+c');
     }
-    await sleep(100);
+    await sleep(250);
     const raw = await read();
     if (!clipboardContainsValidItem(raw)) {
       const errorToastPayload: GenericToastPayload = {
@@ -170,30 +170,36 @@ const LandingPage: React.FC = () => {
     if (!(await checkDiabloFocus())) return;
 
     const raw = await copyAndValidateItem();
-    if (!raw) {
-      const errorToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
+    let encodedItem = '';
+    let queryString = '';
+
+    let errorToastPayload = null;
+
+    if (raw) {
+      if (isStashItem(raw)) {
+        encodedItem = encodeItemForQuickList(raw);
+        queryString = `?item=${encodedItem}`;
+      } else {
+        // Valid item but not in stash
+        queryString = `?error=not_shared_stash`;
+        errorToastPayload = {
+          title: 'Cannot List Item',
+          description: 'This item is not in your shared stash and cannot be listed.',
+          variant: 'error',
+        };
+      }
+    } else {
+      // Invalid or missing item
+      queryString = `?error=not_shared_stash`;
+      errorToastPayload = {
+        title: 'Cannot List Item',
         description: 'Item is not supported or invalid.',
         variant: 'error',
       };
-      emit('toast-event', errorToastPayload);
-      return;
     }
-
-    if (!isStashItem(raw)) {
-      const errorToastPayload: GenericToastPayload = {
-        title: 'PD2 Trader',
-        description: 'Item must be located in stash in order to list',
-        variant: 'error',
-      };
-      emit('toast-event', errorToastPayload);
-      return;
-    }
-
-    const encodedItem = encodeItemForQuickList(raw);
 
     if (!quickListWinRef.current) {
-      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list?item=${encodedItem}`, {
+      quickListWinRef.current = await openWindowAtCursor('QuickList', `/quick-list${queryString}`, {
         decorations: false,
         transparent: true,
         focus: false,
@@ -206,9 +212,19 @@ const LandingPage: React.FC = () => {
         alwaysOnTop: true,
       });
     } else {
-      await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      if (encodedItem) {
+        await quickListWinRef.current.emit('quick-list-new-item', encodedItem);
+      } else if (queryString.includes('error=')) {
+        // Clear item state in window
+        await quickListWinRef.current.emit('quick-list-error', 'not_shared_stash');
+      }
       await sleep(100);
       await quickListWinRef.current.show();
+    }
+
+    // Emit toast at the end to ensure it appears atop the window and isn't duplicated
+    if (errorToastPayload) {
+      await emit('toast-event', errorToastPayload);
     }
   }, [checkDiabloFocus, copyAndValidateItem]);
 
@@ -272,7 +288,7 @@ const LandingPage: React.FC = () => {
         // Position button in bottom right corner - align bottom-right of button window with bottom-right of Diablo window
         const buttonSize = 240; // 48px button + padding + expanded radius
         const x = rect.x + rect.width - buttonSize - 20;
-        const y = rect.y + rect.height - buttonSize - 40;
+        const y = rect.y + rect.height - buttonSize - 10;
 
         chatButtonWindowRef.current = new WebviewWindow('ChatButton', {
           url: '/chat-button',
