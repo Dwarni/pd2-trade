@@ -933,7 +933,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (item) {
       return (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}
+            className="h-full flex flex-col overflow-hidden">
             <ItemSelectionList
               deleteMarketListing={deleteMarketListing}
               matchingItems={matchingItems}
@@ -949,13 +950,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               onRefresh={handleRefresh}
             />
 
-            <ListingFormFields
-              form={form}
-              selectedItem={selectedItem}
-              currentListings={currentListings}
-              submitLoading={submitLoading}
-              onSubmit={handleSubmit}
-            />
+            <div className="flex-shrink-0">
+              <ListingFormFields
+                form={form}
+                selectedItem={selectedItem}
+                currentListings={currentListings}
+                submitLoading={submitLoading}
+                onSubmit={handleSubmit}
+              />
+            </div>
           </form>
         </Form>
       );
@@ -972,10 +975,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   };
 
   return (
-    <div className="inline-block p-4 border rounded-lg bg-background shadow w-screen h-screen">
-      <Tabs value={activeTab}
+    <div className="flex flex-col p-4 border rounded-lg bg-background shadow w-screen h-screen overflow-hidden">
+      <Tabs
+        value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full">
+        className="w-full flex-1 flex flex-col h-full overflow-hidden"
+      >
         <div className="flex justify-between mb-2 items-center"
           id="titlebar">
           <div className="flex items-center gap-1">
@@ -1029,12 +1034,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         </div>
 
         <TabsContent value="list-item"
-          className="mt-4">
+          className="mt-4 flex-1 flex flex-col min-h-0">
           {renderListItemContent()}
         </TabsContent>
 
         <TabsContent value="listed-items"
-          className="mt-4">
+          className="mt-4 flex-1 flex flex-col min-h-0">
           <ListedItemsTab
             onClose={handleClose}
             initialListings={allListings}

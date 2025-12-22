@@ -1,6 +1,7 @@
 import { openWindowAtCursor } from '@/lib/window';
 import { encodeItemForQuickList, isStashItem } from '@/lib/item-utils';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +17,15 @@ import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
 import { useEconomyData } from '../hooks/useEconomyData';
 import { useStatSelection } from '../hooks/useStatSelection';
+import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { buildGetMarketListingQuery, buildTradeUrl } from '../lib/tradeUrlBuilder';
 import { RunePricePopover } from './RunePricePopover';
 import { getStatKey } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
-import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { emit } from '@/lib/browser-events';
 import { Label } from '@/components/ui/label';
@@ -31,6 +34,7 @@ import { openCenteredWindow } from '@/lib/window';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
+import { WindowTitles } from '@/lib/window-titles';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -56,10 +60,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const pd2Item = useMemo(() => findOneByName(item.name, item.quality), [item, findOneByName]);
 
   // Market listings state
-  const [marketListingsResult, setMarketListingsResult] = useState<MarketListingResult | null>(null);
+  const [marketListings, setMarketListings] = useState<MarketListingEntry[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketError, setMarketError] = useState<string | null>(null);
   const [searchArchived, setSearchArchived] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const ITEMS_PER_PAGE = 20;
+
+  const { ref: loaderRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px',
+  });
 
   // Search mode: 0 = category (base), 1 = typeLabel
   const [searchMode, setSearchMode] = useState(0);
@@ -125,6 +138,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       effectiveSearchMode,
       matchedItemType,
       corruptedState,
+      ITEMS_PER_PAGE,
+      page * ITEMS_PER_PAGE,
     );
   }, [
     selected,
@@ -138,12 +153,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     matchedItemType,
     shouldUseToggle,
     corruptedState,
+    page,
   ]);
 
   useEffect(() => {
     if (item) {
       // clear market listing result if new item is loaded
-      setMarketListingsResult(null);
+      setMarketListings([]);
+      setTotalCount(0);
+      setPage(0);
+      setHasMore(false);
       setSelected(new Set());
       setFilters({});
       setSearchMode(0); // Reset to default mode
@@ -179,6 +198,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openCurrencyValuation = useCallback(async () => {
     await openCenteredWindow('Currency', '/currency', {
+      title: WindowTitles.Currency,
       decorations: false,
       focus: true,
       shadow: false,
@@ -233,6 +253,92 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   }, [item]);
 
+  const fetchListings = useCallback(
+    async (isNewSearch: boolean = false) => {
+      setMarketError(null);
+      setMarketLoading(true);
+      const startTime = performance.now();
+
+      try {
+        const result = searchArchived
+          ? await getMarketListingsArchive(pd2MarketQuery)
+          : await getMarketListings(pd2MarketQuery);
+
+        const duration = performance.now() - startTime;
+
+        if (isNewSearch) {
+          setMarketListings(result.data);
+          setTotalCount(result.total);
+          setPage(0);
+        } else {
+          setMarketListings((prev) => {
+            // Filter duplicates
+            const existingIds = new Set(prev.map((l) => l._id));
+            const newItems = result.data.filter((l) => !existingIds.has(l._id));
+            return [...prev, ...newItems];
+          });
+        }
+
+        setHasMore(result.data.length === ITEMS_PER_PAGE);
+
+        incrementMetric('item_overlay.market_search', 1, {
+          status: 'success',
+          archived: searchArchived.toString(),
+          search_mode: shouldUseToggle ? searchMode.toString() : '0',
+          page: isNewSearch ? '0' : page.toString(),
+        });
+        distributionMetric('item_overlay.market_search_duration_ms', duration);
+        if (isNewSearch) {
+          distributionMetric('item_overlay.market_search_results_count', result.total);
+        }
+        distributionMetric('item_overlay.market_search_results_returned', result.data.length);
+      } catch (e: any) {
+        const duration = performance.now() - startTime;
+        incrementMetric('item_overlay.market_search', 1, {
+          status: 'error',
+          archived: searchArchived.toString(),
+          search_mode: shouldUseToggle ? searchMode.toString() : '0',
+        });
+        distributionMetric('item_overlay.market_search_duration_ms', duration);
+        console.log(e.message || 'Failed to fetch market listings');
+        setMarketError(e.message || 'Failed to fetch market listings');
+      } finally {
+        setMarketLoading(false);
+      }
+    },
+    [pd2MarketQuery, getMarketListings, getMarketListingsArchive, searchArchived, searchMode, shouldUseToggle, page],
+  );
+
+  // Initial Search / Reset
+  const handleSearch = () => {
+    if (page === 0) {
+      fetchListings(true);
+    } else {
+      setPage(0);
+      // Wait for state to update so pd2MarketQuery reflects page 0
+      setTimeout(() => fetchListings(true), 0);
+    }
+  };
+
+  // We need to distinguish between "page changed because of scroll" vs "reset to 0"
+  // Let's simplify: Search button resets everything and fetches page 0.
+  // Scroll increments page.
+  // pd2MarketQuery updates when page changes.
+
+  useEffect(() => {
+    // If page > 0, it means we scrolled.
+    if (page > 0) {
+      fetchListings(false);
+    }
+  }, [page, fetchListings]);
+
+  // Trigger infinite scroll
+  useEffect(() => {
+    if (inView && !marketLoading && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  }, [inView, marketLoading, hasMore]);
+
   const openSettingsPage = useCallback(async () => {
     await emit('open-settings', undefined);
   }, []);
@@ -241,12 +347,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
    *  Render
    *  -----------------*/
   return (
-    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none">
+    <Card className="w-screen h-screen shadow-2xl bg-neutral-900/95 border-neutral-700 rounded-none flex flex-col">
       {/* Top Bar */}
       <div
         data-tauri-drag-region
         id="titlebar-drag-handle"
-        className="flex items-center justify-between border-neutral-700 bg-neutral-800/50"
+        className="flex items-center justify-between border-neutral-700 bg-neutral-800/50 flex-none"
       >
         {/* Rune Information Popover */}
         <div className="flex flex-row items-center">
@@ -283,7 +389,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       </div>
 
       {/* Header */}
-      <div className={'flex flex-col gap-1'}>
+      <div className={'flex flex-col gap-1 flex-none'}>
         <CardHeader className="flex flex-row items-start gap-4 justify-between">
           <div className={'flex flex-col'}>
             <CardTitle
@@ -315,8 +421,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       </div>
 
       {/* Body */}
-      <CardContent className="space-y-4">
-        <ScrollArea className="pr-2">
+      <CardContent className="flex-1 flex flex-col min-h-0 space-y-4 overflow-hidden">
+        <ScrollArea className="pr-2 flex-none max-h-[30vh]">
           <div className="space-y-2">
             {sortedStats.map((s) => (
               <StatRow
@@ -333,47 +439,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           </div>
         </ScrollArea>
         {/* Search button */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 flex-none">
           <div className="flex flex-row gap-2 w-full mt-2">
             <ButtonGroup>
-              <Button
-                variant="secondary"
+              <Button variant="secondary"
                 className=""
-                onClick={async () => {
-                  setMarketError(null);
-                  setMarketLoading(true);
-                  setMarketListingsResult(null);
-                  const startTime = performance.now();
-                  try {
-                    const result = searchArchived
-                      ? await getMarketListingsArchive(pd2MarketQuery)
-                      : await getMarketListings(pd2MarketQuery);
-                    const duration = performance.now() - startTime;
-                    setMarketListingsResult(result);
-
-                    incrementMetric('item_overlay.market_search', 1, {
-                      status: 'success',
-                      archived: searchArchived.toString(),
-                      search_mode: shouldUseToggle ? searchMode.toString() : '0',
-                    });
-                    distributionMetric('item_overlay.market_search_duration_ms', duration);
-                    distributionMetric('item_overlay.market_search_results_count', result.total);
-                    distributionMetric('item_overlay.market_search_results_returned', result.data.length);
-                  } catch (e: any) {
-                    const duration = performance.now() - startTime;
-                    incrementMetric('item_overlay.market_search', 1, {
-                      status: 'error',
-                      archived: searchArchived.toString(),
-                      search_mode: shouldUseToggle ? searchMode.toString() : '0',
-                    });
-                    distributionMetric('item_overlay.market_search_duration_ms', duration);
-                    console.log(e.message || 'Failed to fetch market listings');
-                    setMarketError(e.message || 'Failed to fetch market listings');
-                  } finally {
-                    setMarketLoading(false);
-                  }
-                }}
-              >
+                onClick={handleSearch}>
                 Search
               </Button>
               <Button
@@ -430,91 +501,146 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           </div>
         </div>
 
-        {/* Market listings table */}
-        {marketLoading && <div className="text-center text-sm text-gray-400">Loading market listings...</div>}
-        {marketError && <div className="text-center text-sm text-red-400">{marketError}</div>}
-        {marketListingsResult && (
-          <div className="overflow-x-auto mt-2">
-            <div className="mb-2 text-xs text-gray-400">Matches: {marketListingsResult.total}</div>
-            <table className="min-w-full text-sm text-left">
-              <thead>
-                <tr>
-                  <th className="px-2 py-1 border-b border-neutral-700">Price</th>
-                  <th className="px-2 py-1 border-b border-neutral-700">Listed</th>
-                </tr>
-              </thead>
-              <tbody>
-                {marketListingsResult.data.length === 0 && (
+        {marketListings.length > 0 && <div className="mb-2 text-xs text-gray-400 pl-4 mt-2">Matches: {totalCount}</div>}
+
+        <ScrollArea className="flex-1 min-h-0">
+          {marketLoading && marketListings.length === 0 && (
+            <div className="text-center text-sm text-gray-400 p-4">Loading market listings...</div>
+          )}
+          {marketError && <div className="text-center text-sm text-red-400 p-4">{marketError}</div>}
+          {marketListings.length > 0 && (
+            <div className="mt-2 pr-3">
+              <table className="min-w-full text-sm text-left">
+                <thead>
                   <tr>
-                    <td colSpan={2}
-                      className="px-2 py-2 text-center text-gray-400">
-                      No listings found
-                    </td>
+                    <th className="px-2 py-1 border-b border-neutral-700 w-full">Price</th>
+                    <th className="px-2 py-1 border-b border-neutral-700 whitespace-nowrap w-[1%]">Listed</th>
                   </tr>
-                )}
-                {marketListingsResult.data.map((listing: MarketListingEntry, idx: number) => (
-                  <tr key={listing._id || idx}
-                    className={idx % 2 === 0 ? 'bg-neutral-800' : ''}>
-                    <td className="px-2 py-1 flex flex-row items-center">
-                      {listing.hr_price ? (
-                        `${listing.hr_price} HR`
-                      ) : listing.price && listing.price.length > 40 ? (
-                        <HoverPopover
-                          content={
-                            <Card>
-                              <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
-                            </Card>
-                          }
-                        >
-                          <span className="cursor-pointer underline decoration-dotted">
-                            {listing.price.slice(0, 40)}...
-                          </span>
-                        </HoverPopover>
-                      ) : (
-                        listing.price || '-'
-                      )}
-                      {/* Red dot for corruption with hover popover */}
-                      {listing.item?.corruptions?.length > 0 && (
-                        <HoverPopover
-                          content={
-                            <Card>
-                              <div className="text-xs p-2">
-                                <div className="font-bold mb-1 text-red-500">Corruptions:</div>
-                                <ul className="list-disc pl-4">
-                                  {listing.item.modifiers?.filter((mod: any) => mod.corrupted).length > 0
-                                    ? listing.item.modifiers
-                                        .filter((mod: any) => mod.corrupted)
-                                        .map((mod: any, i: number) =>
-                                          mod.name === 'item_numsockets' ? (
-                                            <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
-                                          ) : (
-                                            <li key={i}>{mod.label}</li>
-                                          ),
-                                        )
-                                    : listing.item.corruptions.map((c: string, i: number) =>
-                                        c === 'item_numsockets' ? (
-                                          <li key={i}>{`Sockets ${listing.item.socket_count}`}</li>
-                                        ) : (
-                                          <li key={i}>{c}</li>
-                                        ),
-                                      )}
-                                </ul>
-                              </div>
-                            </Card>
-                          }
-                        >
-                          <span className="inline-block align-middle ml-2 w-2 h-2 rounded-full bg-red-500 cursor-pointer" />
-                        </HoverPopover>
-                      )}
-                    </td>
-                    <td className="px-2 py-1">{listing.bumped_at ? moment(listing.bumped_at).fromNow() : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {marketListings.length === 0 && (
+                    <tr>
+                      <td colSpan={2}
+                        className="px-2 py-2 text-center text-gray-400">
+                        No listings found
+                      </td>
+                    </tr>
+                  )}
+                  {marketListings.map((listing: MarketListingEntry, idx: number) => (
+                    <ListingRow key={listing._id || idx}
+                      listing={listing}
+                      idx={idx} />
+                  ))}
+                </tbody>
+              </table>
+              {/* Load more trigger */}
+              {hasMore && (
+                <div ref={loaderRef}
+                  className="py-2 text-center text-xs text-gray-500">
+                  {marketLoading ? 'Loading more...' : 'Load more'}
+                </div>
+              )}
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
 }
+
+const ListingRow = ({ listing, idx }: { listing: MarketListingEntry; idx: number }) => {
+  const [open, setOpen] = useState(false);
+  const isCorrupted = listing.item?.corruptions && listing.item.corruptions.length > 0;
+
+  // Clean corruptions similar to logic used elsewhere if needed, but for now we rely on the list
+
+  return (
+    <Popover open={open}
+      onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <tr
+          className={`cursor-help ${idx % 2 === 0 ? 'bg-neutral-800' : ''} hover:bg-neutral-700 transition-colors`}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+        >
+          {/* Price Column */}
+          <td className="px-2 py-1 flex flex-row items-center justify-between whitespace-nowrap">
+            <div className="flex-1 truncate mr-2">
+              {listing.hr_price ? (
+                `${listing.hr_price} HR`
+              ) : listing.price && listing.price.length > 40 ? (
+                <HoverPopover
+                  content={
+                    <Card>
+                      <div className="text-sm max-w-xs break-words p-2">{listing.price}</div>
+                    </Card>
+                  }
+                >
+                  <span className="cursor-pointer underline decoration-dotted">{listing.price.slice(0, 40)}...</span>
+                </HoverPopover>
+              ) : (
+                listing.price || '-'
+              )}
+            </div>
+
+            <div className="flex flex-row items-center gap-1">
+              {/* Ethereal Indicator */}
+              {listing.item.is_ethereal && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-white flex items-center justify-center"
+                  title="Ethereal"
+                >
+                  <span className="text-black text-[10px] font-bold leading-none">E</span>
+                </div>
+              )}
+
+              {/* Corruption Indicator */}
+              {isCorrupted && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-red-600 flex items-center justify-center"
+                  title="Corrupted"
+                >
+                  <span className="text-white text-[10px] font-bold leading-none">C</span>
+                </div>
+              )}
+
+              {/* Sockets Indicator */}
+              {(listing.item.socket_count || 0) > 0 && (
+                <div
+                  className="w-4 h-4 rounded-full border border-neutral-600 bg-neutral-800 flex items-center justify-center"
+                  title="Sockets"
+                >
+                  <span className="text-gray-200 text-[10px] font-bold leading-none">{listing.item.socket_count}</span>
+                </div>
+              )}
+            </div>
+          </td>
+
+          {/* Listed Column */}
+          <td className="px-2 py-1 whitespace-nowrap text-right text-xs text-gray-400">
+            {listing.bumped_at ? moment(listing.bumped_at).fromNow(true) : '-'}
+          </td>
+        </tr>
+      </PopoverTrigger>
+
+      {/* Row Hover Stats Popover */}
+      <PopoverContent
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        side="bottom"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="p-0 bg-transparent border-0 w-auto pointer-events-none"
+      >
+        <Card className="p-2 bg-neutral-950 border-neutral-700 max-w-sm">
+          <ItemStatsDisplay
+            stashItem={listing.item as any}
+            isExpanded={true}
+            onToggleExpanded={() => {}}
+            hideToggle={true}
+          />
+        </Card>
+      </PopoverContent>
+    </Popover>
+  );
+};

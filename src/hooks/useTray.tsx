@@ -10,18 +10,21 @@ import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { appConfigDir } from '@tauri-apps/api/path';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { exit } from '@tauri-apps/plugin-process';
+import { WindowTitles } from '@/lib/window-titles';
 
 type TrayContextValue = {
   tray: any | null;
+  settingsWindow: any | null;
 };
 
-const TrayContext = createContext<TrayContextValue>({ tray: null });
+const TrayContext = createContext<TrayContextValue>({ tray: null, settingsWindow: null });
 
 export const useTray = () => useContext(TrayContext);
 
 export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [tray, setTray] = useState<any | null>(null);
-  const { setIsOpen, settings } = useOptions();
+  const [settingsWindow, setSettingsWindow] = useState<any | null>(null);
+  const { settings } = useOptions();
   const trayRef = useRef<any | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
   const settingsWinRef = useRef<any | null>(null);
@@ -36,6 +39,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const showSettingsWindow = async () => {
     if (!settingsWinRef.current) {
       settingsWinRef.current = await openCenteredWindow('Settings', '/settings', {
+        title: WindowTitles.Settings,
         decorations: false,
         skipTaskbar: true,
         transparent: true,
@@ -45,9 +49,11 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         width: 1025,
         height: 700,
       });
+      setSettingsWindow(settingsWinRef.current);
       setIsSettingsOpen(true);
       attachWindowCloseHandler(settingsWinRef.current, () => {
         settingsWinRef.current = null;
+        setSettingsWindow(null);
         setIsSettingsOpen(false);
       });
     } else {
@@ -86,7 +92,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         try {
           await unregister(lastShortcutRef.current);
           lastShortcutRef.current = null;
-        } catch (err) {
+        } catch {
           // Ignore errors
         }
       }
@@ -98,8 +104,10 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
         await unregisterShortcut();
 
         if (!(await isRegistered(shortcut))) {
-          await register(shortcut, () => {
-            showSettingsWindow();
+          await register(shortcut, (event) => {
+            if (event.state === 'Pressed') {
+              showSettingsWindow();
+            }
           });
           lastShortcutRef.current = shortcut;
         }
@@ -108,23 +116,7 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       }
     };
 
-    const isLinux = navigator.userAgent.includes('Linux');
-
-    // On Linux, always enable hotkeys since window focus detection isn't available
-    if (isLinux) {
-      registerShortcut().catch((error) => {
-        console.error('Failed to register settings shortcut on Linux:', error);
-      });
-
-      return () => {
-        // Unregister shortcut on cleanup
-        if (isTauri() && lastShortcutRef.current) {
-          unregisterShortcut().catch(console.error);
-        }
-      };
-    }
-
-    // On other platforms, listen for Diablo focus changes
+    // Listen for Diablo focus changes to register/unregister hotkey
     let unlisten: (() => void) | null = null;
 
     listen<boolean>('diablo-focus-changed', async ({ payload: isFocused }) => {
@@ -231,5 +223,5 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  return <TrayContext.Provider value={{ tray }}>{children}</TrayContext.Provider>;
+  return <TrayContext.Provider value={{ tray, settingsWindow }}>{children}</TrayContext.Provider>;
 };

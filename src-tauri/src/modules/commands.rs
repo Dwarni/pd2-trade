@@ -8,14 +8,7 @@ pub fn greet(name: &str) -> String {
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
-    #[cfg(target_os = "windows")]
-    {
-        window::get_diablo_rect()
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        window::get_diablo_rect(&app_handle)
-    }
+    window::get_diablo_rect(&app_handle)
 }
 
 #[tauri::command]
@@ -41,8 +34,22 @@ pub async fn open_project_diablo2_webview(app_handle: tauri::AppHandle) -> Resul
 pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(bounds) = window::get_appropriate_window_bounds(&app_handle) {
         if let Some(main_window) = app_handle.get_webview_window("main") {
-            let _ = main_window.set_position(tauri::PhysicalPosition::new(bounds.x as f64, bounds.y as f64));
-            let _ = main_window.set_size(tauri::PhysicalSize::new(bounds.width as f64, bounds.height as f64));
+            // Ensure window is not maximized before resizing
+            if let Ok(true) = main_window.is_maximized() {
+                let _ = main_window.unmaximize();
+            }
+
+            // Set Position
+            let _ = main_window.set_position(tauri::PhysicalPosition::new(
+                bounds.x as f64,
+                bounds.y as f64,
+            ));
+
+            // Set Size
+            let _ = main_window.set_size(tauri::PhysicalSize::new(
+                bounds.width as f64,
+                bounds.height as f64,
+            ));
         }
     }
     Ok(())
@@ -51,7 +58,8 @@ pub fn update_window_bounds(app_handle: tauri::AppHandle) -> Result<(), String> 
 #[tauri::command]
 pub fn set_window_click_through(app_handle: tauri::AppHandle, ignore: bool) -> Result<(), String> {
     if let Some(main_window) = app_handle.get_webview_window("main") {
-        main_window.set_ignore_cursor_events(ignore)
+        main_window
+            .set_ignore_cursor_events(ignore)
             .map_err(|e| format!("Failed to set click-through: {}", e))?;
     }
     Ok(())
@@ -60,9 +68,11 @@ pub fn set_window_click_through(app_handle: tauri::AppHandle, ignore: bool) -> R
 #[tauri::command]
 pub fn force_window_focus(app_handle: tauri::AppHandle) -> Result<(), String> {
     if let Some(main_window) = app_handle.get_webview_window("main") {
-        main_window.set_focus()
+        main_window
+            .set_focus()
             .map_err(|e| format!("Failed to set window focus: {}", e))?;
-        main_window.set_always_on_top(true)
+        main_window
+            .set_always_on_top(true)
             .map_err(|e| format!("Failed to set always on top: {}", e))?;
         // Reset always on top after a short delay
         let app_handle_clone = app_handle.clone();
@@ -81,8 +91,8 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
     use tauri::{PhysicalPosition, PhysicalSize};
 
     // Get bounds of the focused area (Diablo or work area)
-    let bounds = window::get_appropriate_window_bounds(&app_handle)
-        .ok_or("Could not get window bounds")?;
+    let bounds =
+        window::get_appropriate_window_bounds(&app_handle).ok_or("Could not get window bounds")?;
 
     // Toast window size
     let toast_width = 400;
@@ -104,8 +114,10 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub fn start_chat_watcher(app_handle: tauri::AppHandle, custom_d2_dir: Option<String>) -> Result<(), String> {
-
+pub fn start_chat_watcher(
+    app_handle: tauri::AppHandle,
+    custom_d2_dir: Option<String>,
+) -> Result<(), String> {
     chat_watcher::start_watching(app_handle, custom_d2_dir)
 }
 
@@ -122,6 +134,20 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 
 #[tauri::command]
 pub fn auto_detect_diablo2_directory() -> Option<String> {
-    chat_watcher::auto_detect_diablo2_directory()
-        .and_then(|p| p.to_str().map(|s| s.to_string()))
+    chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub fn start_click_through_poll(app_handle: tauri::AppHandle) -> Result<(), String> {
+    window::start_cursor_monitoring(app_handle);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn update_click_through_areas(
+    window_label: String,
+    rects: Vec<window::PopupRect>,
+) -> Result<(), String> {
+    window::update_popup_rects(window_label, rects);
+    Ok(())
 }

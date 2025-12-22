@@ -2,9 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": [
-    "*"
-  ],
+  "windows": ["*"],
   "permissions": [
     "core:default",
     "opener:default",
@@ -13,6 +11,8 @@
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "core:window:allow-set-size",
+    "core:window:allow-set-position",
+    "core:window:allow-unminimize",
     "core:app:allow-app-show",
     "core:window:allow-set-ignore-cursor-events",
     "core:webview:allow-create-webview-window",
@@ -20,9 +20,7 @@
     "core:window:allow-close",
     "core:webview:allow-webview-close",
     "core:resources:allow-close",
-    "shell:default",
     "shell:allow-open",
-    "shell:default",
     "dialog:default",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
@@ -97,6 +95,17 @@
         }
       ]
     },
-    { "identifier": "http:default", "allow": [{ "url": "https://api.projectdiablo2.com/**" }, { "url": "https://pd2trader.com/**" }] }
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://api.projectdiablo2.com/**"
+        },
+        {
+          "url": "https://pd2trader.com/**"
+        }
+      ]
+    },
+    "window-state:default"
   ]
 }

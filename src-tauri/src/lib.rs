@@ -27,7 +27,14 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
-       .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_filename("window-state.json")
+                .with_state_flags(tauri_plugin_window_state::StateFlags::all())
+                .with_denylist(&[])
+                .build(),
+        )
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
                 .expect("no main window")
@@ -38,66 +45,19 @@ pub fn run() {
         .setup(|app| {
             let _handle = app.app_handle();
 
-            #[cfg(target_os = "windows")]
-            let (x, y, width, height) = {
-                // Get appropriate bounds based on Diablo focus state
-                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
-                    (
+            let (x, y, width, height) =
+                match window::get_appropriate_window_bounds(app.app_handle()) {
+                    Some(rect) => (
                         rect.x as f64,
                         rect.y as f64,
                         rect.width as f64,
                         rect.height as f64,
-                    )
-                } else {
-                    // Fallback to work area
-                    let mut work_area = RECT {
-                        left: 0,
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                    };
-                    unsafe {
-                        SystemParametersInfoW(
-                            SPI_GETWORKAREA,
-                            0,
-                            &mut work_area as *mut _ as *mut _,
-                            0,
-                        );
-                    }
-                    let width = (work_area.right - work_area.left) as f64;
-                    let height = (work_area.bottom - work_area.top) as f64;
-                    let x = work_area.left as f64;
-                    let y = work_area.top as f64;
-                    (x, y, width, height)
-                }
-            };
-
-            #[cfg(not(target_os = "windows"))]
-            let (x, y, width, height) = {
-                if let Some(rect) = window::get_appropriate_window_bounds(app.app_handle()) {
-                    (
-                        rect.x as f64,
-                        rect.y as f64,
-                        rect.width as f64,
-                        rect.height as f64,
-                    )
-                } else {
-                    let monitor = app.primary_monitor().unwrap();
-                    if let Some(monitor) = monitor {
-                        let size = monitor.size();
-                        let position = monitor.position();
-                        (
-                            position.x as f64,
-                            position.y as f64,
-                            size.width as f64,
-                            size.height as f64,
-                        )
-                    } else {
-                        println!("Warning: No primary monitor detected. using default bounds.");
+                    ),
+                    None => {
+                        eprintln!("Warning: Using default window bounds.");
                         (0.0, 0.0, 1920.0, 1080.0)
                     }
-                }
-            };
+                };
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("PD2 Trader")
@@ -113,27 +73,27 @@ pub fn run() {
 
             let main_window = win_builder.build().unwrap();
             let _ = main_window.set_ignore_cursor_events(true);
-            
+
             // Create toast window
-            let _toast_window = WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
-                .title("PD2 Trader - Toast")
-                .inner_size(400.0, 200.0)
-                .decorations(false)
-                .transparent(true)
-                .visible(false)
-                .shadow(false)
-                .always_on_top(true)
-                .skip_taskbar(true)
-                .focusable(false)
-                .build()
-                .unwrap();
-            
+            let _toast_window =
+                WebviewWindowBuilder::new(app, "toast", WebviewUrl::App("toast".into()))
+                    .title("PD2 Trader - Toast")
+                    .inner_size(400.0, 200.0)
+                    .decorations(false)
+                    .transparent(true)
+                    .visible(false)
+                    .shadow(false)
+                    .always_on_top(true)
+                    .skip_taskbar(true)
+                    .focusable(false)
+                    .build()
+                    .unwrap();
+
             // Position the toast window initially
             let app_handle = app.app_handle().clone();
             let _ = commands::reposition_toast_window(app_handle.clone());
-            
-            // Initialize Diablo focus monitoring for hotkey management and window repositioning
-            // This combines both concerns into a single event hook to avoid duplicate hooks
+
+            // Initialize Diablo focus monitoring (hotkeys & window repositioning)
             let app_handle_bounds = app.app_handle().clone();
             let app_handle_focus = app.app_handle().clone();
             window::initialize_diablo_focus_monitoring(
@@ -144,7 +104,10 @@ pub fn run() {
                     let _ = commands::reposition_toast_window(app_handle_bounds.clone());
                 })),
             );
-            
+
+            // Start background tracking thread for window movement
+            window::start_tracking_thread(app.app_handle().clone());
+
             #[cfg(debug_assertions)]
             main_window.open_devtools();
             Ok(())
@@ -161,7 +124,9 @@ pub fn run() {
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
-            commands::auto_detect_diablo2_directory
+            commands::auto_detect_diablo2_directory,
+            commands::start_click_through_poll,
+            commands::update_click_through_areas
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
