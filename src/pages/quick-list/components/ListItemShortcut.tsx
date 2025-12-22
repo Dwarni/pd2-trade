@@ -157,7 +157,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // Check if this item is already queued
       const existingQueued = pendingListings.find((p) => JSON.stringify(p.item) === JSON.stringify(item));
       if (existingQueued) {
-        console.log('[Queue] Found existing queued item:', existingQueued.id);
         // Switch to queued tab if item is already queued
         setActiveTab('queued');
       } else {
@@ -235,29 +234,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Process a queued listing once item is found
   const processQueuedListing = useCallback(
     async (pendingListing: PendingListing | undefined, stashItem: GameStashItem) => {
-      console.log('[Queue] processQueuedListing called:', {
-        hasPendingListing: !!pendingListing,
-        hasStashItem: !!stashItem,
-        stashItemName: stashItem?.name,
-        stashItemHash: stashItem?.hash,
-        isProcessing: isProcessingRef.current,
-      });
-
       if (!pendingListing) {
-        console.log('[Queue] No pending listing provided, aborting');
         return;
       }
       if (!stashItem) {
-        console.log('[Queue] No stash item provided, aborting');
         return;
       }
 
-      // Note: isProcessingRef is already set to true in pollForQueuedItem when items are found
-      // So we don't need to check or set it here - it's already protected
-      console.log('[Queue] Processing queued listing (flag already set)');
-
       const values = pendingListing.formData;
-      console.log('[Queue] Processing with form data:', values);
 
       const priceValue =
         values.price === null || values.price === undefined || values.price === ''
@@ -269,14 +253,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const hasPrice = numericPrice !== null && !isNaN(numericPrice) && numericPrice > 0;
       const listingType = hasPrice ? 'exact' : 'note';
 
-      console.log('[Queue] Listing details:', {
-        hasPrice,
-        numericPrice,
-        note: values.note,
-        listingType,
-        totalListingsCount,
-      });
-
       try {
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
@@ -285,7 +261,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
           // Check if user has reached the maximum number of listings (50)
           if (currentTotalCount >= 50) {
-            console.log('[Queue] Maximum listings reached, cannot list. Count:', currentTotalCount);
             const warningToast: GenericToastPayload = {
               title: 'Maximum listings reached',
               description:
@@ -297,14 +272,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           }
         }
 
-        console.log('[Queue] Calling listSpecificItem with:', {
-          stashItemName: stashItem.name,
-          stashItemHash: stashItem.hash,
-          hrPrice: hasPrice && numericPrice !== null ? numericPrice : 0,
-          note: values.note || '',
-          listingType,
-        });
-
         const listing = await listSpecificItem(
           stashItem,
           hasPrice && numericPrice !== null ? numericPrice : 0,
@@ -312,10 +279,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           listingType,
         );
 
-        console.log('[Queue] Listing created successfully:', listing._id);
-
         await fetchAllListings();
-        console.log('[Queue] Fetched all listings');
 
         incrementMetric('list_item.create', 1, { status: 'success', listing_type: listingType, source: 'queued' });
         if (hasPrice && numericPrice !== null) {
@@ -336,7 +300,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         };
 
         await emit('toast-event', toastPayload);
-        console.log('[Queue] Toast notification sent, hiding window');
       } catch (err) {
         console.error('[Queue] Failed to process queued listing:', err);
         incrementMetric('list_item.create', 1, { status: 'error', source: 'queued' });
@@ -346,9 +309,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           variant: 'error',
         };
         await emit('toast-event', errorToast);
-      } finally {
-        // Processing flag is managed by pollForAllQueuedItems
-        console.log('[Queue] Processing complete');
       }
     },
     [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, appWindow],
@@ -357,32 +317,27 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Poll for all queued items
   const pollForAllQueuedItems = useCallback(async () => {
     if (!authData) {
-      console.log('[Queue] Skipping poll - missing authData');
       return;
     }
 
     const currentQueuedIds = Array.from(queuedListingIds);
     if (currentQueuedIds.length === 0) {
-      console.log('[Queue] No queued items to poll');
       setIsPolling(false);
       setIsQueued(false);
       return;
     }
 
-    console.log('[Queue] Polling for queued items:', currentQueuedIds.length);
     setIsPolling(true);
 
     // Process each queued item independently
     const pollPromises = currentQueuedIds.map(async (pendingId) => {
       // Skip if already processing this item
       if (isProcessingRef.current.has(pendingId)) {
-        console.log('[Queue] Skipping poll - already processing:', pendingId);
         return;
       }
 
       const pendingListing = getPendingListing(pendingId);
       if (!pendingListing) {
-        console.log('[Queue] Pending listing not found, removing from tracked:', pendingId);
         setQueuedListingIds((prev) => {
           const next = new Set(prev);
           next.delete(pendingId);
@@ -396,7 +351,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const age = now - pendingListing.createdAt;
       const maxAge = 60 * POLL_INTERVAL; // MAX_POLL_ATTEMPTS * POLL_INTERVAL
       if (age >= maxAge) {
-        console.log('[Queue] Polling timeout reached for:', pendingId, 'Age:', age, 'Max:', maxAge);
         // Remove from queue
         removePendingListing(pendingId);
         setQueuedListingIds((prev) => {
@@ -420,9 +374,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       updateLastPolled(pendingId);
 
       try {
-        console.log('[Queue] Searching for matching items in stash for:', pendingId);
         const items = await findMatchingItems(pendingListing.item);
-        console.log('[Queue] Found matching items for', pendingId, ':', items.length);
 
         // Determine which item to use based on whether we have initial matching hashes
         let itemToUse: GameStashItem | null = null;
@@ -430,34 +382,19 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         if (pendingListing.initialMatchingHashes && pendingListing.initialMatchingHashes.size > 0) {
           // We queued with multiple matches - look for a NEW item (not in initial set)
           const newItems = items.filter((item) => !pendingListing.initialMatchingHashes!.has(item.hash));
-          console.log(
-            '[Queue] Checking for new items. Initial hashes:',
-            Array.from(pendingListing.initialMatchingHashes),
-          );
-          console.log(
-            '[Queue] Current item hashes:',
-            items.map((i) => i.hash),
-          );
-          console.log('[Queue] New items found:', newItems.length);
 
           if (newItems.length > 0) {
             // Found a new item! Use the first one (or could use the most recent if we had timestamps)
             itemToUse = newItems[0];
-            console.log('[Queue] New item detected! Using:', itemToUse.name, itemToUse.hash);
-          } else {
-            // No new items yet, continue polling
-            console.log('[Queue] No new items found yet, will continue polling');
           }
         } else {
           // No initial matching hashes - this was queued with 0 matches, use first item found
           if (items.length > 0) {
             itemToUse = items[0];
-            console.log('[Queue] First item found (queued with 0 matches):', itemToUse.name, itemToUse.hash);
           }
         }
 
         if (itemToUse) {
-          console.log('[Queue] Item found! Starting processing for:', pendingId);
           // Mark as processing immediately to prevent duplicates
           isProcessingRef.current.add(pendingId);
 
@@ -475,7 +412,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         } else if (items.length > 1 && !pendingListing.initialMatchingHashes) {
           // Multiple matches but no initial hashes (shouldn't happen, but handle gracefully)
           // This means we queued with 0 matches but now have multiple - show selector
-          console.log('[Queue] Multiple matches found (unexpected), showing selector:', items.length);
           isProcessingRef.current.add(pendingId);
           setQueuedListingIds((prev) => {
             const next = new Set(prev);
@@ -518,36 +454,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   // Start polling for all queued items
   useEffect(() => {
     const hasQueuedItems = queuedListingIds.size > 0;
-    console.log('[Queue] Polling effect triggered:', {
-      queuedCount: queuedListingIds.size,
-      hasPollInterval: !!pollIntervalRef.current,
-      hasQueuedItems,
-    });
 
     // Set up polling if we have queued items and no interval is running
     if (hasQueuedItems && !pollIntervalRef.current) {
-      console.log('[Queue] Starting polling for', queuedListingIds.size, 'queued items');
-
       // Poll immediately first
       pollForAllQueuedItems();
 
       // Then set up interval
       pollIntervalRef.current = setInterval(() => {
-        console.log('[Queue] Polling interval tick');
         pollForAllQueuedItems();
       }, POLL_INTERVAL);
-
-      console.log('[Queue] Polling interval set up with interval:', POLL_INTERVAL);
     } else if (!hasQueuedItems && pollIntervalRef.current) {
       // Stop polling if no queued items
-      console.log('[Queue] No queued items, stopping polling');
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
       setIsPolling(false);
     }
 
     return () => {
-      console.log('[Queue] Cleaning up polling interval');
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -563,7 +487,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // Check listing count before queuing
       await fetchAllListings();
       if (totalListingsCount >= 50) {
-        console.log('[Queue] Maximum listings reached, cannot queue. Count:', totalListingsCount);
         const warningToast: GenericToastPayload = {
           title: 'Maximum listings reached',
           description:
@@ -579,15 +502,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       const initialMatchingHashes =
         matchingItems.length > 0 ? new Set(matchingItems.map((item) => item.hash)) : undefined;
 
-      console.log('[Queue] Queuing item for later listing:', {
-        itemName: item.name || item.type,
-        formData: values,
-        hasMultipleMatches: matchingItems.length > 0,
-        initialMatchingHashes: initialMatchingHashes ? Array.from(initialMatchingHashes) : undefined,
-      });
-
       const pendingId = addPendingListing(item, values, initialMatchingHashes);
-      console.log('[Queue] Item queued with ID:', pendingId);
 
       setQueuedListingIds((prev) => new Set([...prev, pendingId]));
       setIsQueued(true);
@@ -762,7 +677,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const handleMultipleMatchSelection = useCallback(
     async (stashItem: GameStashItem) => {
       if (!pendingListingDataRef.current || !pendingMatchListingId) {
-        console.error('No pending listing data available for multiple match selection');
         return;
       }
 
