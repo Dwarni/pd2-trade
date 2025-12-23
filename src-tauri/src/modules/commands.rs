@@ -124,6 +124,22 @@ pub fn reposition_toast_window(app_handle: tauri::AppHandle) -> Result<(), Strin
 }
 
 #[tauri::command]
+pub fn bring_toast_to_front(app_handle: tauri::AppHandle) -> Result<(), String> {
+    if let Some(toast_window) = app_handle.get_webview_window("toast") {
+        // Ensure toast window is always on top to appear above chat button
+        toast_window
+            .set_always_on_top(true)
+            .map_err(|e| format!("Failed to set toast window always on top: {}", e))?;
+        
+        // Show the window to bring it to front
+        toast_window
+            .show()
+            .map_err(|e| format!("Failed to show toast window: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn start_chat_watcher(
     app_handle: tauri::AppHandle,
     custom_d2_dir: Option<String>,

@@ -20,6 +20,7 @@ import {
   getDiabloRectWithRetry,
   updateMainWindowBounds,
   moveWindowBy,
+  attachWindowCloseHandler,
 } from '@/lib/window';
 import { listen } from '@/lib/browser-events';
 import { useAppShortcuts } from '@/hooks/useShortcuts';
@@ -151,7 +152,7 @@ const LandingPage: React.FC = () => {
         focusable: true,
       });
       if (winRef.current) {
-        winRef.current.onCloseRequested(async () => {
+        attachWindowCloseHandler(winRef.current, () => {
           winRef.current = null;
         });
       }
@@ -246,7 +247,7 @@ const LandingPage: React.FC = () => {
         });
 
         if (quickListWinRef.current) {
-          quickListWinRef.current.onCloseRequested(async () => {
+          attachWindowCloseHandler(quickListWinRef.current, () => {
             console.log('[QuickList] Window closed (onCloseRequested), clearing ref.');
             quickListWinRef.current = null;
           });
@@ -507,8 +508,8 @@ const LandingPage: React.FC = () => {
       });
 
       if (chatWindowRef.current) {
-        chatWindowRef.current.onCloseRequested(async () => {
-          chatWindowRef.current = null;
+        attachWindowCloseHandler(chatWindowRef.current, () => {
+          winRef.current = null;
         });
       }
 
@@ -616,7 +617,7 @@ const LandingPage: React.FC = () => {
         visible: false,
       });
       if (tradeMessagesWindowRef.current) {
-        tradeMessagesWindowRef.current.onCloseRequested(async () => {
+        attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
           tradeMessagesWindowRef.current = null;
         });
       }
@@ -645,7 +646,7 @@ const LandingPage: React.FC = () => {
         );
 
         if (tradeMessagesWindowRef.current) {
-          tradeMessagesWindowRef.current.onCloseRequested(async () => {
+          attachWindowCloseHandler(tradeMessagesWindowRef.current, () => {
             tradeMessagesWindowRef.current = null;
           });
         }

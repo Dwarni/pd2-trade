@@ -197,16 +197,41 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   }, [searchMode, item.type, matchedItemType]);
 
   const openCurrencyValuation = useCallback(async () => {
-    await openCenteredWindow(WindowLabels.Currency, '/currency', {
-      title: WindowTitles.Currency,
-      decorations: false,
-      focus: true,
-      shadow: false,
-      width: 640,
-      height: 870,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-    });
+    const currencyLabel = WindowLabels.Currency;
+
+    try {
+      // Check if window exists
+      const existingWin = await WebviewWindow.getByLabel(currencyLabel);
+
+      if (existingWin) {
+        try {
+          await existingWin.unminimize();
+          await existingWin.show();
+          await existingWin.setFocus();
+          return;
+        } catch (err) {
+          console.warn('[ItemOverlay] Failed to reuse Currency window, attempting to recreate:', err);
+          try {
+            await existingWin.close();
+          } catch (closeErr) {
+            console.warn('[ItemOverlay] Failed to close zombie window:', closeErr);
+          }
+        }
+      }
+
+      await openCenteredWindow(currencyLabel, '/currency', {
+        title: WindowTitles.Currency,
+        decorations: false,
+        focus: true,
+        shadow: false,
+        width: 640,
+        height: 870,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+      });
+    } catch (err) {
+      console.error('[ItemOverlay] Failed to open Currency window:', err);
+    }
   }, []);
 
   const openListWindow = useCallback(async () => {

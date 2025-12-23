@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { listen, emit } from '@/lib/browser-events';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri, invoke } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getCurrentWebviewWindow } from '@/lib/browser-webview';
 import { toast } from 'sonner';
@@ -45,8 +45,8 @@ const ToastPage: React.FC = () => {
       // Show the window when we receive a toast event (only in Tauri)
       if (isTauri()) {
         try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
+          // Bring toast to front to ensure it appears above chat button
+          await invoke('bring_toast_to_front');
         } catch (error) {
           console.error('Failed to show toast window:', error);
         }
@@ -93,8 +93,8 @@ const ToastPage: React.FC = () => {
       // Show the window when we receive a toast event (only in Tauri)
       if (isTauri()) {
         try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
+          // Bring toast to front to ensure it appears above chat button
+          await invoke('bring_toast_to_front');
         } catch (error) {
           console.error('Failed to show toast window:', error);
         }
@@ -141,8 +141,8 @@ const ToastPage: React.FC = () => {
       // Show the window when we receive a toast event (only in Tauri)
       if (isTauri()) {
         try {
-          const win = await getCurrentWebviewWindow();
-          if (win) await win.show();
+          // Bring toast to front to ensure it appears above chat button
+          await invoke('bring_toast_to_front');
         } catch (error) {
           console.error('Failed to show toast window:', error);
         }

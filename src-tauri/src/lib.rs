@@ -79,6 +79,7 @@ pub fn run() {
             let _ = main_window.set_ignore_cursor_events(true);
 
             // Create toast window
+            
             let _toast_window = WebviewWindowBuilder::new(
                 app,
                 &modules::config::WINDOW_CONFIG.labels.Toast,
@@ -128,6 +129,7 @@ pub fn run() {
             commands::set_window_click_through,
             commands::force_window_focus,
             commands::reposition_toast_window,
+            commands::bring_toast_to_front,
             commands::start_chat_watcher,
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,

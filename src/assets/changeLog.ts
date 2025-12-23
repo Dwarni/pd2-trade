@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.7.1': [
+    '🔧 Fixed an issue where the chat button overlay would appear over the toasts',
+    '🔧 Fixed an issue which caused price-check, list-item overlays would not close when focus is lost',
+  ],
   '0.7.0': [
     '✨ Expanded the quick list window to include a "Queued" tab for items that are waiting to be listed',
     '✨ Refined Item Search UI with a compact table layout, hover popovers for stats, and visual badges for Corruption, Sockets, and Ethereal status.',
