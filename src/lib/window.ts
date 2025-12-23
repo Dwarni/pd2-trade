@@ -205,46 +205,53 @@ export async function openWindowCenteredOnDiablo(
  * Attach window lifecycle handlers - works with both Tauri and browser windows
  */
 /**
+ * Validates and sanitizes window bounds before saving to prevent Linux integer overflow bug
+ */
+async function validateAndSanitizeBounds(w: WebviewWindow): Promise<void> {
+  if (!isTauri()) return;
+
+  try {
+    const size = await w.outerSize();
+    const pos = await w.outerPosition();
+    if (size.width > 10000 || size.height > 10000 || Math.abs(pos.x) > 50000 || Math.abs(pos.y) > 50000) {
+      console.warn('[window] Validating bounds before save: detected invalid dimensions, resetting...', size, pos);
+      await w.setSize(new PhysicalSize(800, 600));
+      await w.setPosition(new PhysicalPosition(100, 100));
+    }
+  } catch (err) {
+    console.warn('[window] Failed to validate bounds:', err);
+  }
+}
+
+/**
  * Internal helper to attach save-on-close behavior with sanitization
  */
 function attachSaveBehavior(w: WebviewWindow) {
-  let isClosing = false;
-  w.onCloseRequested(async (event) => {
-    if (isClosing) return;
-    event.preventDefault();
-    isClosing = true;
+  const isClosing = false;
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    try {
-      // Sanitize window bounds before saving to prevent Linux integer overflow bug
-      if (isTauri()) {
-        try {
-          const size = await w.outerSize();
-          const pos = await w.outerPosition();
-          if (size.width > 10000 || size.height > 10000 || Math.abs(pos.x) > 50000 || Math.abs(pos.y) > 50000) {
-            console.warn(
-              '[window] Validating bounds before save: detected invalid dimensions, resetting...',
-              size,
-              pos,
-            );
-            await w.setSize(new PhysicalSize(800, 600));
-            await w.setPosition(new PhysicalPosition(100, 100));
-          }
-        } catch (err) {
-          console.warn('[window] Failed to validate bounds:', err);
-        }
-      }
-
-      console.log('[window] saving window state...');
-      await saveWindowState(StateFlags.ALL);
-      console.log('[window] window state saved.');
-    } catch (e) {
-      console.error('[window] Failed to manually save window state on close:', e);
+  // Debounced save function for window movement
+  const debouncedSave = async (position: PhysicalPosition) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
     }
 
-    // We don't call onClose() here because this helper is for the generic window creation
-    // The specific attachWindowLifecycle below will handle its own onClose callback
+    saveTimeout = setTimeout(async () => {
+      try {
+        await validateAndSanitizeBounds(w);
+        console.log('[window] window moved, saving state...', position);
+        await saveWindowState(StateFlags.ALL);
+        console.log('[window] window state saved after move.');
+      } catch (e) {
+        console.error('[window] Failed to save window state on move:', e);
+      }
+      saveTimeout = null;
+    }, 300);
+  };
 
-    w.close();
+  // Save window state when moved
+  w.onMoved(async ({ payload: position }) => {
+    debouncedSave(position);
   });
 }
 
