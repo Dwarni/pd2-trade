@@ -555,7 +555,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {averagePriceData && !averagePriceLoading && pd2Item?.image?.invfile && (
               <div className="inline-block">
                 <HoverPopover
-                  side="right"
                   content={
                     <Card className="p-3 bg-neutral-950 border-neutral-700 w-[300px]">
                       <div className="space-y-2 text-sm">
@@ -778,7 +777,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             {corruptionPrices.corruptionPrices.length > 5 && (
                               <button
                                 onClick={() => setShowAllCorruptions(!showAllCorruptions)}
-                                className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline"
+                                className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline focus:outline-none focus-visible:outline-none focus:ring-0"
                               >
                                 {showAllCorruptions
                                   ? 'Show Less'
@@ -800,7 +799,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     <img
                       src={`https://pd2trader.com/assets/items/${pd2Item.image.invfile}.png`}
                       alt={item.name}
-                      className="w-10 h-10"
+                      className="h-10"
                       onError={(e) => {
                         // Fallback if image fails to load
                         (e.target as HTMLImageElement).style.display = 'none';
