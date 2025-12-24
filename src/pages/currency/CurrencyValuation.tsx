@@ -188,7 +188,7 @@ export function CurrencyValuation() {
           size="icon"
           onClick={async () => {
             const window = getCurrentWebviewWindow();
-            await window.close();
+            await window.hide();
           }}
           className="self-start"
         >
