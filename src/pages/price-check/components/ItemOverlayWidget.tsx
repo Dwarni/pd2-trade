@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X } from 'lucide-react';
+import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X, ArrowRight, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { qualityColor } from '../lib/qualityColor';
@@ -35,6 +35,12 @@ import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { incrementMetric, distributionMetric } from '@/lib/sentryMetrics';
 import { WindowTitles, WindowLabels } from '@/lib/window-titles';
+import {
+  fetchItemPriceByName,
+  fetchCorruptionPrices,
+  AveragePriceResponse,
+  CorruptionPricesResponse,
+} from '@/pages/currency/lib/price-api';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -68,6 +74,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  // Average price state for unique items
+  const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
+  const [averagePriceLoading, setAveragePriceLoading] = useState(false);
+  const [averagePriceError, setAveragePriceError] = useState<string | null>(null);
+
+  // Corruption prices state
+  const [corruptionPrices, setCorruptionPrices] = useState<CorruptionPricesResponse | null>(null);
+  const [corruptionPricesLoading, setCorruptionPricesLoading] = useState(false);
+  const [showAllCorruptions, setShowAllCorruptions] = useState(false);
 
   const { ref: loaderRef, inView } = useInView({
     threshold: 0,
@@ -167,8 +183,88 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setFilters({});
       setSearchMode(0); // Reset to default mode
       setCorruptedState(0); // Reset corrupted state to default (both)
+      // Clear average price data only when item changes (not on every render)
+      setAveragePriceData(null);
+      setAveragePriceError(null);
+      // Clear corruption prices
+      setCorruptionPrices(null);
+      setShowAllCorruptions(false);
     }
-  }, [item, setSelected, setFilters, setCorruptedState]);
+    // Only depend on item, not on setter functions which may change on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.name, item?.quality]);
+
+  // Fetch average price for unique items
+  useEffect(() => {
+    const fetchAveragePrice = async () => {
+      // Only fetch for unique items
+      if (item.quality !== ItemQuality.Unique || !pd2Item?.name) {
+        return;
+      }
+
+      setAveragePriceLoading(true);
+      setAveragePriceError(null);
+
+      try {
+        // Convert settings to API format
+        const isLadder = settings.ladder === 'ladder';
+        const isHardcore = settings.mode === 'hardcore';
+
+        const priceData = await fetchItemPriceByName(pd2Item.name, {
+          isLadder,
+          isHardcore,
+          hours: 168, // 7 days
+        });
+
+        if (priceData) {
+          setAveragePriceData(priceData);
+          setAveragePriceLoading(false);
+        } else {
+          setAveragePriceError('No price data available');
+          setAveragePriceLoading(false);
+        }
+      } catch (error: any) {
+        console.error('[ItemOverlayWidget] Error fetching average price:', error);
+        setAveragePriceError(error.message || 'Failed to fetch price data');
+        setAveragePriceLoading(false);
+      }
+    };
+
+    fetchAveragePrice();
+  }, [item.quality, pd2Item?.name, settings.ladder, settings.mode]);
+
+  // Fetch corruption prices when average price data is available
+  useEffect(() => {
+    const fetchCorruptionData = async () => {
+      // Only fetch for unique items with price data
+      if (item.quality !== ItemQuality.Unique || !pd2Item?.name || !averagePriceData) {
+        return;
+      }
+
+      setCorruptionPricesLoading(true);
+
+      try {
+        const isLadder = settings.ladder === 'ladder';
+        const isHardcore = settings.mode === 'hardcore';
+
+        const corruptionData = await fetchCorruptionPrices(pd2Item.name, {
+          isLadder,
+          isHardcore,
+          hours: 168, // 7 days
+        });
+
+        if (corruptionData) {
+          setCorruptionPrices(corruptionData);
+        }
+      } catch (error: any) {
+        console.error('[ItemOverlayWidget] Error fetching corruption prices:', error);
+      } finally {
+        setCorruptionPricesLoading(false);
+      }
+    };
+
+    fetchCorruptionData();
+  }, [item.quality, pd2Item?.name, averagePriceData, settings.ladder, settings.mode]);
 
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
@@ -443,6 +539,292 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             )}
           </div>
         </CardHeader>
+
+        {/* Average Price Information for Unique Items - Compact */}
+        {item.quality === ItemQuality.Unique && (
+          <div className="px-6 pb-4 -mt-4">
+            {averagePriceLoading && (
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading price data...</span>
+              </div>
+            )}
+            {averagePriceError && !averagePriceLoading && (
+              <div className="text-xs text-red-400">{averagePriceError}</div>
+            )}
+            {averagePriceData && !averagePriceLoading && pd2Item?.image?.invfile && (
+              <div className="inline-block">
+                <HoverPopover
+                  side="right"
+                  content={
+                    <Card className="p-3 bg-neutral-950 border-neutral-700 w-[300px]">
+                      <div className="space-y-2 text-sm">
+                        <div className="font-semibold text-white mb-2">{averagePriceData.itemName}</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-400">Median:</span>
+                            <span className="ml-2 font-semibold text-white">
+                              {averagePriceData.medianPrice.toFixed(2)} HR
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Average:</span>
+                            <span className="ml-2 text-white">{averagePriceData.averagePrice.toFixed(2)} HR</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Min:</span>
+                            <span className="ml-2 text-white">{averagePriceData.minPrice.toFixed(2)} HR</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Max:</span>
+                            <span className="ml-2 text-white">{averagePriceData.maxPrice.toFixed(2)} HR</span>
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-neutral-700 space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Samples:</span>
+                            <span className="text-white">{averagePriceData.sampleCount}</span>
+                          </div>
+                          {averagePriceData.hourlyVolumeAverage > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Hourly Volume:</span>
+                              <span className="text-white">{averagePriceData.hourlyVolumeAverage.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {averagePriceData.priceChange7Days && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">7d Change:</span>
+                              <span
+                                className={
+                                  averagePriceData.priceChange7Days.change >= 0 ? 'text-green-400' : 'text-red-400'
+                                }
+                              >
+                                {averagePriceData.priceChange7Days.change >= 0 ? '+' : ''}
+                                {averagePriceData.priceChange7Days.changePercent.toFixed(1)}%
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {/* Corruption Prices */}
+                        {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
+                          <div className="pt-2 border-t border-neutral-700">
+                            <div className="text-xs font-semibold text-gray-300 mb-2">Top Corruptions</div>
+                            {showAllCorruptions ? (
+                              <ScrollArea className="h-[200px] w-full overflow-x-hidden">
+                                <div className="space-y-1 w-full overflow-x-hidden">
+                                  {corruptionPrices.corruptionPrices.map((corruption, idx) => {
+                                    const hasSocketPrices =
+                                      corruption.socketPrices && corruption.socketPrices.length > 0;
+                                    const isTruncated = corruption.corruptionName.length > 25;
+                                    const truncatedName = isTruncated
+                                      ? corruption.corruptionName.substring(0, 25)
+                                      : corruption.corruptionName;
+
+                                    const corruptionNameElement = isTruncated ? (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[150px]">
+                                              {truncatedName}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p className="text-xs">{corruption.corruptionName}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ) : (
+                                      <span className="text-gray-400 pr-2 truncate block max-w-[150px]">
+                                        {truncatedName}
+                                      </span>
+                                    );
+
+                                    const corruptionRow = (
+                                      <div className="flex justify-between items-center text-xs w-full min-w-0">
+                                        <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <span className="text-gray-500 text-[10px]">({corruption.sampleCount})</span>
+                                          <span className="text-white font-semibold">
+                                            {corruption.medianPrice.toFixed(2)} HR
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+
+                                    if (hasSocketPrices) {
+                                      return (
+                                        <HoverPopover
+                                          key={idx}
+                                          side="right"
+                                          content={
+                                            <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                              <div className="text-xs font-semibold text-gray-300 mb-2">
+                                                {corruption.corruptionName} - Socket Prices
+                                              </div>
+                                              <div className="space-y-1">
+                                                {corruption.socketPrices!.map((socketPrice, socketIdx) => (
+                                                  <div
+                                                    key={socketIdx}
+                                                    className="flex justify-between items-center text-xs"
+                                                  >
+                                                    <span className="text-gray-400">
+                                                      {socketPrice.socketCount} Socket
+                                                      {socketPrice.socketCount !== 1 ? 's' : ''}
+                                                    </span>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                      <span className="text-gray-500 text-[10px]">
+                                                        ({socketPrice.sampleCount})
+                                                      </span>
+                                                      <span className="text-white font-semibold">
+                                                        {socketPrice.medianPrice.toFixed(2)} HR
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </Card>
+                                          }
+                                        >
+                                          <div className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1">
+                                            {corruptionRow}
+                                          </div>
+                                        </HoverPopover>
+                                      );
+                                    }
+
+                                    return <div key={idx}>{corruptionRow}</div>;
+                                  })}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <div className="space-y-1 w-full overflow-x-hidden">
+                                {corruptionPrices.corruptionPrices.slice(0, 5).map((corruption, idx) => {
+                                  const hasSocketPrices = corruption.socketPrices && corruption.socketPrices.length > 0;
+                                  const isTruncated = corruption.corruptionName.length > 20;
+                                  const truncatedName = isTruncated
+                                    ? corruption.corruptionName.substring(0, 20)
+                                    : corruption.corruptionName;
+
+                                  const corruptionNameElement = isTruncated ? (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[150px]">
+                                            {truncatedName}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-xs">{corruption.corruptionName}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ) : (
+                                    <span className="text-gray-400 pr-2 truncate block max-w-[150px]">
+                                      {truncatedName}
+                                    </span>
+                                  );
+
+                                  const corruptionRow = (
+                                    <div className="flex justify-between items-center text-xs w-full min-w-0">
+                                      <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="text-gray-500 text-[10px]">({corruption.sampleCount})</span>
+                                        <span className="text-white font-semibold">
+                                          {corruption.medianPrice.toFixed(2)} HR
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+
+                                  if (hasSocketPrices) {
+                                    return (
+                                      <HoverPopover
+                                        key={idx}
+                                        side="right"
+                                        content={
+                                          <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                            <div className="text-xs font-semibold text-gray-300 mb-2">
+                                              {corruption.corruptionName} - Socket Prices
+                                            </div>
+                                            <div className="space-y-1">
+                                              {corruption.socketPrices!.map((socketPrice, socketIdx) => (
+                                                <div
+                                                  key={socketIdx}
+                                                  className="flex justify-between items-center text-xs"
+                                                >
+                                                  <span className="text-gray-400">
+                                                    {socketPrice.socketCount} Socket
+                                                    {socketPrice.socketCount !== 1 ? 's' : ''}
+                                                  </span>
+                                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <span className="text-gray-500 text-[10px]">
+                                                      ({socketPrice.sampleCount})
+                                                    </span>
+                                                    <span className="text-white font-semibold">
+                                                      {socketPrice.medianPrice.toFixed(2)} HR
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </Card>
+                                        }
+                                      >
+                                        <div className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1">
+                                          {corruptionRow}
+                                        </div>
+                                      </HoverPopover>
+                                    );
+                                  }
+
+                                  return <div key={idx}>{corruptionRow}</div>;
+                                })}
+                              </div>
+                            )}
+                            {corruptionPrices.corruptionPrices.length > 5 && (
+                              <button
+                                onClick={() => setShowAllCorruptions(!showAllCorruptions)}
+                                className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline"
+                              >
+                                {showAllCorruptions
+                                  ? 'Show Less'
+                                  : `Show More (${corruptionPrices.corruptionPrices.length - 5} more)`}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        {corruptionPricesLoading && (
+                          <div className="pt-2 border-t border-neutral-700 text-xs text-gray-400">
+                            Loading corruption prices...
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  }
+                >
+                  <div className="flex items-center gap-2 cursor-pointer bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 transition-colors">
+                    <img
+                      src={`https://pd2trader.com/assets/items/${pd2Item.image.invfile}.png`}
+                      alt={item.name}
+                      className="w-10 h-10"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <ArrowLeftRight className="w-4 h-4 text-gray-400" />
+                    <span className="font-semibold text-white text-sm">
+                      {averagePriceData.medianPrice.toFixed(2)} HR
+                    </span>
+                  </div>
+                </HoverPopover>
+              </div>
+            )}
+            {!averagePriceLoading && !averagePriceError && !averagePriceData && (
+              <div className="text-xs text-gray-500">No price data available</div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Body */}

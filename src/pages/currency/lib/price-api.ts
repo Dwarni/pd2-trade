@@ -65,6 +65,55 @@ export async function fetchItemPrice(
 }
 
 /**
+ * Fetch average price for a specific item by itemName (for unique items)
+ */
+export async function fetchItemPriceByName(
+  itemName: string,
+  config: PriceApiConfig = {},
+): Promise<AveragePriceResponse | null> {
+  try {
+    const params = new URLSearchParams({
+      itemName,
+      ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
+      ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
+      ...(config.hours !== undefined && { hours: config.hours.toString() }),
+    });
+
+    const url = `${API_BASE_URL}/item-prices/average?${params}`;
+    console.log('[fetchItemPriceByName] Fetching price data:', {
+      itemName,
+      config,
+      url,
+    });
+
+    const response = await fetch(url);
+
+    console.log('[fetchItemPriceByName] Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log('[fetchItemPriceByName] No price data found for:', itemName);
+        return null; // No data found
+      }
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('[fetchItemPriceByName] Price data received:', {
+      itemName: data.itemName,
+      medianPrice: data.medianPrice,
+      averagePrice: data.averagePrice,
+      sampleCount: data.sampleCount,
+    });
+
+    return data;
+  } catch (error) {
+    console.error(`[fetchItemPriceByName] Error fetching price for ${itemName}:`, error);
+    return null;
+  }
+}
+
+/**
  * Fetch average prices for multiple items in a single batch request (by baseCode only)
  */
 export async function fetchMultipleItemPrices(
@@ -116,4 +165,71 @@ export async function fetchMultipleItemPrices(
   }
 
   return results;
+}
+
+export interface SocketPrice {
+  socketCount: number;
+  averagePrice: number;
+  medianPrice: number;
+  sampleCount: number;
+}
+
+export interface CorruptionPrice {
+  corruptionName: string;
+  averagePrice: number;
+  medianPrice: number;
+  sampleCount: number;
+  socketPrices?: SocketPrice[];
+}
+
+export interface CorruptionPricesResponse {
+  typeCode: string;
+  baseCode: string;
+  itemName: string;
+  corruptionPrices: CorruptionPrice[];
+}
+
+/**
+ * Fetch corruption prices for a unique item by itemName
+ */
+export async function fetchCorruptionPrices(
+  itemName: string,
+  config: PriceApiConfig = {},
+): Promise<CorruptionPricesResponse | null> {
+  try {
+    const params = new URLSearchParams({
+      itemName,
+      ...(config.isLadder !== undefined && { isLadder: config.isLadder.toString() }),
+      ...(config.isHardcore !== undefined && { isHardcore: config.isHardcore.toString() }),
+      ...(config.hours !== undefined && { hours: config.hours.toString() }),
+    });
+
+    const url = `${API_BASE_URL}/item-prices/corruption-prices?${params}`;
+    console.log('[fetchCorruptionPrices] Fetching corruption prices:', {
+      itemName,
+      config,
+      url,
+    });
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log('[fetchCorruptionPrices] No corruption price data found for:', itemName);
+        return null;
+      }
+      throw new Error(`API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('[fetchCorruptionPrices] Corruption prices received:', {
+      itemName: data.itemName,
+      corruptionCount: data.corruptionPrices?.length || 0,
+    });
+
+    return data;
+  } catch (error) {
+    console.error(`[fetchCorruptionPrices] Error fetching corruption prices for ${itemName}:`, error);
+    return null;
+  }
 }
