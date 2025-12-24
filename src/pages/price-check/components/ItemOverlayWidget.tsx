@@ -585,12 +585,6 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <span className="text-gray-400">Samples:</span>
                             <span className="text-white">{averagePriceData.sampleCount}</span>
                           </div>
-                          {averagePriceData.hourlyVolumeAverage > 0 && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Hourly Volume:</span>
-                              <span className="text-white">{averagePriceData.hourlyVolumeAverage.toFixed(2)}</span>
-                            </div>
-                          )}
                           {averagePriceData.priceChange7Days && (
                             <div className="flex justify-between">
                               <span className="text-gray-400">7d Change:</span>

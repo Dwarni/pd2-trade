@@ -227,31 +227,36 @@ async function validateAndSanitizeBounds(w: WebviewWindow): Promise<void> {
  * Internal helper to attach save-on-close behavior with sanitization
  */
 function attachSaveBehavior(w: WebviewWindow) {
-  const isClosing = false;
-  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Save window state when focus changes
+  w.onFocusChanged(async (event: any) => {
+    try {
+      await validateAndSanitizeBounds(w);
 
-  // Debounced save function for window movement
-  const debouncedSave = async (position: PhysicalPosition) => {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout);
+      console.log('[window] saving window state...');
+      await saveWindowState(StateFlags.ALL);
+      console.log('[window] window state saved.');
+    } catch (e) {
+      console.error('[window] Failed to manually save window state on close:', e);
+    }
+  });
+
+  w.onCloseRequested(async (event) => {
+    event.preventDefault();
+
+    try {
+      await validateAndSanitizeBounds(w);
+
+      console.log('[window] saving window state...');
+      await saveWindowState(StateFlags.ALL);
+      console.log('[window] window state saved.');
+    } catch (e) {
+      console.error('[window] Failed to manually save window state on close:', e);
     }
 
-    saveTimeout = setTimeout(async () => {
-      try {
-        await validateAndSanitizeBounds(w);
-        console.log('[window] window moved, saving state...', position);
-        await saveWindowState(StateFlags.ALL);
-        console.log('[window] window state saved after move.');
-      } catch (e) {
-        console.error('[window] Failed to save window state on move:', e);
-      }
-      saveTimeout = null;
-    }, 300);
-  };
+    // We don't call onClose() here because this helper is for the generic window creation
+    // The specific attachWindowLifecycle below will handle its own onClose callback
 
-  // Save window state when moved
-  w.onMoved(async ({ payload: position }) => {
-    debouncedSave(position);
+    w.close();
   });
 }
 
