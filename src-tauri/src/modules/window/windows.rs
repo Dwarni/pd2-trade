@@ -153,7 +153,7 @@ pub fn initialize_diablo_focus_monitoring(
 
     initialize_foreground_monitoring(move || {
         let current_focus_state = is_diablo_focused();
-        let mut last_state = DIABLO_FOCUS_STATE.lock().unwrap();
+        let mut last_state: std::sync::MutexGuard<'_, Option<bool>> = DIABLO_FOCUS_STATE.lock().unwrap();
 
         if let Some(last) = *last_state {
             if current_focus_state != last {

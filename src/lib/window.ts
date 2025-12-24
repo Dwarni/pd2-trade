@@ -225,21 +225,9 @@ async function validateAndSanitizeBounds(w: WebviewWindow): Promise<void> {
 
 /**
  * Internal helper to attach save-on-close behavior with sanitization
+ * Note: Focus/blur saving is now handled in the backend via window-state plugin
  */
 function attachSaveBehavior(w: WebviewWindow) {
-  // Save window state when focus changes
-  w.onFocusChanged(async (event: any) => {
-    try {
-      await validateAndSanitizeBounds(w);
-
-      console.log('[window] saving window state...');
-      await saveWindowState(StateFlags.ALL);
-      console.log('[window] window state saved.');
-    } catch (e) {
-      console.error('[window] Failed to manually save window state on close:', e);
-    }
-  });
-
   w.onCloseRequested(async (event) => {
     event.preventDefault();
 

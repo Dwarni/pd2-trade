@@ -116,6 +116,9 @@ pub fn run() {
             // Start background tracking thread for window movement
             window::start_tracking_thread(app.app_handle().clone());
 
+            // Initialize window state saving on focus/blur events
+            window::initialize_window_state_saving(app.app_handle().clone());
+
             #[cfg(debug_assertions)]
             main_window.open_devtools();
             Ok(())

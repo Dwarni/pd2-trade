@@ -492,27 +492,6 @@ const LandingPage: React.FC = () => {
       // Small delay to ensure app is fully initialized
       await sleep(500);
 
-      // Open chat window (hidden by default) - centered on Diablo screen
-      chatWindowRef.current = await openWindowCenteredOnDiablo(WindowLabels.Chat, '/chat', {
-        title: WindowTitles.Chat,
-        decorations: false,
-        transparent: true,
-        skipTaskbar: true,
-        alwaysOnTop: true,
-        shadow: false,
-        focus: false,
-        focusable: true,
-        width: 1000,
-        height: 700,
-        visible: false,
-      });
-
-      if (chatWindowRef.current) {
-        attachWindowCloseHandler(chatWindowRef.current, () => {
-          winRef.current = null;
-        });
-      }
-
       // Set up toggle handler
       const toggleChatWindow = async (event?: { payload?: { conversationId?: string; conversation?: any } }) => {
         const conversationId = event?.payload?.conversationId;
@@ -533,8 +512,8 @@ const LandingPage: React.FC = () => {
             visible: false,
           });
           if (chatWindowRef.current) {
-            chatWindowRef.current.onCloseRequested(async () => {
-              chatWindowRef.current = null;
+            attachWindowCloseHandler(chatWindowRef.current, () => {
+              winRef.current = null;
             });
           }
           // Wait a bit for window to be created, then show it
