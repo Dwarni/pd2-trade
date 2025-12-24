@@ -1,6 +1,8 @@
 export const changeLog = {
   '0.7.1': [
+    '✨ Price check overlay now will show prices for unique items, along with corruption prices.',
     '🔧 Fixed an issue where the chat button overlay would appear over the toasts',
+    '🆕 Window location will now persist on close',
     '🔧 Fixed an issue which caused price-check, list-item overlays would not close when focus is lost',
   ],
   '0.7.0': [
