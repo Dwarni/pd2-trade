@@ -18,6 +18,12 @@ import ChatPage from './pages/chat/ChatPage';
 
 // Initialize Sentry asynchronously to avoid blocking application startup
 setTimeout(() => {
+  // Only initialize Sentry in production to avoid sending local development data
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Sentry disabled in development mode');
+    return;
+  }
+
   Sentry.init({
     dsn: 'https://c5f27188412f60350ae11ef386a2a179@o427910.ingest.us.sentry.io/4508895791939584',
     environment: process.env.NODE_ENV, // Set environment for filtering
