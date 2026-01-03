@@ -577,6 +577,14 @@ export function getStatIdsForModifierName(modifierName: string): number | null {
     return modifier.key;
   }
 
+  // Fallback: check statIdToProperty for a matching property name
+  // This handles cases like 'all_resist' which maps to stat_id 999
+  for (const [statId, propertyName] of Object.entries(statIdToProperty)) {
+    if (propertyName === modifierName || propertyName === `item_${modifierName}`) {
+      return Number(statId);
+    }
+  }
+
   return null;
 }
 

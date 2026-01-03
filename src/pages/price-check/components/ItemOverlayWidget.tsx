@@ -291,8 +291,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     if (!item.stats) return null;
     if (item.quality !== ItemQuality.Unique || !pd2Item) return null;
 
+    console.log(pd2Item);
     // Look for stat_id 360 or 361 (corruption flags)
-    const corruptionStat = item.stats.find((stat) => stat.stat_id === 360 || stat.stat_id === 361);
+    const corruptionStat = item.stats.find((stat) => stat.stat_id === 360);
     if (!corruptionStat || corruptionStat.value === undefined) {
       console.log('[ItemOverlayWidget] No corruption stat found (360/361)');
       return null;
@@ -310,6 +311,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     const itemCorruptionNames: string[] = [];
 
     cubeCorruption.stats.forEach((corruptionStat) => {
+      // Skip transform_dye stats
+      if (corruptionStat.stat === 'dye') {
+        return;
+      }
+
       // Get stat_id for this corruption stat key
       const statId = getStatIdForCorruptionStatKey(corruptionStat.stat);
       if (statId !== null) {
@@ -335,6 +341,20 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     const sortedCorruptions = [...itemCorruptionNames].sort();
     const formattedCorruptionName = formatCorruptionName(sortedCorruptions);
 
+    // Format each property name individually for partial matching
+    const formattedPropertyNames = sortedCorruptions.map((name) => {
+      let formatted = name.trim();
+      formatted = formatted.replace(/^item_/, '');
+      formatted = formatted.replace(/_/g, ' ');
+      formatted = formatted
+        .split(' ')
+        .map((word) => {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(' ');
+      return formatted;
+    });
+
     // Debug logging
     console.log('[ItemOverlayWidget] Item corruptions:', {
       corruptionStat: {
@@ -349,13 +369,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       itemCorruptionNames,
       sortedCorruptions,
       formattedCorruptionName,
+      formattedPropertyNames,
       availableCorruptions: corruptionPrices?.corruptionPrices?.map((c) => c.corruptionName) || [],
     });
 
-    // Find matching corruption price (case-insensitive comparison) if corruptionPrices is available
-    const matchingCorruption = corruptionPrices?.corruptionPrices?.find(
-      (corruption) => corruption.corruptionName.toLowerCase() === formattedCorruptionName.toLowerCase(),
-    );
+    // Find matching corruption price - match if any of the item's corruption properties
+    // appear in the corruption price's name (which is a comma-separated list)
+    const matchingCorruption = corruptionPrices?.corruptionPrices?.find((corruption) => {
+      const corruptionNameLower = corruption.corruptionName.toLowerCase();
+      // Check if any of the formatted property names appear in the corruption price name
+      return formattedPropertyNames.some((propertyName) => corruptionNameLower.includes(propertyName.toLowerCase()));
+    });
 
     // Return the corruption data even if no price is found
     return {

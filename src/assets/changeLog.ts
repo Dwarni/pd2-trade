@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.7.2': [
+    '🆕 The corruption tooltip will now automatically show how much the current items corruption price is worth.',
+    '🔧 Fixed an issue which caused the manage listings auto close when clicking ui elements',
+    '🔧 Fixed an issue which caused menu widget to open even when disabled.',
+  ],
   '0.7.1': [
     '✨ Price check overlay now will show prices for unique items, along with corruption prices.',
     '🔧 Fixed an issue where the chat button overlay would appear over the toasts',
