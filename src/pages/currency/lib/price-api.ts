@@ -12,6 +12,9 @@ export interface AveragePriceResponse {
   minPrice: number;
   maxPrice: number;
   medianPrice: number;
+  movingAverage7Days: number;
+  trimmedMean7Days: number;
+  lastDayPrice: number;
   sampleCount: number;
   hourlyVolumeAverage: number;
   priceChange7Days?: {

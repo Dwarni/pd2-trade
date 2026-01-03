@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { X, GripVertical, Loader2, AlertCircle } from 'lucide-react';
+import { X, GripVertical, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -924,7 +924,10 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               currentListings={currentListings}
               expandedItems={expandedItems}
               isMarketListingsLoading={isMarketListingsLoading}
-              onItemSelect={setSelectedItem}
+              onItemSelect={(item) => {
+                setSelectedItem(item);
+                setShowQueueOption(false);
+              }}
               onToggleExpanded={toggleExpandedStats}
               onExpandAll={expandAllStats}
               onCollapseAll={collapseAllStats}
@@ -933,18 +936,26 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
 
             <div className="flex-shrink-0">
-              {matchingItems.length > 0 && !selectedItem && !showQueueOption && (
-                <div className="mb-2 flex flex-col items-center gap-2">
-                  <div className="text-xs text-muted-foreground text-center">None of these match?</div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowQueueOption(true)}
-                    className="text-xs"
-                  >
-                    Queue Item for Later
-                  </Button>
+              {!showQueueOption && (
+                <div className="p-2 border border-dashed border-neutral-500/50 rounded bg-neutral-900/10 mb-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">None of these match?</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedItem(null);
+                        setShowQueueOption(true);
+                      }}
+                      className="text-xs h-7 px-3"
+                    >
+                      Queue Item
+                    </Button>
+                  </div>
                 </div>
               )}
               {(selectedItem || (matchingItems.length > 0 && !selectedItem && showQueueOption)) && (

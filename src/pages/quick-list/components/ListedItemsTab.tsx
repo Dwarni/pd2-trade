@@ -725,7 +725,11 @@ const ListedItemsTab: React.FC<ListedItemsTabProps> = ({
                           <TooltipTrigger asChild>
                             <Trash2
                               className="w-4 h-4 p-0 hover:opacity-70 transition-opacity cursor-pointer text-red-500"
-                              onClick={() => handleDelete(listing)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(listing);
+                              }}
                             />
                           </TooltipTrigger>
                           <TooltipContent>Remove listing</TooltipContent>

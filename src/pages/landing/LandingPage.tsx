@@ -245,15 +245,6 @@ const LandingPage: React.FC = () => {
           resizable: true,
           alwaysOnTop: true,
         });
-
-        if (quickListWinRef.current) {
-          attachWindowCloseHandler(quickListWinRef.current, () => {
-            console.log('[QuickList] Window closed (onCloseRequested), clearing ref.');
-            quickListWinRef.current = null;
-          });
-        } else {
-          console.error('[QuickList] openWindowAtCursor returned null!');
-        }
       } else {
         console.log('[QuickList] Window already exists, showing and focusing.');
         try {
