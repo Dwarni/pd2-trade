@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.7.3': [
+    '🆕 The corruption in the price tooltip can be clicked to filter the price check window by the selected corruption.',
+  ],
   '0.7.2': [
     '🆕 The corruption tooltip will now automatically show how much the current items corruption price is worth.',
     '🔧 Fixed an issue which caused the manage listings auto close when clicking ui elements',
