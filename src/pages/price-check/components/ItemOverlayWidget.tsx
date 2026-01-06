@@ -205,8 +205,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Fetch average price for unique items
   useEffect(() => {
     const fetchAveragePrice = async () => {
-      // Only fetch for unique items
-      if (item.quality !== ItemQuality.Unique || !pd2Item?.name) {
+      // Only fetch for unique and set items
+      if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item?.name) {
         return;
       }
 
@@ -244,8 +244,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
     const fetchCorruptionData = async () => {
-      // Only fetch for unique items with price data
-      if (item.quality !== ItemQuality.Unique || !pd2Item?.name || !averagePriceData) {
+      // Only fetch for unique and set items with price data
+      if (
+        (item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) ||
+        !pd2Item?.name ||
+        !averagePriceData
+      ) {
         return;
       }
 
@@ -295,7 +299,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Get item's corruptions using stat_id 360/361 to look up in cube-corruptions.ts
   const itemCorruptions = useMemo(() => {
     if (!item.stats) return null;
-    if (item.quality !== ItemQuality.Unique || !pd2Item) return null;
+    if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item) return null;
 
     console.log(pd2Item);
     // Look for stat_id 360 or 361 (corruption flags)
@@ -578,6 +582,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   };
 
+  // Helper function to check if two corruption key arrays are equal
+  const areCorruptionKeysEqual = useCallback((key1: string[], key2: string[]): boolean => {
+    if (key1.length !== key2.length) return false;
+    const sorted1 = [...key1].sort();
+    const sorted2 = [...key2].sort();
+    return sorted1.every((key, index) => key === sorted2[index]);
+  }, []);
+
   // Handle corruption click - search for items with that specific corruption
   const handleCorruptionClick = useCallback(
     (corruptionKey: string | string[]) => {
@@ -752,7 +764,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         </CardHeader>
 
         {/* Average Price Information for Unique Items - Compact */}
-        {item.quality === ItemQuality.Unique && (
+        {(item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set) && (
           <div className="px-6 pb-4 -mt-4">
             {averagePriceLoading && (
               <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -858,9 +870,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                   </div>
                                 );
 
+                                // Check if this corruption is currently selected
+                                const isSelected =
+                                  selectedCorruptionNames.length > 0 &&
+                                  areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
                                 const clickableWrapper = (
                                   <div
-                                    className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1"
+                                    className={`cursor-pointer rounded px-1 -mx-1 ${
+                                      isSelected
+                                        ? 'bg-blue-600/30 border border-blue-500/50'
+                                        : 'hover:bg-neutral-800/30'
+                                    }`}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleCorruptionClick(corruption.corruptionKey);
@@ -974,10 +995,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                         </div>
                                       );
 
+                                      // Check if this corruption is currently selected
+                                      const isSelected =
+                                        selectedCorruptionNames.length > 0 &&
+                                        areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
                                       const clickableWrapper = (
                                         <div
                                           key={idx}
-                                          className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1"
+                                          className={`cursor-pointer rounded px-1 -mx-1 ${
+                                            isSelected
+                                              ? 'bg-blue-600/30 border border-blue-500/50'
+                                              : 'hover:bg-neutral-800/30'
+                                          }`}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleCorruptionClick(corruption.corruptionKey);
@@ -1088,10 +1118,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                       </div>
                                     );
 
+                                    // Check if this corruption is currently selected
+                                    const isSelected =
+                                      selectedCorruptionNames.length > 0 &&
+                                      areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
                                     const clickableWrapper = (
                                       <div
                                         key={idx}
-                                        className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1"
+                                        className={`cursor-pointer rounded px-1 -mx-1 ${
+                                          isSelected
+                                            ? 'bg-blue-600/30 border border-blue-500/50'
+                                            : 'hover:bg-neutral-800/30'
+                                        }`}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleCorruptionClick(corruption.corruptionKey);
@@ -1230,13 +1269,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           <div className="flex flex-row gap-2 w-full mt-2">
             <ButtonGroup>
               <Button variant="secondary"
-                className=""
+                className="cursor-pointer"
                 onClick={handleSearch}>
                 Search
               </Button>
               <Button
                 variant="secondary"
-                className="flex flex-row justify-center gap-2 px-3"
+                className="flex flex-row justify-center gap-2 px-3 cursor-pointer"
                 onClick={() => {
                   if (tradeUrl) {
                     incrementMetric('item_overlay.trade_url_opened', 1, {
@@ -1257,7 +1296,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   <span>
                     <Button
                       variant="secondary"
-                      className="flex flex-row justify-center gap-2"
+                      className="flex flex-row justify-center gap-2 cursor-pointer"
                       onClick={openListWindow}
                       disabled={!isStashItem(item)}
                     >
@@ -1289,7 +1328,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         </div>
 
         {marketListings.length > 0 && (
-          <div className="mb-2 text-xs text-gray-400 pl-4 mt-2 flex items-center gap-2">
+          <div className="mb-2 text-xs text-gray-400 pl-2 mt-2 flex items-center gap-2">
             <span>Matches: {totalCount}</span>
             {marketLoading && <Loader2 className="h-3 w-3 animate-spin" />}
           </div>
