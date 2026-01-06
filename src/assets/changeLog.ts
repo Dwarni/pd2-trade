@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.7.4': [
+    '✨ Added visual highlighting for selected corruption in price check widget - selected corruption is now highlighted with blue background and border',
+    '✨ Added support for Set items in price check widget - Set items now fetch and display average prices and corruption prices',
+  ],
   '0.7.3': [
     '🆕 The corruption in the price tooltip can be clicked to filter the price check window by the selected corruption.',
   ],
