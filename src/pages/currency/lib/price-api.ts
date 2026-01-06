@@ -178,6 +178,7 @@ export interface SocketPrice {
 }
 
 export interface CorruptionPrice {
+  corruptionKey: string[];
   corruptionName: string;
   averagePrice: number;
   medianPrice: number;

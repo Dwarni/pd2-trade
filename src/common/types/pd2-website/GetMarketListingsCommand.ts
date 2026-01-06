@@ -42,4 +42,7 @@ export interface MarketListingQuery {
   'item.is_ethereal': boolean;
   'item.corrupted': boolean;
   'item.is_identified': boolean;
+  'item.corruptions'?: {
+    $all: string[];
+  };
 }

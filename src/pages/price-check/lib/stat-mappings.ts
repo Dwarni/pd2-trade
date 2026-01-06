@@ -624,10 +624,10 @@ const corruptionStatKeyToModifierName: Record<string, string> = {
   crush: 'item_crushingblow',
   deadly: 'item_deadlystrike',
   pierce: 'item_pierce',
-  'pierce-fire': 'item_pierce_fire',
-  'pierce-ltng': 'item_pierce_ltng',
-  'pierce-cold': 'item_pierce_cold',
-  'pierce-pois': 'item_pierce_pois',
+  'pierce-fire': 'passive_fire_pierce',
+  'pierce-ltng': 'passive_ltng_pierce',
+  'pierce-cold': 'passive_cold_pierce',
+  'pierce-pois': 'passive_pois_pierce',
   'dmg-min': 'min_damage',
   'dmg-max': 'max_damage',
   'dmg-demon': 'item_demondamage_percent',
@@ -645,7 +645,7 @@ const corruptionStatKeyToModifierName: Record<string, string> = {
   block: 'toblock',
   block1: 'item_fasterblockrate',
   block2: 'item_fasterblockrate',
-  sock: 'socket',
+  sock: 'item_numsockets',
   dye: 'transform_dye',
   addxp: 'item_addexperience',
   regen: 'hpregen',
@@ -663,10 +663,10 @@ const corruptionStatKeyToModifierName: Record<string, string> = {
   'dmg-ac': 'item_damagetargetac',
   balance1: 'item_fastergethitrate',
   ease: 'item_req_percent', // Negative value
-  'extra-fire': 'item_elemskill_fire',
-  'extra-cold': 'item_elemskill_cold',
-  'extra-ltng': 'item_elemskill_lightning',
-  'extra-pois': 'item_elemskill_poison',
+  'extra-fire': 'passive_fire_mastery',
+  'extra-cold': 'passive_cold_mastery',
+  'extra-ltng': 'passive_ltng_mastery',
+  'extra-pois': 'passive_pois_mastery',
   'thorns/lvl': 'thorns_percent', // Per level version
 };
 
