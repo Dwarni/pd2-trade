@@ -127,7 +127,9 @@ const getIncomingOffers = async (
         in_game_account: true,
       },
       offers: {
-        user: true,
+        user: {
+          in_game_account: true,
+        },
       },
     },
     user_id: authData.user._id,
@@ -185,9 +187,15 @@ const getOutgoingOffers = async (
 ): Promise<TradeMessageData[]> => {
   const query = {
     $resolve: {
-      listing: true,
+      listing: {
+        user: {
+          in_game_account: true,
+        },
+      },
       listing_archive: {
-        user: true,
+        user: {
+          in_game_account: true,
+        },
       },
     },
     user_id: authData.user._id,

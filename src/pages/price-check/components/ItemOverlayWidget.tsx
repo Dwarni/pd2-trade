@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X, ArrowRight, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { SettingsIcon, LuggageIcon, SquareArrowOutUpRight, X, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { qualityColor } from '../lib/qualityColor';
@@ -41,6 +41,8 @@ import {
   AveragePriceResponse,
   CorruptionPricesResponse,
 } from '@/pages/currency/lib/price-api';
+import { statIdToProperty, getStatIdForCorruptionStatKey, StatId } from '../lib/stat-mappings';
+import { cubeCorruptions } from '@/assets/cube-corruptions';
 
 export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) {
   const { settings } = useOptions();
@@ -73,6 +75,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searchArchived, setSearchArchived] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [triggerCorruptionSearch, setTriggerCorruptionSearch] = useState(false);
+  const [triggerSocketSearch, setTriggerSocketSearch] = useState(false);
+  const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 20;
 
   // Average price state for unique items
@@ -156,6 +161,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       corruptedState,
       ITEMS_PER_PAGE,
       page * ITEMS_PER_PAGE,
+      selectedCorruptionNames.length > 0 ? selectedCorruptionNames : undefined,
     );
   }, [
     selected,
@@ -170,6 +176,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     shouldUseToggle,
     corruptedState,
     page,
+    selectedCorruptionNames,
   ]);
 
   useEffect(() => {
@@ -183,6 +190,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       setFilters({});
       setSearchMode(0); // Reset to default mode
       setCorruptedState(0); // Reset corrupted state to default (both)
+      setSelectedCorruptionNames([]); // Clear selected corruptions
       // Clear average price data only when item changes (not on every render)
       setAveragePriceData(null);
       setAveragePriceError(null);
@@ -197,8 +205,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Fetch average price for unique items
   useEffect(() => {
     const fetchAveragePrice = async () => {
-      // Only fetch for unique items
-      if (item.quality !== ItemQuality.Unique || !pd2Item?.name) {
+      // Only fetch for unique and set items
+      if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item?.name) {
         return;
       }
 
@@ -236,8 +244,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Fetch corruption prices when average price data is available
   useEffect(() => {
     const fetchCorruptionData = async () => {
-      // Only fetch for unique items with price data
-      if (item.quality !== ItemQuality.Unique || !pd2Item?.name || !averagePriceData) {
+      // Only fetch for unique and set items with price data
+      if (
+        (item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) ||
+        !pd2Item?.name ||
+        !averagePriceData
+      ) {
         return;
       }
 
@@ -265,6 +277,132 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
     fetchCorruptionData();
   }, [item.quality, pd2Item?.name, averagePriceData, settings.ladder, settings.mode]);
+
+  // Helper function to format corruption name the same way the server does
+  const formatCorruptionName = useCallback((corruptionNames: string[]): string => {
+    return corruptionNames
+      .map((c) => {
+        let formatted = c.trim();
+        formatted = formatted.replace(/^item_/, '');
+        formatted = formatted.replace(/_/g, ' ');
+        formatted = formatted
+          .split(' ')
+          .map((word) => {
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join(' ');
+        return formatted;
+      })
+      .join(', ');
+  }, []);
+
+  // Get item's corruptions using stat_id 360/361 to look up in cube-corruptions.ts
+  const itemCorruptions = useMemo(() => {
+    if (!item.stats) return null;
+    if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item) return null;
+
+    console.log(pd2Item);
+    // Look for stat_id 360 or 361 (corruption flags)
+    const corruptionStat = item.stats.find((stat) => stat.stat_id === 360);
+    if (!corruptionStat || corruptionStat.value === undefined) {
+      console.log('[ItemOverlayWidget] No corruption stat found (360/361)');
+      return null;
+    }
+
+    // The value corresponds to the 'key' field in cube-corruptions.ts
+    const corruptionKey = corruptionStat.value;
+    const cubeCorruption = cubeCorruptions.find((corruption) => corruption.key === corruptionKey);
+    if (!cubeCorruption) {
+      console.warn('[ItemOverlayWidget] Corruption key not found:', corruptionKey);
+      return null;
+    }
+
+    // Map corruption stats to property names
+    const itemCorruptionNames: string[] = [];
+
+    cubeCorruption.stats.forEach((corruptionStat) => {
+      // Skip transform_dye stats
+      if (corruptionStat.stat === 'dye') {
+        return;
+      }
+
+      // Get stat_id for this corruption stat key
+      const statId = getStatIdForCorruptionStatKey(corruptionStat.stat);
+      if (statId !== null) {
+        // Map stat_id to property name using statIdToProperty
+        const propertyName = statIdToProperty[statId];
+        if (propertyName) {
+          // Normalize property name (ensure it starts with "item_")
+          const normalizedName = propertyName.startsWith('item_') ? propertyName : `item_${propertyName}`;
+          itemCorruptionNames.push(normalizedName);
+        }
+      } else {
+        // If not found, log a warning
+        console.warn('[ItemOverlayWidget] Could not find stat_id for corruption stat:', corruptionStat.stat);
+      }
+    });
+
+    if (itemCorruptionNames.length === 0) {
+      console.warn('[ItemOverlayWidget] No corruption names mapped from stats');
+      return null;
+    }
+
+    // Sort and format the same way the server does
+    const sortedCorruptions = [...itemCorruptionNames].sort();
+    const formattedCorruptionName = formatCorruptionName(sortedCorruptions);
+
+    // Format each property name individually for partial matching
+    const formattedPropertyNames = sortedCorruptions.map((name) => {
+      let formatted = name.trim();
+      formatted = formatted.replace(/^item_/, '');
+      formatted = formatted.replace(/_/g, ' ');
+      formatted = formatted
+        .split(' ')
+        .map((word) => {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(' ');
+      return formatted;
+    });
+
+    // Debug logging
+    console.log('[ItemOverlayWidget] Item corruptions:', {
+      corruptionStat: {
+        stat_id: corruptionStat.stat_id,
+        value: corruptionStat.value,
+      },
+      cubeCorruption: {
+        id: cubeCorruption.id,
+        key: cubeCorruption.key,
+        stats: cubeCorruption.stats,
+      },
+      itemCorruptionNames,
+      sortedCorruptions,
+      formattedCorruptionName,
+      formattedPropertyNames,
+      availableCorruptions: corruptionPrices?.corruptionPrices?.map((c) => c.corruptionName) || [],
+    });
+
+    // Find matching corruption price - match by comparing corruptionKey arrays
+    const matchingCorruption = corruptionPrices?.corruptionPrices?.find((corruption) => {
+      // Compare the sorted corruption key arrays
+      if (!corruption.corruptionKey || corruption.corruptionKey.length !== sortedCorruptions.length) {
+        return false;
+      }
+      // Sort both arrays and compare element by element
+      const sortedItemKey = [...sortedCorruptions].sort();
+      const sortedApiKey = [...corruption.corruptionKey].sort();
+      return sortedItemKey.every((key, index) => key === sortedApiKey[index]);
+    });
+
+    // Return the corruption data even if no price is found
+    return {
+      corruptionName: formattedCorruptionName,
+      corruptionKey: sortedCorruptions,
+      cubeCorruption,
+      priceData: matchingCorruption || null,
+    };
+  }, [item.stats, item.quality, corruptionPrices, formatCorruptionName, pd2Item]);
 
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
@@ -381,6 +519,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       const startTime = performance.now();
 
       try {
+        console.log('[ItemOverlayWidget] API Query:', JSON.stringify(pd2MarketQuery, null, 2));
         const result = searchArchived
           ? await getMarketListingsArchive(pd2MarketQuery)
           : await getMarketListings(pd2MarketQuery);
@@ -432,6 +571,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Initial Search / Reset
   const handleSearch = () => {
+    // Clear corruption names filter when manually searching
+    setSelectedCorruptionNames([]);
     if (page === 0) {
       fetchListings(true);
     } else {
@@ -441,6 +582,87 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   };
 
+  // Helper function to check if two corruption key arrays are equal
+  const areCorruptionKeysEqual = useCallback((key1: string[], key2: string[]): boolean => {
+    if (key1.length !== key2.length) return false;
+    const sorted1 = [...key1].sort();
+    const sorted2 = [...key2].sort();
+    return sorted1.every((key, index) => key === sorted2[index]);
+  }, []);
+
+  // Handle corruption click - search for items with that specific corruption
+  const handleCorruptionClick = useCallback(
+    (corruptionKey: string | string[]) => {
+      // Clear existing selections and add the corruption property names to the array for direct filtering
+      setSelected(new Set());
+      setFilters({});
+      setSelectedCorruptionNames(Array.isArray(corruptionKey) ? corruptionKey : [corruptionKey]); // Set the corruption property names to filter by
+      setCorruptedState(1); // Set to corrupted only
+      setSearchArchived(true); // Enable expired listings
+      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
+      setTriggerCorruptionSearch(true); // Trigger search after state updates
+    },
+    [corruptionPrices, itemCorruptions],
+  );
+
+  // Handle socket count click - update socket filter and trigger search
+  const handleSocketClick = useCallback(
+    (socketCount: number, corruptionKey: string[]) => {
+      // Find the socket stat in sortedStats
+      const socketStat = sortedStats.find((s) => s.stat_id === StatId.Socket);
+      if (!socketStat) {
+        console.warn('[ItemOverlayWidget] Socket stat not found');
+        return;
+      }
+
+      const socketKey = getStatKey(socketStat);
+
+      // Set socket filter to exact count (min and max both equal to socketCount)
+      setFilters((f) => ({
+        ...f,
+        [socketKey]: { min: String(socketCount), max: String(socketCount) },
+      }));
+
+      // Ensure socket stat is selected
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.add(socketKey);
+        return next;
+      });
+
+      // Set the numsockets corruption key filter
+      setSelectedCorruptionNames(corruptionKey);
+
+      // Don't set page to 0 here - let the trigger handle it to avoid conflicts
+      setTriggerSocketSearch(true); // Trigger search after state updates
+    },
+    [sortedStats],
+  );
+
+  // Trigger search when corruption search is requested
+  useEffect(() => {
+    if (triggerCorruptionSearch) {
+      setTriggerCorruptionSearch(false);
+      setPage(0); // Reset to first page before searching
+      // Use setTimeout to ensure state updates are applied
+      setTimeout(() => {
+        fetchListings(true);
+      }, 0);
+    }
+  }, [triggerCorruptionSearch, fetchListings]);
+
+  // Trigger search when socket search is requested
+  useEffect(() => {
+    if (triggerSocketSearch) {
+      setTriggerSocketSearch(false);
+      setPage(0); // Reset to first page before searching
+      // Use setTimeout to ensure state updates are applied
+      setTimeout(() => {
+        fetchListings(true);
+      }, 0);
+    }
+  }, [triggerSocketSearch, fetchListings]);
+
   // We need to distinguish between "page changed because of scroll" vs "reset to 0"
   // Let's simplify: Search button resets everything and fetches page 0.
   // Scroll increments page.
@@ -448,10 +670,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   useEffect(() => {
     // If page > 0, it means we scrolled.
-    if (page > 0) {
+    // Don't trigger if we're doing a corruption or socket search (triggers handle that)
+    if (page > 0 && !triggerCorruptionSearch && !triggerSocketSearch) {
       fetchListings(false);
     }
-  }, [page, fetchListings]);
+  }, [page, fetchListings, triggerCorruptionSearch]);
 
   // Trigger infinite scroll
   useEffect(() => {
@@ -541,7 +764,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         </CardHeader>
 
         {/* Average Price Information for Unique Items - Compact */}
-        {item.quality === ItemQuality.Unique && (
+        {(item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set) && (
           <div className="px-6 pb-4 -mt-4">
             {averagePriceLoading && (
               <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -556,19 +779,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               <div className="inline-block">
                 <HoverPopover
                   content={
-                    <Card className="p-3 bg-neutral-950 border-neutral-700 w-[300px]">
+                    <Card className="p-3 bg-neutral-950 border-neutral-700 w-[400px]">
                       <div className="space-y-2 text-sm">
                         <div className="font-semibold text-white mb-2">{averagePriceData.itemName}</div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-gray-400">Average:</span>
+                            <span className="ml-2 text-white">{averagePriceData.movingAverage7Days.toFixed(2)} HR</span>
+                          </div>
                           <div>
                             <span className="text-gray-400">Median:</span>
                             <span className="ml-2 font-semibold text-white">
                               {averagePriceData.medianPrice.toFixed(2)} HR
                             </span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400">Average:</span>
-                            <span className="ml-2 text-white">{averagePriceData.averagePrice.toFixed(2)} HR</span>
                           </div>
                           <div>
                             <span className="text-gray-400">Min:</span>
@@ -598,6 +821,125 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             </div>
                           )}
                         </div>
+                        {/* Item's Corruption Price - Display separately if matched */}
+                        {itemCorruptions && (
+                          <div className="pt-2 border-t border-neutral-700">
+                            <div className="text-xs font-semibold text-red-400 mb-2">This Item&apos;s Corruption</div>
+                            <div className="space-y-1">
+                              {(() => {
+                                const corruption = itemCorruptions;
+                                const priceData = corruption.priceData;
+                                const hasSocketPrices = priceData?.socketPrices && priceData.socketPrices.length > 0;
+                                // Use the actual corruptionName from the API if available, otherwise use the formatted name
+                                const displayName = priceData?.corruptionName || corruption.corruptionName;
+                                const isTruncated = displayName.length > 40;
+                                const truncatedName = isTruncated ? displayName.substring(0, 40) : displayName;
+
+                                const corruptionNameElement = isTruncated ? (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-red-300 pr-2 cursor-help border-b border-dotted border-red-500 truncate block max-w-[250px]">
+                                          {truncatedName}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">{displayName}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                ) : (
+                                  <span className="text-red-300 pr-2 truncate block max-w-[250px]">
+                                    {truncatedName}
+                                  </span>
+                                );
+
+                                const corruptionRow = (
+                                  <div className="flex justify-between items-center text-xs w-full min-w-0">
+                                    <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
+                                    {priceData ? (
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="text-gray-500 text-[10px]">({priceData.sampleCount})</span>
+                                        <span className="font-semibold">{priceData.medianPrice.toFixed(2)} HR</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                        <span className="text-gray-500 text-[10px]">No price data</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+
+                                // Check if this corruption is currently selected
+                                const isSelected =
+                                  selectedCorruptionNames.length > 0 &&
+                                  areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
+                                const clickableWrapper = (
+                                  <div
+                                    className={`cursor-pointer rounded px-1 -mx-1 ${
+                                      isSelected
+                                        ? 'bg-blue-600/30 border border-blue-500/50'
+                                        : 'hover:bg-neutral-800/30'
+                                    }`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCorruptionClick(corruption.corruptionKey);
+                                    }}
+                                    title="Click to search for items with this corruption"
+                                  >
+                                    {corruptionRow}
+                                  </div>
+                                );
+
+                                if (hasSocketPrices && priceData) {
+                                  return (
+                                    <HoverPopover
+                                      side="bottom"
+                                      content={
+                                        <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                          <div className="text-xs font-semibold text-gray-300 mb-2">
+                                            {displayName} - Socket Prices
+                                          </div>
+                                          <div className="space-y-1">
+                                            {priceData.socketPrices!.map((socketPrice, socketIdx) => (
+                                              <div
+                                                key={socketIdx}
+                                                className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleSocketClick(socketPrice.socketCount, corruption.corruptionKey);
+                                                }}
+                                                title="Click to filter by this socket count"
+                                              >
+                                                <span className="text-gray-400">
+                                                  {socketPrice.socketCount} Socket
+                                                  {socketPrice.socketCount !== 1 ? 's' : ''}
+                                                </span>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                  <span className="text-gray-500 text-[10px]">
+                                                    ({socketPrice.sampleCount})
+                                                  </span>
+                                                  <span className="text-white font-semibold">
+                                                    {socketPrice.medianPrice.toFixed(2)} HR
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </Card>
+                                      }
+                                    >
+                                      {clickableWrapper}
+                                    </HoverPopover>
+                                  );
+                                }
+
+                                return clickableWrapper;
+                              })()}
+                            </div>
+                          </div>
+                        )}
                         {/* Corruption Prices */}
                         {corruptionPrices && corruptionPrices.corruptionPrices.length > 0 && (
                           <div className="pt-2 border-t border-neutral-700">
@@ -605,12 +947,144 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             {showAllCorruptions ? (
                               <ScrollArea className="h-[200px] w-full overflow-x-hidden">
                                 <div className="space-y-1 w-full overflow-x-hidden">
-                                  {corruptionPrices.corruptionPrices.map((corruption, idx) => {
+                                  {corruptionPrices.corruptionPrices
+                                    .filter((corruption) => {
+                                      // Filter out the item's corruption if it matches
+                                      return (
+                                        !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName
+                                      );
+                                    })
+                                    .map((corruption, idx) => {
+                                      const hasSocketPrices =
+                                        corruption.socketPrices && corruption.socketPrices.length > 0;
+                                      const isTruncated = corruption.corruptionName.length > 40;
+                                      const truncatedName = isTruncated
+                                        ? corruption.corruptionName.substring(0, 40)
+                                        : corruption.corruptionName;
+
+                                      const corruptionNameElement = isTruncated ? (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[250px]">
+                                                {truncatedName}
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p className="text-xs">{corruption.corruptionName}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      ) : (
+                                        <span className="text-gray-400 pr-2 truncate block max-w-[250px]">
+                                          {truncatedName}
+                                        </span>
+                                      );
+
+                                      const corruptionRow = (
+                                        <div className="flex justify-between items-center text-xs w-full min-w-0">
+                                          <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
+                                          <div className="flex items-center gap-2 flex-shrink-0">
+                                            <span className="text-gray-500 text-[10px]">
+                                              ({corruption.sampleCount})
+                                            </span>
+                                            <span className="text-white font-semibold">
+                                              {corruption.medianPrice.toFixed(2)} HR
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+
+                                      // Check if this corruption is currently selected
+                                      const isSelected =
+                                        selectedCorruptionNames.length > 0 &&
+                                        areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
+                                      const clickableWrapper = (
+                                        <div
+                                          key={idx}
+                                          className={`cursor-pointer rounded px-1 -mx-1 ${
+                                            isSelected
+                                              ? 'bg-blue-600/30 border border-blue-500/50'
+                                              : 'hover:bg-neutral-800/30'
+                                          }`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCorruptionClick(corruption.corruptionKey);
+                                          }}
+                                          title="Click to search for items with this corruption"
+                                        >
+                                          {corruptionRow}
+                                        </div>
+                                      );
+
+                                      if (hasSocketPrices) {
+                                        return (
+                                          <HoverPopover
+                                            key={idx}
+                                            side="bottom"
+                                            content={
+                                              <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
+                                                <div className="text-xs font-semibold text-gray-300 mb-2">
+                                                  {corruption.corruptionName} - Socket Prices
+                                                </div>
+                                                <div className="space-y-1">
+                                                  {corruption.socketPrices!.map((socketPrice, socketIdx) => (
+                                                    <div
+                                                      key={socketIdx}
+                                                      className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSocketClick(
+                                                          socketPrice.socketCount,
+                                                          corruption.corruptionKey,
+                                                        );
+                                                      }}
+                                                      title="Click to filter by this socket count"
+                                                    >
+                                                      <span className="text-gray-400">
+                                                        {socketPrice.socketCount} Socket
+                                                        {socketPrice.socketCount !== 1 ? 's' : ''}
+                                                      </span>
+                                                      <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <span className="text-gray-500 text-[10px]">
+                                                          ({socketPrice.sampleCount})
+                                                        </span>
+                                                        <span className="text-white font-semibold">
+                                                          {socketPrice.medianPrice.toFixed(2)} HR
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              </Card>
+                                            }
+                                          >
+                                            {clickableWrapper}
+                                          </HoverPopover>
+                                        );
+                                      }
+
+                                      return clickableWrapper;
+                                    })}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <div className="space-y-1 w-full overflow-x-hidden">
+                                {corruptionPrices.corruptionPrices
+                                  .filter((corruption) => {
+                                    // Filter out the item's corruption if it matches
+                                    return (
+                                      !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName
+                                    );
+                                  })
+                                  .slice(0, 5)
+                                  .map((corruption, idx) => {
                                     const hasSocketPrices =
                                       corruption.socketPrices && corruption.socketPrices.length > 0;
-                                    const isTruncated = corruption.corruptionName.length > 25;
+                                    const isTruncated = corruption.corruptionName.length > 40;
                                     const truncatedName = isTruncated
-                                      ? corruption.corruptionName.substring(0, 25)
+                                      ? corruption.corruptionName.substring(0, 40)
                                       : corruption.corruptionName;
 
                                     const corruptionNameElement = isTruncated ? (
@@ -627,7 +1101,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                         </Tooltip>
                                       </TooltipProvider>
                                     ) : (
-                                      <span className="text-gray-400 pr-2 truncate block max-w-[150px]">
+                                      <span className="text-gray-400 pr-2 truncate block max-w-[250px]">
                                         {truncatedName}
                                       </span>
                                     );
@@ -644,11 +1118,34 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                       </div>
                                     );
 
+                                    // Check if this corruption is currently selected
+                                    const isSelected =
+                                      selectedCorruptionNames.length > 0 &&
+                                      areCorruptionKeysEqual(corruption.corruptionKey, selectedCorruptionNames);
+
+                                    const clickableWrapper = (
+                                      <div
+                                        key={idx}
+                                        className={`cursor-pointer rounded px-1 -mx-1 ${
+                                          isSelected
+                                            ? 'bg-blue-600/30 border border-blue-500/50'
+                                            : 'hover:bg-neutral-800/30'
+                                        }`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCorruptionClick(corruption.corruptionKey);
+                                        }}
+                                        title="Click to search for items with this corruption"
+                                      >
+                                        {corruptionRow}
+                                      </div>
+                                    );
+
                                     if (hasSocketPrices) {
                                       return (
                                         <HoverPopover
                                           key={idx}
-                                          side="right"
+                                          side="bottom"
                                           content={
                                             <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
                                               <div className="text-xs font-semibold text-gray-300 mb-2">
@@ -658,7 +1155,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                                 {corruption.socketPrices!.map((socketPrice, socketIdx) => (
                                                   <div
                                                     key={socketIdx}
-                                                    className="flex justify-between items-center text-xs"
+                                                    className="flex justify-between items-center text-xs cursor-pointer hover:bg-neutral-800/50 rounded px-2 py-1 -mx-2 -my-1"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleSocketClick(
+                                                        socketPrice.socketCount,
+                                                        corruption.corruptionKey,
+                                                      );
+                                                    }}
+                                                    title="Click to filter by this socket count"
                                                   >
                                                     <span className="text-gray-400">
                                                       {socketPrice.socketCount} Socket
@@ -678,112 +1183,33 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                                             </Card>
                                           }
                                         >
-                                          <div className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1">
-                                            {corruptionRow}
-                                          </div>
+                                          {clickableWrapper}
                                         </HoverPopover>
                                       );
                                     }
 
-                                    return <div key={idx}>{corruptionRow}</div>;
+                                    return clickableWrapper;
                                   })}
-                                </div>
-                              </ScrollArea>
-                            ) : (
-                              <div className="space-y-1 w-full overflow-x-hidden">
-                                {corruptionPrices.corruptionPrices.slice(0, 5).map((corruption, idx) => {
-                                  const hasSocketPrices = corruption.socketPrices && corruption.socketPrices.length > 0;
-                                  const isTruncated = corruption.corruptionName.length > 20;
-                                  const truncatedName = isTruncated
-                                    ? corruption.corruptionName.substring(0, 20)
-                                    : corruption.corruptionName;
-
-                                  const corruptionNameElement = isTruncated ? (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <span className="text-gray-400 pr-2 cursor-help border-b border-dotted border-gray-500 truncate block max-w-[150px]">
-                                            {truncatedName}
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p className="text-xs">{corruption.corruptionName}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ) : (
-                                    <span className="text-gray-400 pr-2 truncate block max-w-[150px]">
-                                      {truncatedName}
-                                    </span>
-                                  );
-
-                                  const corruptionRow = (
-                                    <div className="flex justify-between items-center text-xs w-full min-w-0">
-                                      <div className="min-w-0 flex-1 overflow-hidden">{corruptionNameElement}</div>
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-gray-500 text-[10px]">({corruption.sampleCount})</span>
-                                        <span className="text-white font-semibold">
-                                          {corruption.medianPrice.toFixed(2)} HR
-                                        </span>
-                                      </div>
-                                    </div>
-                                  );
-
-                                  if (hasSocketPrices) {
-                                    return (
-                                      <HoverPopover
-                                        key={idx}
-                                        side="right"
-                                        content={
-                                          <Card className="p-3 bg-neutral-950 border-neutral-700 min-w-[200px]">
-                                            <div className="text-xs font-semibold text-gray-300 mb-2">
-                                              {corruption.corruptionName} - Socket Prices
-                                            </div>
-                                            <div className="space-y-1">
-                                              {corruption.socketPrices!.map((socketPrice, socketIdx) => (
-                                                <div
-                                                  key={socketIdx}
-                                                  className="flex justify-between items-center text-xs"
-                                                >
-                                                  <span className="text-gray-400">
-                                                    {socketPrice.socketCount} Socket
-                                                    {socketPrice.socketCount !== 1 ? 's' : ''}
-                                                  </span>
-                                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                                    <span className="text-gray-500 text-[10px]">
-                                                      ({socketPrice.sampleCount})
-                                                    </span>
-                                                    <span className="text-white font-semibold">
-                                                      {socketPrice.medianPrice.toFixed(2)} HR
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </Card>
-                                        }
-                                      >
-                                        <div className="cursor-pointer hover:bg-neutral-800/30 rounded px-1 -mx-1">
-                                          {corruptionRow}
-                                        </div>
-                                      </HoverPopover>
-                                    );
-                                  }
-
-                                  return <div key={idx}>{corruptionRow}</div>;
-                                })}
                               </div>
                             )}
-                            {corruptionPrices.corruptionPrices.length > 5 && (
-                              <button
-                                onClick={() => setShowAllCorruptions(!showAllCorruptions)}
-                                className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline focus:outline-none focus-visible:outline-none focus:ring-0"
-                              >
-                                {showAllCorruptions
-                                  ? 'Show Less'
-                                  : `Show More (${corruptionPrices.corruptionPrices.length - 5} more)`}
-                              </button>
-                            )}
+                            {(() => {
+                              const filteredCorruptions = corruptionPrices.corruptionPrices.filter((corruption) => {
+                                return !itemCorruptions || corruption.corruptionName !== itemCorruptions.corruptionName;
+                              });
+                              const remainingCount = filteredCorruptions.length;
+                              const showCount = showAllCorruptions ? remainingCount : Math.min(5, remainingCount);
+
+                              return (
+                                remainingCount > showCount && (
+                                  <button
+                                    onClick={() => setShowAllCorruptions(!showAllCorruptions)}
+                                    className="mt-2 text-xs text-gray-400 hover:text-gray-300 underline focus:outline-none focus-visible:outline-none focus:ring-0"
+                                  >
+                                    {showAllCorruptions ? 'Show Less' : `Show More (${remainingCount - 5} more)`}
+                                  </button>
+                                )
+                              );
+                            })()}
                           </div>
                         )}
                         {corruptionPricesLoading && (
@@ -807,7 +1233,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     />
                     <ArrowLeftRight className="w-4 h-4 text-gray-400" />
                     <span className="font-semibold text-white text-sm">
-                      {averagePriceData.medianPrice.toFixed(2)} HR
+                      {averagePriceData.movingAverage7Days.toFixed(2)} HR
                     </span>
                   </div>
                 </HoverPopover>
@@ -843,13 +1269,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           <div className="flex flex-row gap-2 w-full mt-2">
             <ButtonGroup>
               <Button variant="secondary"
-                className=""
+                className="cursor-pointer"
                 onClick={handleSearch}>
                 Search
               </Button>
               <Button
                 variant="secondary"
-                className="flex flex-row justify-center gap-2 px-3"
+                className="flex flex-row justify-center gap-2 px-3 cursor-pointer"
                 onClick={() => {
                   if (tradeUrl) {
                     incrementMetric('item_overlay.trade_url_opened', 1, {
@@ -870,7 +1296,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   <span>
                     <Button
                       variant="secondary"
-                      className="flex flex-row justify-center gap-2"
+                      className="flex flex-row justify-center gap-2 cursor-pointer"
                       onClick={openListWindow}
                       disabled={!isStashItem(item)}
                     >
@@ -901,11 +1327,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           </div>
         </div>
 
-        {marketListings.length > 0 && <div className="mb-2 text-xs text-gray-400 pl-4 mt-2">Matches: {totalCount}</div>}
+        {marketListings.length > 0 && (
+          <div className="mb-2 text-xs text-gray-400 pl-2 mt-2 flex items-center gap-2">
+            <span>Matches: {totalCount}</span>
+            {marketLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+          </div>
+        )}
 
         <ScrollArea className="flex-1 min-h-0">
           {marketLoading && marketListings.length === 0 && (
-            <div className="text-center text-sm text-gray-400 p-4">Loading market listings...</div>
+            <div className="text-center text-sm text-gray-400 p-4 flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading market listings...</span>
+            </div>
           )}
           {marketError && <div className="text-center text-sm text-red-400 p-4">{marketError}</div>}
           {marketListings.length > 0 && (

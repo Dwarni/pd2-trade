@@ -245,15 +245,6 @@ const LandingPage: React.FC = () => {
           resizable: true,
           alwaysOnTop: true,
         });
-
-        if (quickListWinRef.current) {
-          attachWindowCloseHandler(quickListWinRef.current, () => {
-            console.log('[QuickList] Window closed (onCloseRequested), clearing ref.');
-            quickListWinRef.current = null;
-          });
-        } else {
-          console.error('[QuickList] openWindowAtCursor returned null!');
-        }
       } else {
         console.log('[QuickList] Window already exists, showing and focusing.');
         try {
@@ -513,7 +504,7 @@ const LandingPage: React.FC = () => {
           });
           if (chatWindowRef.current) {
             attachWindowCloseHandler(chatWindowRef.current, () => {
-              winRef.current = null;
+              chatWindowRef.current = null;
             });
           }
           // Wait a bit for window to be created, then show it
@@ -559,6 +550,24 @@ const LandingPage: React.FC = () => {
         .catch((err) => {
           console.error('Failed to listen for toggle-chat-window event:', err);
         });
+
+      // Call toggle function on startup to ensure chat window is created and opened (even if invisible)
+      // This ensures the component mounts and socket listeners are initialized for notifications
+      setTimeout(async () => {
+        try {
+          // Call toggle to create and show the window
+          await toggleChatWindow();
+          // Give the component time to mount and initialize socket listeners
+          await sleep(300);
+          // Hide it so it's invisible to the user (but component remains mounted)
+          if (chatWindowRef.current) {
+            await chatWindowRef.current.hide();
+            console.log('[LandingPage] Chat window initialized in background for notifications');
+          }
+        } catch (error) {
+          console.error('[LandingPage] Error initializing chat window on startup:', error);
+        }
+      }, 600); // Wait a bit longer to ensure toggle listener is set up
     };
     openChat();
 

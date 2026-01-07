@@ -1,4 +1,17 @@
 export const changeLog = {
+  '0.7.5': ['🔧 Fixed an issue which causes website trade whispers to not be notified'],
+  '0.7.4': [
+    '✨ Added visual highlighting for selected corruption in price check widget - selected corruption is now highlighted with blue background and border',
+    '✨ Added support for Set items in price check widget - Set items now fetch and display average prices and corruption prices',
+  ],
+  '0.7.3': [
+    '🆕 The corruption in the price tooltip can be clicked to filter the price check window by the selected corruption.',
+  ],
+  '0.7.2': [
+    '🆕 The corruption tooltip will now automatically show how much the current items corruption price is worth.',
+    '🔧 Fixed an issue which caused the manage listings auto close when clicking ui elements',
+    '🔧 Fixed an issue which caused menu widget to open even when disabled.',
+  ],
   '0.7.1': [
     '✨ Price check overlay now will show prices for unique items, along with corruption prices.',
     '🔧 Fixed an issue where the chat button overlay would appear over the toasts',

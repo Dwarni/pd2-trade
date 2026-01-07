@@ -158,6 +158,7 @@ export function buildGetMarketListingQuery(
   corruptedState: number = 0,
   limit: number = 10,
   offset: number = 0,
+  corruptionNames?: string[],
 ): MarketListingQuery {
   const now = new Date();
   const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
@@ -186,6 +187,12 @@ export function buildGetMarketListingQuery(
     query['item.corrupted'] = false;
   }
   // If corruptedState === 0, don't add any corrupted filter
+
+  // Handle corruption names filter - filter by specific corruptions
+  // Use $all to require ALL corruptions to be present, not just one
+  if (corruptionNames && corruptionNames.length > 0) {
+    query['item.corruptions'] = { $all: corruptionNames };
+  }
 
   [...selected].forEach((key) => {
     const stat = sortedStats.find((s) => getStatKey(s) === key);

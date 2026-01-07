@@ -53,20 +53,29 @@ const ToastPage: React.FC = () => {
       }
 
       handleToastOpen();
-      toast('Disable Chat Button Overlay?', {
+      const toastId = toast('Disable Chat Button Overlay?', {
         description: 'You can re-enable it later in Settings → Interface.',
         position: 'bottom-right',
         duration: 5000,
         action: {
           label: 'Disable',
           onClick: async () => {
+            // Explicitly dismiss the toast when action is clicked
+            if (toastId) {
+              toast.dismiss(toastId);
+            }
+            handleToastClose();
             emit('confirm-disable-overlay');
           },
         },
         cancel: {
           label: 'Cancel',
           onClick: () => {
-            // No-op, just close
+            // Explicitly dismiss the toast when cancel is clicked
+            if (toastId) {
+              toast.dismiss(toastId);
+            }
+            handleToastClose();
           },
         },
         onDismiss: () => handleToastClose(),
@@ -101,7 +110,7 @@ const ToastPage: React.FC = () => {
       }
 
       handleToastOpen();
-      toast.warning('Delete Listing?', {
+      const toastId = toast.warning('Delete Listing?', {
         description: itemName
           ? `Are you sure you want to delete the listing for ${itemName}?`
           : 'Are you sure you want to delete this listing?',
@@ -110,13 +119,22 @@ const ToastPage: React.FC = () => {
         action: {
           label: 'Delete',
           onClick: async () => {
+            // Explicitly dismiss the toast when action is clicked
+            if (toastId) {
+              toast.dismiss(toastId);
+            }
+            handleToastClose();
             emit('confirm-delete-listing', { listingId });
           },
         },
         cancel: {
           label: 'Cancel',
           onClick: () => {
-            // No-op, just close
+            // Explicitly dismiss the toast when cancel is clicked
+            if (toastId) {
+              toast.dismiss(toastId);
+            }
+            handleToastClose();
           },
         },
         onDismiss: () => handleToastClose(),
@@ -276,13 +294,19 @@ const ToastPage: React.FC = () => {
           };
 
           // Custom toast with action button
-          toast(customPayload.title || 'PD2 Trader', {
+          const customToastId = toast(customPayload.title || 'PD2 Trader', {
             position: 'bottom-right',
             description: customPayload.description,
             closeButton: true,
             action: {
               label: customPayload.action.label,
-              onClick: handleActionClick,
+              onClick: async () => {
+                // Explicitly dismiss the toast when action is clicked
+                if (customToastId) {
+                  toast.dismiss(customToastId);
+                }
+                await handleActionClick();
+              },
             },
             onDismiss: () => closeToastWebview(),
             onAutoClose: () => closeToastWebview(),

@@ -1,8 +1,17 @@
 {
   "name": "pd2-trader",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.7.5",
   "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./components": "./src/pages/price-check/components/index.ts",
+    "./hooks/useOptions": "./src/hooks/useOptions.tsx",
+    "./hooks/useItems": "./src/hooks/useItems.tsx",
+    "./hooks/pd2website/usePD2Website": "./src/hooks/pd2website/usePD2Website.tsx",
+    "./src/globals.css": "./src/globals.css"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
