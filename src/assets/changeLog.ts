@@ -1,4 +1,5 @@
 export const changeLog = {
+  '0.7.5': ['🔧 Fixed an issue which causes website trade whispers to not be notified'],
   '0.7.4': [
     '✨ Added visual highlighting for selected corruption in price check widget - selected corruption is now highlighted with blue background and border',
     '✨ Added support for Set items in price check widget - Set items now fetch and display average prices and corruption prices',
